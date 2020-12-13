@@ -8,7 +8,41 @@ def getBigramList(firstLayerLetters, n_gramLength, txtFile, bigTxtFile):
     pureBigramArray = []
     bigramImportance = []
     absoluteBigramCount = []
-    if os.path.exists(txtFile): # If smaller textfile does not exist, read from big textfile
+
+    bigTxtFile = './bigram_dictionaries/' + bigTxtFile
+    txtFile = './other input & output/' + txtFile
+    previousFirstLayerLettersFile = './other input & output/' + 'previousFirstLayerLetters.txt'
+    previousBigTxtFile = './other input & output/' + 'previousBigTxtFileName.txt'
+    updateTxtFile = False
+
+    if os.path.exists(previousFirstLayerLettersFile):
+        with open(previousFirstLayerLettersFile, 'r') as file:
+            if file.readline() == firstLayerLetters:
+                print('Remember to take breaks if something hurts of thinking starts getting hard. :)')
+            else:
+                updateTxtFile = True
+                with open(previousFirstLayerLettersFile, 'w') as file:
+                    file.write(firstLayerLetters)
+    else:
+        with open(previousFirstLayerLettersFile, 'w') as file:
+            file.write(firstLayerLetters)
+        updateTxtFile = True
+    
+    if os.path.exists(previousBigTxtFile):
+        with open(previousBigTxtFile, 'r') as file:
+            if file.readline() == bigTxtFile:
+                print('Still working on that one language ...')
+            else:
+                updateTxtFile = True
+                with open(previousBigTxtFile, 'w') as file:
+                    file.write(bigTxtFile)
+    else:
+        with open(previousBigTxtFile, 'w') as file:
+            file.write(bigTxtFile)
+        updateTxtFile = True
+
+
+    if os.path.exists(txtFile) & (updateTxtFile == False): # If smaller textfile does not exist, read from big textfile
         with open(txtFile, 'r') as file:
             bigrams = file.read()
                     
@@ -19,10 +53,7 @@ def getBigramList(firstLayerLetters, n_gramLength, txtFile, bigTxtFile):
         with open(txtFile, 'r') as file:
             for line in file:
                 bigramImportance.append(int(line[n_gramLength+1:]))
-
-        with open(bigTxtFile, 'r') as file:
-            for line in file:
-                absoluteBigramCount.append(int(line[n_gramLength+1:]))
+        
     else:
         bigrams = ''
         for k in itertools.permutations(firstLayerLetters, n_gramLength):
@@ -36,10 +67,12 @@ def getBigramList(firstLayerLetters, n_gramLength, txtFile, bigTxtFile):
                     if currentBigram == line[0:n_gramLength]:
                         bigrams += line
                         bigramImportance.append(int(line[n_gramLength+1:]))
-                        print(currentBigram, line[n_gramLength+1:])
-                    absoluteBigramCount.append(int(line[n_gramLength+1:]))
         with open(txtFile, 'w') as file:
             file.write(bigrams)
+
+    with open(bigTxtFile, 'r') as file:
+            for line in file:
+                absoluteBigramCount.append(int(line[n_gramLength+1:]))
 
     absoluteBigramCount = sum(absoluteBigramCount)
     return bigrams, pureBigramArray, bigramImportance, absoluteBigramCount
@@ -66,24 +99,6 @@ def prepareAsciiArray(firstLayerLetters, firstLayerStaticLetters):
             j+=1
         letterPlacement += 1
     return asciiArray, emptySlots
-
-def flowsssssssssssssssWell(layout, bigram): # currently not in use
-    n=0
-    for letter in layout:
-        if bigram[0] == letter:
-            l1_placement = n
-        elif bigram[1] == letter:
-            l2_placement = n
-
-    print(layout)
-
-    if (l1_placement % 2) == 0: # if FIRST LETTER of the bigram is EVEN
-        print('1')
-        if (l2_placement % 2) != 0: # and if FIRST LETTER of the bigram is ODD
-            #if
-            print('2')
-            return True
-        #elif 
 
 def showDataInTerminal(layoutList, goodScoresList, badScoresList, layoutNumber, showData, showGeneralStats, numberOfTopLayouts, numberOfBottomLayouts, numberOfALLbigrams):
     if showData:
@@ -144,8 +159,8 @@ def showDataInTerminal(layoutList, goodScoresList, badScoresList, layoutNumber, 
             print('Number of Bigrams possible with this layout (regardless of Fluidity):',
                     sumOfBigramImportance, ' (', '~%.2f' % float(100*sumOfBigramImportance/numberOfALLbigrams), '%)')
             print('Sum of ALL Bigrams, if a whole keyboard was being used:', numberOfALLbigrams)
-            print('"Average" Layout:', ' Good Bigrams:~%.2f' % float(statistics.mean(goodScoresList)/sumOfBigramImportance), '%',
-                    '\n                   Bad Bigrams: ~%.2f' % float(statistics.mean(badScoresList)/sumOfBigramImportance), '%')
+            print('"Average" Layout:', ' Good Bigrams:~%.2f' % float(100*statistics.mean(goodScoresList)/sumOfBigramImportance), '%',
+                    '\n                   Bad Bigrams: ~%.2f' % float(100*statistics.mean(badScoresList)/sumOfBigramImportance), '%')
             print('#######################################################################################################################')
             print('######################################### 8vim Keyboard Layout Calculator #############################################')
             print('#######################################################################################################################')
@@ -154,10 +169,9 @@ def showDataInTerminal(layoutList, goodScoresList, badScoresList, layoutNumber, 
 ########################################## start ##########################################
 
 # define the letters you want to use
-firstLayerLetters = 'etaoinsr'.upper() # All letters for the first cycle of calculation, including e (or whatever you put in >firstLayerStaticLetters<)
+firstLayerLetters = 'enirtsah'.upper() # All letters for the first cycle of calculation, including e (or whatever you put in >firstLayerStaticLetters<)
 secondLayerLetters = 'dulcgmob'.upper() # All letters for the second cycle of calculation
 thirdLayerLetters = ''.upper() # All letters for the second cycle of calculation
-thirdLayerLetters = capitalizeList(thirdLayerLetters)
 
 firstLayerStaticLetters = ['e', '', '', '', '', '', '', ''] # the positions go clockwise. 'e' is on the bottom left. 
 firstLayerStaticLetters = capitalizeList(firstLayerStaticLetters)
@@ -172,7 +186,7 @@ while j < len(firstLayerLetters):
 # define bigram-stuff
 n_gramLength = 2
 tempTxtName = 'bigrams.txt'
-bigBigramList = 'english_bigrams.txt'
+bigBigramList = 'german_bigrams.txt'
 
 # define what placement-combinations have a "good flow"
 # 0 (the middle of this array) is assumed to be the position of the first letter. IT'S ASSUMED TO BE EVEN!!!
@@ -184,26 +198,15 @@ oddNumberFlow = evenNumberFlow.copy()
 oddNumberFlow.reverse()
 
 # Define what information you want to recieve.
-showData = True
+showData = False
 showGeneralStats = True
 numberOfTopLayouts = 3
 numberOfBottomLayouts = 2
 
 # create the asciiArray
 asciiArray, emptySlots = prepareAsciiArray(firstLayerLetters, firstLayerStaticLetters)
-# asciiArray = [255]*256
-# emptySlots = [0]*8
-# letterPlacement = 0
-# m=0
-# while letterPlacement < len(firstLayerLetters):
-#     if firstLayerStaticLetters[letterPlacement]:
-#         currentLetter = firstLayerStaticLetters[letterPlacement]
-#         asciiArray[ord(currentLetter)] = letterPlacement
-#     else:
-#         emptySlots[m] = letterPlacement
-#         m+=1
-#     letterPlacement += 1
 
+# Get the bigram-lists
 bigramList, pureBigramLetters, pureBigramImportance, numberOfALLbigrams = getBigramList(firstLayerLetters, n_gramLength, tempTxtName, bigBigramList)
 
 numberOfPossibleLayouts = math.factorial(len(firstLayerLetters)-1)
@@ -231,15 +234,13 @@ for variableLetterCombination in itertools.permutations(variableLetters): # try 
         #if firstLetterPlacement+secondLetterPlacement > 63:
         #    print('Hhiiiiiiiiiiiiiiiiiiii', asciiArray)
         #print(asciiArray)
-        if (firstLetterPlacement % 2) == 0:
-            # if first letter of the bigram is EVEN, check the flowsWellArray
+
+        if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the flowsWellArray
             flowsWell = evenNumberFlow[secondLetterPlacement - firstLetterPlacement + 7]
-        else: # check the reversed flowsWellArray
+        else: # if it's ODD, check the reversed flowsWellArray
             flowsWell = oddNumberFlow[secondLetterPlacement - firstLetterPlacement + 7]
-        # print(bigramList, flowsWell)
-        #bigramPositionInFile = bigramList.find(bigram)
-        #print(bigramPositionInFile)
-        if flowsWell:
+
+        if flowsWell: # if the bigram flows well, add it to the number of good-flowing-bigrams. Otherwise add it to the bad ones.
             goodgramList[layoutNumber] += pureBigramImportance[k]
         else:
             badgramList[layoutNumber] += pureBigramImportance[k]
@@ -255,11 +256,6 @@ for variableLetterCombination in itertools.permutations(variableLetters): # try 
             m+=1
         letterPlacement += 1
     
-    #print('Layout', layoutNumber+1)
-    #print(layoutList[layoutNumber])
-    #print('Good bigrams:', goodgramList[layoutNumber], 'out of', sumOfBigramImportance, '  ~%.2f' % float(100*goodgramList[layoutNumber]/sumOfBigramImportance), '%')
-    #print('Bad  bigrams:', badgramList[layoutNumber], 'out of', sumOfBigramImportance,  '  ~%.2f' % float(100*badgramList[layoutNumber]/sumOfBigramImportance), '%', '\n')
-
     layoutNumber+=1
     ### Un-comment this if you want only a certain number of tested layouts
     #if layoutNumber>1700:
