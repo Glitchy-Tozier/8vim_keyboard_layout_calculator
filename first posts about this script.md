@@ -289,5 +289,76 @@ Sum of ALL Bigrams, if a whole keyboard was being used: 4324127906
 ######################################### 8vim Keyboard Layout Calculator #############################################
 #######################################################################################################################
 ```
+# Fourth Post
+## Update:
+
+The best layouts for TWO innermost layers now can be calculated.
+Even more importantly, I changed pretty much the entire script so that the next few steps are **very easy** to implement. Those steps are:
+0. (A little more cleaning up.)
+1. Calculate 3 layers, not just 2. Originally, I didn't want to implement this, but it's so obvious and easy that it'd be a waste to stop now.
+2. Implementing a finer control over what "flow" is.
+Currently it's just a boolean. `Flow = True` / `Flow = False`.
+Instead, I wand this: `Flow = 0.9` (out of 1)
+3. Add a penalty for being in a higher layer. The penalty won't be very big, but It should prevent VERY common letters like 'e' in German and English to drop to something like the third layer.
+
+Finally, a view into what happens in the command-window. The layout that's higher up is very good. It may not be the best though... we'll know once goals 2 and 3 are implemented.
+If you want to help me, the best thing you can do is to go to this discussion and give me your answers to that little questionnaire: **https://github.com/flide/8VIM/discussions/140**
+
+```
+======>  1 out of 6 cycles
+
+------------------------ 0.54 seconds --- Got best layouts for layer 1
+------------------------ 21.42 seconds --- Got best layouts for layer 2
+
+======>  2 out of 6 cycles
+
+------------------------ 21.96 seconds --- Got best layouts for layer 1
+------------------------ 42.8 seconds --- Got best layouts for layer 2
+
+======>  3 out of 6 cycles
+
+------------------------ 43.35 seconds --- Got best layouts for layer 1
+------------------------ 64.12 seconds --- Got best layouts for layer 2
+
+======>  4 out of 6 cycles
+
+------------------------ 64.65 seconds --- Got best layouts for layer 1
+------------------------ 85.82 seconds --- Got best layouts for layer 2
+
+======>  5 out of 6 cycles
+
+------------------------ 86.38 seconds --- Got best layouts for layer 1
+------------------------ 107.29 seconds --- Got best layouts for layer 2
+
+======>  6 out of 6 cycles
+
+------------------------ 107.83 seconds --- Got best layouts for layer 1
+------------------------ 128.38 seconds --- Got best layouts for layer 2
+------------------------ 128.38 seconds --- Done computing
 
 
+#######################################################################################################################
+#######################################################################################################################
+                                                The top 2 BEST layouts:
+
+Layout:
+eatrhinsbmcuodgl
+Good bigrams: 555427171 out of 741644636   ~74.89 %
+Bad  bigrams: 186217465 out of 741644636   ~25.11 %
+Layout-placing: 1
+
+Layout:
+eutrhinsbmcaodgl
+Good bigrams: 554255344 out of 741644636   ~74.73 %
+Bad  bigrams: 187389292 out of 741644636   ~25.27 %
+Layout-placing: 2
+#######################################################################################################################
+#######################################################################################################################
+                                                    General Stats:
+Number of Layouts tested: 12
+Number of Bigrams possible with this layout (regardless of Fluidity): 741644636  ( ~81.01 %)
+Sum of ALL Bigrams, if a whole keyboard was being used: 915463743
+#######################################################################################################################
+########################################### 8vim Keyboard Layout Calculator ###########################################
+#######################################################################################################################
+```
