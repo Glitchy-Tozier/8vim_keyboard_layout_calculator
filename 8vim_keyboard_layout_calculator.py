@@ -28,13 +28,15 @@ def main():
     # Define the letters you want to use
     layer1letters = 'enirtsah'.lower() # All letters for the first cycleNr of calculation, including 'e' (or whatever you put in >staticLetters<)
     layer2letters = 'dulcgmob'.lower() # All letters for the second cycleNr of calculation
-    layer3letters = 'fkwzvpjy'.lower() # All letters for the second cycleNr of calculation
+    layer3letters = 'fkwzvpjy'.lower() # All letters for the third cycleNr of calculation
+    layer4letters = ''.lower() # All letters for the fourth cycleNr of calculation
 
     # Define how which of the above letters are interchangeable (variable) between adjacent layers.
     # They have to be in the same order as they apear between layer1letters and layer2letters.
     # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-    varLetters_L1_L2 = ''.lower()
+    varLetters_L1_L2 = 'ahdu'.lower()
     varLetters_L2_L3 = ''.lower()
+    varLetters_L3_L4 = ''.lower()
 
 
     # For layer 1, define that a certain Letter ('e') doesn't change.
@@ -46,7 +48,7 @@ def main():
     # Define how many layers the layouts you recieve should contain.
     nrOfLayers = 3
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
-    nrOfBestPermutations = 2
+    nrOfBestPermutations = 10
 
     # Define what information you want to recieve.
     showData = True
@@ -74,7 +76,7 @@ def main():
     flow_evenNumbers_L3 = [True, True, False, True, False, False, False, False, True, True, False, True, False, False, False]
 
     #                        -7     -6     -5    -4     -3    -2    -1   ~0~     1      2      3     4      5     6     7
-    flow_evenNumbers_L4 = [False, True, False, False, True, False, True, True, False, True, False, False, True, False, True]
+    flow_evenNumbers_L4 = [False, True, False, False, True, False, True, False, False, True, False, False, True, False, True]
 
 
     # You can use this section to test your custom-made layouts. Leave "'abcdefghijklmnop'," intact, but append any number of your own layouts afterwards.
@@ -138,7 +140,7 @@ def main():
 
 
         # Get all layouts for each Layer with the current layer-letters.
-        layouts_L1, layouts_L2, layouts_L3 = getLayouts(varLetters, staticLetters, layer2letters, layer3letters)
+        layouts_L1, layouts_L2, layouts_L3, layouts_L4 = getLayouts(varLetters, staticLetters, layer2letters, layer3letters, layer4letters)
 
         # Test the layer 1 - layouts
         goodScores_L1, badScores_L1 = testLayouts(layouts_L1, asciiArray, [], [], staticLetters, emptySlots)
@@ -184,39 +186,47 @@ def main():
         ################################  Calculate (most of the stuff for) the third Layer
 
         # Sort the best layer-1 layouts and only return the best ones
-        layouts_L1_L2, goodScores_L1_L2, badScores_L1_L2 = getBestScores(tempLayoutList, tempGoodgramList, tempBadgramList)
-        
-        cycleNr=0
-        #for layout_L1_L2 in layouts_L1_L2: # Go through every of the previous top-layouts.
-        layer3letters = layer3letters
-
-
+        bestLayouts_L1_L2, bestScores_L1_L2, WORSTSCORES_L1_L2 = getBestScores(tempLayoutList, tempGoodgramList, tempBadgramList)
 
 
         # Combine the layouts of layer 1 and layer 2 to all possible variants
-        layouts_L1_L2_L3 = combinePermutations(layouts_L1_L2, layouts_L3)
+        layouts_L1_L2_L3 = combinePermutations(bestLayouts_L1_L2, layouts_L3)
 
 
         # Test the the combined layouts of layers 1&2 and layer 3
-        goodScores_L1_L2_L3, badScores_L1_L2_L3 = testLayouts(layouts_L1_L2_L3, asciiArray, goodScores_L1_L2, badScores_L1_L2)
+        goodScores_L1_L2_L3, badScores_L1_L2_L3 = testLayouts(layouts_L1_L2_L3, asciiArray, bestScores_L1_L2, WORSTSCORES_L1_L2)
 
 
         print("------------------------ %s seconds --- Got best layouts for layer 3" % round((time.time() - start_time), 2))
 
-        layoutList, goodgramList, badgramList = layouts_L1_L2_L3, goodScores_L1_L2_L3, badScores_L1_L2_L3
-
         if nrOfLayers > 3:
+            print("\n------------------------ %s seconds --- Startet with layouts for layer 3" % round((time.time() - start_time), 2))
+
             ####################################################################################################################
             ################################  Calculate (most of the stuff for) the fourth Layer
-            pass
+
+            # Sort the best layer-1 layouts and only return the best ones
+            bestLayouts_L1_L2_L3, bestScores_L1_L2_L3, WORSTSCORES_L1_L2_L3 = getBestScores(layouts_L1_L2_L3, goodScores_L1_L2_L3, badScores_L1_L2_L3)
+
+
+            # Combine the layouts of layer 1 and layer 2 to all possible variants
+            layouts_L1_L2_L3_L4 = combinePermutations(bestLayouts_L1_L2_L3, layouts_L4)
+
+
+            # Test the the combined layouts of layers 1&2 and layer 3
+            goodScores_L1_L2_L3_L4, badScores_L1_L2_L3_L4 = testLayouts(layouts_L1_L2_L3_L4, asciiArray, bestScores_L1_L2_L3, WORSTSCORES_L1_L2_L3)
+
+
+            print("------------------------ %s seconds --- Got best layouts for layer 4" % round((time.time() - start_time), 2))
+
         else:
-            for j in  range(len(layoutList)):
+            for j in  range(len(layouts_L1_L2_L3)):
                 # Add the found layouts to the list (which will later be displayed)
-                finalLayoutList.append(layoutList[j])
-                finalGoodgramList.append(goodgramList[j])
-                finalBadgramList.append(badgramList[j])
+                finalLayoutList.append(layouts_L1_L2_L3[j])
+                finalGoodgramList.append(goodScores_L1_L2_L3[j])
+                finalBadgramList.append(badScores_L1_L2_L3[j])
     else:
-        for j in  range(len(layoutList)):
+        for j in  range(len(tempLayoutList)):
             # Add the found layouts to the list (which will later be displayed)
             finalLayoutList.append(tempLayoutList[j])
             finalGoodgramList.append(tempGoodgramList[j])
@@ -409,19 +419,22 @@ def prepareAsciiArray(staticLetters):
 
     return asciiArray, emptySlots
 
-def getLayouts(varLetters, staticLetters, layer2letters, layer3letters):
+def getLayouts(varLetters, staticLetters, layer2letters, layer3letters, layer4letters):
     # This calculates and returns all layouts.
 
     layer1layouts = getPermutations(varLetters, staticLetters)
     layer2layouts = ['']
     layer3layouts = ['']
+    layer4layouts = ['']
 
     if layer2letters:
         layer2layouts = getPermutations(layer2letters)
     if layer3letters:
         layer3layouts = getPermutations(layer3letters)
+    if layer4letters:
+        layer4layouts = getPermutations(layer4letters)
     
-    return layer1layouts, layer2layouts, layer3layouts
+    return layer1layouts, layer2layouts, layer3layouts, layer4layouts
 
 def getPermutations(varLetters, staticLetters=[]):
     # This returns all possible letter-positions (permutations) with the input letters.
@@ -611,7 +624,7 @@ def showDataInTerminal(layoutList, goodScoresList, badScoresList, showData, show
             while j > nrOfLayouts-showTopLayouts-1:
                 i = j
 
-                print('\nLayout:', layoutList.index(orderedLayouts[i])+1)
+                print('\nLayout:')#:', layoutList.index(orderedLayouts[i])+1)
                 print(orderedLayouts[i])
 
                 print('Good bigrams:', orderedGoodScores[i], 'out of', sumOfBigramImportance,
@@ -632,7 +645,7 @@ def showDataInTerminal(layoutList, goodScoresList, badScoresList, showData, show
                 print('                                                The top', showBottomLayouts, 'WORST layouts:')
             while j < showBottomLayouts:
                 i = showBottomLayouts-j
-                print('\nLayout', layoutList.index(orderedLayouts[i])+1)
+                print('\nLayout:')#, layoutList.index(orderedLayouts[i])+1)
                 print(orderedLayouts[i])
 
                 print('Good bigrams:', orderedGoodScores[i], 'out of', sumOfBigramImportance,
@@ -650,7 +663,8 @@ def showDataInTerminal(layoutList, goodScoresList, badScoresList, showData, show
             print('#######################################################################################################################')
             print('#######################################################################################################################')
             print('                                                    General Stats:')
-            print('Number of Layouts tested:', nrOfLayouts)
+            # print('Number of Layouts tested:', nrOfLayouts)
+            print('Time needed for the whole runthrough: %s seconds.' % round((time.time() - start_time), 2))
             print('Number of Bigrams possible with this layout (regardless of Fluidity):',
                     sumOfBigramImportance, ' (', '~%.2f' % float(100*sumOfBigramImportance/sumOfALLbigrams), '%)')
             print('Sum of ALL Bigrams, if a whole keyboard was being used:', sumOfALLbigrams)
