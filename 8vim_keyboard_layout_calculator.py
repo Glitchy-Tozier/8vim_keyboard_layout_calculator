@@ -3,7 +3,7 @@ import itertools
 import math
 #import statistics
 import time
-from multiprocessing import Pool
+from multiprocessing import Process
 from threading import Thread
 import concurrent.futures
 start_time = time.time()
@@ -16,6 +16,7 @@ def main():
     global testingCustomLayouts
     global fillSymbol
 
+    global useDiacriticsGesture
     global nrOfLettersInEachLayer
     global nrOfLayers
     global nrOfBestPermutations
@@ -41,6 +42,11 @@ def main():
     varLetters_L1_L2 = ''.lower()
     varLetters_L2_L3 = ''.lower()
     varLetters_L3_L4 = ''.lower()
+
+    # Decide whether you want to include diacritics (typed with the diacritics-gesture) in your testing. If you have all the diacritics you need on your main layout, leave this on False.
+    useGestureDiacritics = False
+    gestureDiacritics = 'äöüß'
+    gestureDiacritics_correspondingLetters = 'aous'
 
 
     # For layer 1, define that a certain Letter ('e') doesn't change.
@@ -575,10 +581,10 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
             layout_j_groupBeginning = int((len(layouts) / len(prevScores)) * j)
             layout_j_groupEnding = int((len(layouts) / len(prevScores)) * (j+1))
 
-            threads.append(Thread(target=getLayoutScores3, args=[ layouts, scoresList, layout_j_groupBeginning, layout_j_groupEnding, asciiArray, bigrams, bigramFrequency, prevScores[j], flow[:]]))
+            threads.append(Thread(target=getLayoutScores3, args=[ layouts, scoresList, layout_j_groupBeginning, layout_j_groupEnding, asciiArray[:], bigrams, bigramFrequency, prevScores[j] ]))
 
         for t in threads:
-            time.sleep(1)
+            time.sleep(0.5)
             t.start()
  
         # wieder zusammenführen
@@ -678,15 +684,6 @@ def getLayoutScores3(*args): #layouts, outputArray, asciiArray, bigrams, bigramF
     bigrams = args[5]
     bigramFrequency = args[6]
     prevScores = args[7]
-    flow = args[8]
-    flow_evenNumbers_L1 = flow[0]
-    flow_oddNumbers_L1 = flow[1]
-    flow_evenNumbers_L2 = flow[2]
-    flow_oddNumbers_L2 = flow[3]
-    flow_evenNumbers_L3 = flow[4]
-    flow_oddNumbers_L3 = flow[5]
-    flow_evenNumbers_L4 = flow[6]
-    flow_oddNumbers_L4 = flow[7]
 
     # Test the flow of all the layouts.
     # scoresList = [0]*len(layouts)
@@ -744,7 +741,7 @@ def getLayoutScores3(*args): #layouts, outputArray, asciiArray, bigrams, bigramF
         j+=1
 
     print('Scores:', scoresList[layout_j_groupBeginning : layout_j_groupBeginning+4], '\n')
-#    return# scoresList
+    #return scoresList
 
 def getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters, L1_comfort, L2_comfort, L3_comfort, L4_comfort, layerVsFlow):
     # This creates the score a perfect (impossible) layout would have, just for comparison's sake.
