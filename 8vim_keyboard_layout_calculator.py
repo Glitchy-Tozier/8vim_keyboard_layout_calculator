@@ -3,9 +3,10 @@ import itertools
 import math
 #import statistics
 import time
-from multiprocessing import Process
+import multiprocessing #import Process
 from threading import Thread
-import concurrent.futures
+from functools import partial
+
 start_time = time.time()
 
 
@@ -31,15 +32,15 @@ def main():
     global flow_oddNumbers_L4
 
     # Define the letters you want to use
-    layer1letters = 'etaoinsr'.lower() # All letters for the first cycleNr of calculation, including 'e' (or whatever you put in >staticLetters<)
-    layer2letters = 'hldcumfg'.lower() # All letters for the second cycleNr of calculation
-    layer3letters = 'pwybvkjx'.lower() # All letters for the third cycleNr of calculation
-    layer4letters = 'zq'.lower() # All letters for the fourth cycleNr of calculation
+    layer1letters = 'enritsad'.lower() # All letters for the first cycleNr of calculation, including 'e' (or whatever you put in >staticLetters<)
+    layer2letters = 'hulgomcb'.lower() # All letters for the second cycleNr of calculation
+    layer3letters = 'fkwzpvjy'.lower() # All letters for the third cycleNr of calculation
+    layer4letters = 'xq'.lower() # All letters for the fourth cycleNr of calculation
 
     # Define how which of the above letters are interchangeable (variable) between adjacent layers.
     # They have to be in the same order as they apear between layer1letters and layer2letters.
     # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-    varLetters_L1_L2 = ''.lower()
+    varLetters_L1_L2 = 'adhu'.lower()
     varLetters_L2_L3 = ''.lower()
     varLetters_L3_L4 = ''.lower()
 
@@ -63,23 +64,23 @@ def main():
     # Define what information you want to recieve.
     showData = True
     showGeneralStats = True
-    nrOfTopLayouts = 7
+    nrOfTopLayouts = 9
     nrOfBottomLayouts = 0
 
     # You can use this section to test your custom-made layouts. Leave "'abcdefghijklmnop'," intact, but append any number of your own layouts afterwards.
     testCustomLayouts = True
-    customLayoutNames = ['Old / original 8VIM layout', 'English layout by sslater11', 'G-Layout-Github-Post', 'G-Layout-Threading-Result']
-    customLayouts = ['eitsyanolhcdbrmukjzgpxfv----q--w', 'hitanerolfydmcsujwkgpxbv----q--z', 'eotrnsaidfcugmlhxvjykpwbq-z-----', 'eotrnsaidfcgumlhxjkvbywpq---z---']
+    customLayoutNames = ['Old / original 8VIM layout', 'English layout by sslater11', 'G-Layout-multiprocessing-nr-1']
+    customLayouts = ['eitsyanolhcdbrmukjzgpxfv----q--w', 'hitanerolfydmcsujwkgpxbv----q--z', 'eatnsdrigcloumbhzwykpjfvq-----x-']
 
 
     # Define bigram-stuff
     n_gramLength = 2
-    bigramTxt = './bigram_dictionaries/english_bigrams.txt' # <- This is the main thing you want to change. Name it whatever your bigram is called.
+    bigramTxt = './bigram_dictionaries/german_bigrams.txt' # <- This is the main thing you want to change. Name it whatever your bigram is called.
 
 
 
     # Define how important layer-placement is as opposed to flow. 0 = only flow is important. 1 =  only what layer the letter is in is important.
-    layerVsFlow = 0.4  # /0.6
+    layerVsFlow = 0.5  # /0.6
 
     # Define the comfort of different Layers. Use numbers between 1 (most comfortable) and 0 (least comfortable).
     L1_comfort = 1
@@ -244,6 +245,7 @@ def main():
 
             # Sort the best layer-1 layouts and only return the best ones
             bestLayouts_L1_L2_L3, bestScores_L1_L2_L3 = getBestScores(layouts_L1_L2_L3, scores_L1_L2_L3)
+
 
             # If layer 4 isn't completely filled with letters, fill the remaining slots of layer 4 with blanks.
             if len(layer4letters) < nrOfLettersInEachLayer:
@@ -568,44 +570,51 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
         bigrams, bigramFrequency = filterBigrams(lastLayerLetters, bigrams, bigramFrequency)
     
 
-    # Test the layouts for their flow
-    # scoresList = getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores, fixedLetters, emptySlots)
+    useMultiprocessing = True
+    if useMultiprocessing:
 
-    if prevScores:
-        print('-------------------------------------------------------------------------------------------------------------------------')
-        scoresList = [9999999999999999999999]*len(layouts)
-        threads = []
-        flow = [flow_evenNumbers_L1, flow_oddNumbers_L1, flow_evenNumbers_L2, flow_oddNumbers_L2, flow_evenNumbers_L3, flow_oddNumbers_L3, flow_evenNumbers_L4, flow_oddNumbers_L4]
-        print(prevScores)
-        for j in range(len(prevScores)):
-            layout_j_groupBeginning = int((len(layouts) / len(prevScores)) * j)
-            layout_j_groupEnding = int((len(layouts) / len(prevScores)) * (j+1))
+        if prevScores:
+            if len(prevScores) > 1:
 
-            threads.append(Thread(target=getLayoutScores3, args=[ layouts, scoresList, layout_j_groupBeginning, layout_j_groupEnding, asciiArray[:], bigrams, bigramFrequency, prevScores[j] ]))
+                scoresList = []
+                # Prepare the group-sizes of the layout-groups for multiprozessing
+                groupBeginning = []
+                for j in range(len(prevScores)):
+                    groupBeginning.append(int((len(layouts) / len(prevScores)) * j)) # Prepare the iterables for the later "pool.map"
+                groupSize = groupBeginning[1]
 
-        for t in threads:
-            time.sleep(0.5)
-            t.start()
- 
-        # wieder zusammenführen
-        for t in threads:
-            t.join()
+                # Prepare the layout-testing-function and its "static parameters"
+                testingFunction = partial(getLayoutScores_multiprocessing, [layouts, asciiArray[:], bigrams, bigramFrequency, prevScores, groupSize])
+                
+                # Using multithreading, test the layouts for their flow
+                with multiprocessing.Pool(processes=len(prevScores)) as pool:
+                    groupScores = pool.map(testingFunction, groupBeginning)
+                    pool.close()
+                
+                # Add all the results to the scoresList
+                for j in range(len(groupScores)):
+                    scoresList.extend(groupScores[j])
 
-        print('-------------------------------------------------------------------------------------------------------------------------')
-    
+            else:
+                # Test the layouts for their flow
+                scoresList = getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores, fixedLetters, emptySlots)
+        else:
+            # Test the layouts for their flow
+            scoresList = getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores, fixedLetters, emptySlots)
     else:
         # Test the layouts for their flow
         scoresList = getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores, fixedLetters, emptySlots)
-    
 
     
     return scoresList
 
 def getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores=None, fixedLetters=None, emptySlots=None):
+    # This function tests the layouts and return their scores. It's only used when single-threading.
 
-    # Test the flow of all the layouts.
+    # Create the empty scoring-list
     scoresList = [0]*len(layouts)
 
+    # Test the flow of all the layouts.
     k=0
     for layout in layouts:
 
@@ -659,11 +668,11 @@ def getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores=No
     # Add the previous layouts' scores. (which weren't tested here. It would be redundant.)
     j=0
     while j < len(prevScores):
-        layout_j_groupBeginning = int((len(layouts) / len(prevScores)) * j)
-        layout_j_groupEnding = int((len(layouts) / len(prevScores)) * (j+1))
+        groupBeginning = int((len(layouts) / len(prevScores)) * j)
+        groupEnding = int((len(layouts) / len(prevScores)) * (j+1))
         
-        k = layout_j_groupBeginning
-        while k < layout_j_groupEnding:
+        k = groupBeginning
+        while k < groupEnding:
             scoresList[k] = scoresList[k] + prevScores[j]
             k+=1
         j+=1
@@ -674,27 +683,31 @@ def getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores=No
 
     return scoresList
 
-def getLayoutScores3(*args): #layouts, outputArray, asciiArray, bigrams, bigramFrequency, prevScores):
+def getLayoutScores_multiprocessing(*args):
+    # This function tests the layouts and return their scores.
+    # Only use this function when using multiprocessing. Otherwise, use "getLayoutScores"
 
-    layouts = args[0]
-    scoresList = args[1]
-    layout_j_groupBeginning = args[2]
-    layout_j_groupEnding = args[3]
-    asciiArray = args[4]
-    bigrams = args[5]
-    bigramFrequency = args[6]
-    prevScores = args[7]
+    # Rename the input arguments
+    mapArgs = args[1]
+    staticArgs = args[0]
+
+    groupSize = staticArgs[5]
+
+    groupBeginning = mapArgs
+    groupEnding = groupBeginning + groupSize
+
+    layouts = staticArgs[0]
+    asciiArray = staticArgs[1]
+    bigrams = staticArgs[2]
+    bigramFrequency = staticArgs[3]
+    prevScore = staticArgs[4][ int(groupBeginning/groupSize)]
+
+    scoresList = [0]*groupSize
 
     # Test the flow of all the layouts.
-    # scoresList = [0]*len(layouts)
-    print('PrevScores:', prevScores)
-    print('Layouts:   ', layouts[layout_j_groupBeginning:layout_j_groupBeginning+4])
-    print('layout_j_groupBeginning:', layout_j_groupBeginning)
-    print('layout_j_groupEnding:   ', layout_j_groupEnding, '\n')
-
-    k=layout_j_groupBeginning
-    for layout in layouts[layout_j_groupBeginning : layout_j_groupEnding]:
-        scoresList[k] = 0
+    k=0
+    for layout in layouts[groupBeginning : groupEnding]:
+        #scoresList[k] = 0
         j=0
         for letter in layout:
             asciiArray[ord(letter)] = j
@@ -729,19 +742,11 @@ def getLayoutScores3(*args): #layouts, outputArray, asciiArray, bigrams, bigramF
                 else: # if it's ODD, check the reversed flowsWellArray
                     scoresList[k] += bigramFrequency[j] * flow_oddNumbers_L4[secondLetterPlacement - firstLetterPlacement + 31]
             j+=1
+        
+        scoresList[k] += prevScore
         k+=1
 
-
-    print('\nprevScores:', prevScores)
-    print('lenLayouts:', len(layouts[layout_j_groupBeginning : layout_j_groupEnding]))
-
-    j = layout_j_groupBeginning
-    while j < layout_j_groupEnding:
-        scoresList[j] += prevScores
-        j+=1
-
-    print('Scores:', scoresList[layout_j_groupBeginning : layout_j_groupBeginning+4], '\n')
-    #return scoresList
+    return scoresList
 
 def getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters, L1_comfort, L2_comfort, L3_comfort, L4_comfort, layerVsFlow):
     # This creates the score a perfect (impossible) layout would have, just for comparison's sake.
@@ -814,7 +819,6 @@ def showDataInTerminal(layoutList, scoreList, unweightedWriteableFrequency, cust
         orderedScoreList = scoreList[:]
         orderedScoreList.sort()
 
-
         # Make the values more visually appealing.
         j=0
         while j < len(orderedScoreList):
@@ -826,8 +830,8 @@ def showDataInTerminal(layoutList, scoreList, unweightedWriteableFrequency, cust
             customScores[j] = round(customScores[j], 2)
             j+=1
 
+
         if showTopLayouts != 0:
-            j=nrOfLayouts-1
             print('\n')
             print('#######################################################################################################################')
             print('#######################################################################################################################')
@@ -835,16 +839,15 @@ def showDataInTerminal(layoutList, scoreList, unweightedWriteableFrequency, cust
                 print('                                                       The King:')
             else:
                 print('                                                The top', showTopLayouts, 'BEST layouts:')
-
+            
+            j=nrOfLayouts-1
             while j > nrOfLayouts-showTopLayouts-1:
-                i = j
-
                 print('\nLayout:')
-                print(orderedLayouts[i])
+                print(orderedLayouts[j])
 
-                print('Score:', orderedScoreList[i], '   ~%.2f' % float(100*orderedScoreList[i]/perfectLayoutScore), '%')
+                print('Score:', orderedScoreList[j], '   ~%.2f' % float(100*orderedScoreList[j]/perfectLayoutScore), '%')
                 
-                print('Layout-placing:', nrOfLayouts-i)
+                print('Layout-placing:', nrOfLayouts-j)
                 j-=1
 
         if showBottomLayouts != 0:
@@ -895,4 +898,5 @@ def showDataInTerminal(layoutList, scoreList, unweightedWriteableFrequency, cust
         print('########################################### 8vim Keyboard Layout Calculator ###########################################')
         print('#######################################################################################################################')
 
-main()
+if __name__ == '__main__':
+    main()
