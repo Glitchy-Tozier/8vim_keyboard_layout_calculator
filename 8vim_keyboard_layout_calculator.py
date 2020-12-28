@@ -39,7 +39,7 @@ def main():
     # Define how which of the above letters are interchangeable (variable) between adjacent layers.
     # They have to be in the same order as they apear between layer1letters and layer2letters.
     # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-    varLetters_L1_L2 = 'dh'.lower()
+    varLetters_L1_L2 = 'tsadhulg'.lower()
     varLetters_L2_L3 = ''.lower()
     varLetters_L3_L4 = ''.lower()
 
@@ -58,7 +58,7 @@ def main():
     # Define how many layers the layouts you recieve should contain.
     nrOfLayers = 4
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
-    nrOfBestPermutations = 4
+    nrOfBestPermutations = 5
 
     # Define what information you want to recieve.
     showData = True
@@ -239,7 +239,7 @@ def main():
 
             print("\n------------------------ %s seconds --- Started with layouts for layer 4" % round((time.time() - start_time), 2))
 
-            nrOfBestPermutations = nrOfBestPermutations * 50
+            nrOfBestPermutations = nrOfBestPermutations * 5
 
             # Sort the best layer-1 layouts and only return the best ones
             bestLayouts_L1_L2_L3, bestScores_L1_L2_L3 = getBestScores(layouts_L1_L2_L3, scores_L1_L2_L3)
@@ -591,11 +591,9 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
                 testingFunction = partial(getLayoutScores_multiprocessing, [layouts, asciiArray[:], bigrams, bigramFrequency, prevScores, flowList, groupSize])
                 
                 # Using multithreading, test the layouts for their flow. Only test 64 or less than 64 at once.
-                maxNrProcesses = 64 # Max number of simuntaneous processes
+                maxNrProcesses = 60 # Max number of simuntaneous processes
                 j=0
                 while j < len(prevScores):
-                    print("j =", j)
-                    print('actual nr of processes:', len(prevScores[j:j+maxNrProcesses]))
                     groupScoresList = []
 
                     # Using multithreading, test the layouts for their flow
@@ -770,31 +768,22 @@ def getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4let
     # This creates the score a perfect (impossible) layout would have, just for comparison's sake.
     bigramLetters_L1, bigramFrequencies_L1 = getBigramList(layer1letters)
     perfectScore = sum(bigramFrequencies_L1) * ((L1_comfort * layerVsFlow) + (1-layerVsFlow))
-    print('\n"PerfectScore"...score start:')
-    print(perfectScore)
-
     
     if nrOfLayers > 1:
         bigramLetters_L2, bigramFrequencies_L2 = getBigramList(layer1letters+layer2letters)
         bigramLetters_L2, bigramFrequencies_L2 = filterBigrams(layer2letters, bigramLetters_L2, bigramFrequencies_L2)
         perfectScore += sum(bigramFrequencies_L2) * ((L2_comfort * layerVsFlow) + (1-layerVsFlow))
-        print(perfectScore)
         
         if nrOfLayers > 2:
             bigramLetters_L3, bigramFrequencies_L3 = getBigramList(layer1letters+layer2letters+layer3letters)
             bigramLetters_L3, bigramFrequencies_L3 = filterBigrams(layer3letters, bigramLetters_L3, bigramFrequencies_L3)
             perfectScore += sum(bigramFrequencies_L3) * ((L3_comfort * layerVsFlow) + (1-layerVsFlow))
-            print(perfectScore)
 
             if nrOfLayers > 3:
                 bigramLetters_L4, bigramFrequencies_L4 = getBigramList(layer1letters+layer2letters+layer3letters+layer4letters)
                 bigramLetters_L4, bigramFrequencies_L4 = filterBigrams(layer4letters, bigramLetters_L4, bigramFrequencies_L4)
                 perfectScore += sum(bigramFrequencies_L4) * ((L4_comfort * layerVsFlow) + (1-layerVsFlow))
-                print(perfectScore)
 
-    print('Number of layers used:', nrOfLayers)
-    print('End-result:', perfectScore)
-    print('"getPerfectScore"...score end^\n')
     return(perfectScore)
 
 def getBestScores(layouts, scoresList):
