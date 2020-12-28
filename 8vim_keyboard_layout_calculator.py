@@ -1,10 +1,9 @@
 import os.path
 import itertools
 import math
-#import statistics
 import time
 import multiprocessing #import Process
-from threading import Thread
+#from threading import Thread
 from functools import partial
 
 start_time = time.time()
@@ -57,14 +56,14 @@ def main():
     staticLetters = ['e', '', '', '', '', '', '', ''] # the positions go clockwise. 'e' is on the bottom left. 
 
     # Define how many layers the layouts you recieve should contain.
-    nrOfLayers = 4
+    nrOfLayers = 2
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
     nrOfBestPermutations = 4
 
     # Define what information you want to recieve.
     showData = True
     showGeneralStats = True
-    nrOfTopLayouts = 9
+    nrOfTopLayouts = 5
     nrOfBottomLayouts = 0
 
     # You can use this section to test your custom-made layouts. Leave "'abcdefghijklmnop'," intact, but append any number of your own layouts afterwards.
@@ -153,15 +152,15 @@ def main():
     for letters_L1 in firstLayers:
         letters_L2 = secondLayers[cycleNr]
         ####################################################################################################################
-        ################################# Calculate (most of the stuff for) the first Layer
+        ################################# Calculate the first Layer
         cycleNr+=1
+
 
         print ('\n======> ', cycleNr, 'out of', nrOfCycles, 'cycles')
         if cycleNr == 2:
             print('\nEstimated time needed for all cycles:', round(nrOfCycles*(time.time() - start_time), 2), 'seconds')
             print("Those only are the cycles for layer 1 and 2 though. Don't worry however; Layer 3 (and 4) should be calculated quicker.")
         print("\n------------------------ %s seconds --- Started with layouts for layer 1" % round((time.time() - start_time), 2))
-        
         
 
         # get the letters in layer 1 that can actually move.
@@ -175,14 +174,13 @@ def main():
         scores_L1 = testLayouts(layouts_L1, asciiArray, [], staticLetters, emptySlots)
 
 
-        
         print("------------------------ %s seconds --- Got best layouts for layer 1" % round((time.time() - start_time), 2))
         
         
         # If the user says so, calculate the second layer.
         if nrOfLayers > 1:
             ####################################################################################################################
-            ################################  Calculate (most of the stuff for) the second Layer
+            ################################  Calculate the second Layer
 
             print("\n------------------------ %s seconds --- Started with layouts for layer 2" % round((time.time() - start_time), 2))
 
@@ -215,7 +213,7 @@ def main():
 
     if nrOfLayers > 2:
         ####################################################################################################################
-        ################################  Calculate (most of the stuff for) the third Layer
+        ################################  Calculate the third Layer
 
         print("\n------------------------ %s seconds --- Started with layouts for layer 3" % round((time.time() - start_time), 2))
 
@@ -237,7 +235,7 @@ def main():
 
         if nrOfLayers > 3:
             ####################################################################################################################
-            ################################  Calculate (most of the stuff for) the fourth Layer
+            ################################  Calculate the fourth Layer
 
             print("\n------------------------ %s seconds --- Started with layouts for layer 4" % round((time.time() - start_time), 2))
 
@@ -841,9 +839,16 @@ def showDataInTerminal(layoutList, scoreList, unweightedWriteableFrequency, cust
                 print('                                                The top', showTopLayouts, 'BEST layouts:')
             
             j=nrOfLayouts-1
-            while j > nrOfLayouts-showTopLayouts-1:
+            while j > nrOfLayouts-showTopLayouts-1:                
+                firstLayerLetters =  orderedLayouts[j][0:nrOfLettersInEachLayer]
+                secondLayerLetters = orderedLayouts[j][nrOfLettersInEachLayer:nrOfLettersInEachLayer*2]
+                thirdLayerLetters =  orderedLayouts[j][nrOfLettersInEachLayer*2:nrOfLettersInEachLayer*3]
+                fourthLayerLetters = orderedLayouts[j][nrOfLettersInEachLayer*3:nrOfLettersInEachLayer*4]
+                
                 print('\nLayout:')
-                print(orderedLayouts[j])
+                print(firstLayerLetters, secondLayerLetters, thirdLayerLetters, fourthLayerLetters)
+
+                # print(orderedLayouts[j])
 
                 print('Score:', orderedScoreList[j], '   ~%.2f' % float(100*orderedScoreList[j]/perfectLayoutScore), '%')
                 
@@ -860,8 +865,13 @@ def showDataInTerminal(layoutList, scoreList, unweightedWriteableFrequency, cust
                 print('                                                The top', showBottomLayouts, 'WORST layouts:')
             while j < showBottomLayouts:
                 i = showBottomLayouts-j
+                firstLayerLetters =  orderedLayouts[i][0:nrOfLettersInEachLayer]
+                secondLayerLetters = orderedLayouts[i][nrOfLettersInEachLayer:nrOfLettersInEachLayer*2]
+                thirdLayerLetters =  orderedLayouts[i][nrOfLettersInEachLayer*2:nrOfLettersInEachLayer*3]
+                fourthLayerLetters = orderedLayouts[i][nrOfLettersInEachLayer*3:nrOfLettersInEachLayer*4]
+
                 print('\nLayout:')
-                print(orderedLayouts[i])
+                print(firstLayerLetters, secondLayerLetters, thirdLayerLetters, fourthLayerLetters)
 
                 print('Good bigrams:', orderedScoreList[i], '   ~%.2f' % float(100*orderedScoreList[i]/perfectLayoutScore), '%')
 
@@ -876,7 +886,6 @@ def showDataInTerminal(layoutList, scoreList, unweightedWriteableFrequency, cust
             print('                                                    Custom layouts:')
 
             while j < len(customLayouts):
-
                 print('\n{}:'.format(customLayoutNames[j]))
                 print(customLayouts[j])
                 print('Score:', customScores[j], '   ~%.2f' % float(100*customScores[j]/perfectLayoutScore), '%')
