@@ -39,13 +39,13 @@ def main():
     # Define how which of the above letters are interchangeable (variable) between adjacent layers.
     # They have to be in the same order as they apear between layer1letters and layer2letters.
     # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-    varLetters_L1_L2 = 'adhu'.lower()
+    varLetters_L1_L2 = 'dh'.lower()
     varLetters_L2_L3 = ''.lower()
     varLetters_L3_L4 = ''.lower()
 
     # Decide whether you want to include diacritics (typed with the diacritics-gesture) in your testing. If you have all the diacritics you need on your main layout, leave this on False.
     useGestureDiacritics = False
-    gestureDiacritics = 'äöüß'
+    gestureDiacritics = ''
     gestureDiacritics_correspondingLetters = 'aous'
 
 
@@ -56,7 +56,7 @@ def main():
     staticLetters = ['e', '', '', '', '', '', '', ''] # the positions go clockwise. 'e' is on the bottom left. 
 
     # Define how many layers the layouts you recieve should contain.
-    nrOfLayers = 2
+    nrOfLayers = 4
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
     nrOfBestPermutations = 4
 
@@ -239,7 +239,7 @@ def main():
 
             print("\n------------------------ %s seconds --- Started with layouts for layer 4" % round((time.time() - start_time), 2))
 
-            nrOfBestPermutations = nrOfBestPermutations * 5
+            nrOfBestPermutations = nrOfBestPermutations * 50
 
             # Sort the best layer-1 layouts and only return the best ones
             bestLayouts_L1_L2_L3, bestScores_L1_L2_L3 = getBestScores(layouts_L1_L2_L3, scores_L1_L2_L3)
@@ -291,7 +291,7 @@ def main():
 
             # If yout're only testing a certain nuber of layers, only use that amount of layers of the custom layouts.
             if len(layout) > (nrOfLayers*nrOfLettersInEachLayer):
-                layoutName = layout[:nrOfLayers*nrOfLettersInEachLayer] + "...(+ more letters that weren't tested. Change nrOfLayers to the correct number to test all of them.)"
+                layoutName = layout[:nrOfLayers*nrOfLettersInEachLayer] + "... (+ more letters that weren't tested. Change nrOfLayers to the correct number to test all of them.)"
                 customSizeLayouts.append(layoutName)
             else:
                 customSizeLayouts.append(layout)
@@ -576,22 +576,46 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
 
                 scoresList = []
                 # Prepare the group-sizes of the layout-groups for multiprozessing
-                groupBeginning = []
+                groupBeginnings = []
                 for j in range(len(prevScores)):
-                    groupBeginning.append(int((len(layouts) / len(prevScores)) * j)) # Prepare the iterables for the later "pool.map"
-                groupSize = groupBeginning[1]
+                    groupBeginnings.append(int((len(layouts) / len(prevScores)) * j)) # Prepare the iterables for the later "pool.map"
+                groupSize = groupBeginnings[1]
+
+                flowList = [flow_evenNumbers_L1, flow_oddNumbers_L1,
+                    flow_evenNumbers_L2, flow_oddNumbers_L2,
+                    flow_evenNumbers_L3, flow_oddNumbers_L3,
+                    flow_evenNumbers_L4, flow_oddNumbers_L4]
 
                 # Prepare the layout-testing-function and its "static parameters"
-                testingFunction = partial(getLayoutScores_multiprocessing, [layouts, asciiArray[:], bigrams, bigramFrequency, prevScores, groupSize])
+                testingFunction = partial(getLayoutScores_multiprocessing, [layouts, asciiArray[:], bigrams, bigramFrequency, prevScores, groupSize, flowList])
                 
-                # Using multithreading, test the layouts for their flow
-                with multiprocessing.Pool(processes=len(prevScores)) as pool:
-                    groupScores = pool.map(testingFunction, groupBeginning)
-                    pool.close()
+                # Using multithreading, test the layouts for their flow. Only test 64 or less than 64 at once.
+                maxNrProcesses = 64 # Max number of simuntaneous processes
+                j=0
+                while j < len(prevScores):
+                    print("j =", j)
+                    print('actual nr of processes:', len(prevScores[j:j+maxNrProcesses]))
+                    # Using multithreading, test the layouts for their flow
+                    with multiprocessing.Pool(processes=len(prevScores[j:j+maxNrProcesses])) as pool:
+                        groupScoresList = []
+                        groupScoresList = pool.map(testingFunction, groupBeginnings[j:j+maxNrProcesses])
+                        pool.close()
+                    # Add all the results to the scoresList
+                    for groupScores in groupScoresList:
+                        scoresList.extend(groupScores)
+                    j += maxNrProcesses
                 
-                # Add all the results to the scoresList
-                for j in range(len(groupScores)):
-                    scoresList.extend(groupScores[j])
+                # If there are less than 64 "nrOfBestPermutations" (or if there are any remaining prevscores from the while-loop directly above,) test them using multithreading.
+                # j-=64
+                # print("j =", j)
+                # # Using multithreading, test the layouts for their flow
+                # with multiprocessing.Pool(processes=len(prevScores)-j) as pool:
+                #     groupScoresList = []
+                #     groupScoresList = pool.map(testingFunction, groupBeginnings[j:])
+                #     pool.close()
+                # # Add all the results to the scoresList
+                # for groupScores in groupScoresList:
+                #     scoresList.extend(groupScores)
 
             else:
                 # Test the layouts for their flow
@@ -699,6 +723,12 @@ def getLayoutScores_multiprocessing(*args):
     bigrams = staticArgs[2]
     bigramFrequency = staticArgs[3]
     prevScore = staticArgs[4][ int(groupBeginning/groupSize)]
+
+    flowList = staticArgs[6]
+    [flow_evenNumbers_L1, flow_oddNumbers_L1,
+        flow_evenNumbers_L2, flow_oddNumbers_L2,
+        flow_evenNumbers_L3, flow_oddNumbers_L3,
+        flow_evenNumbers_L4, flow_oddNumbers_L4] = flowList
 
     scoresList = [0]*groupSize
 
