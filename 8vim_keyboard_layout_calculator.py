@@ -581,13 +581,14 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
                     groupBeginnings.append(int((len(layouts) / len(prevScores)) * j)) # Prepare the iterables for the later "pool.map"
                 groupSize = groupBeginnings[1]
 
+                # Prepare the flow-lists so they can be used in the next line
                 flowList = [flow_evenNumbers_L1, flow_oddNumbers_L1,
                     flow_evenNumbers_L2, flow_oddNumbers_L2,
                     flow_evenNumbers_L3, flow_oddNumbers_L3,
                     flow_evenNumbers_L4, flow_oddNumbers_L4]
 
                 # Prepare the layout-testing-function and its "static parameters"
-                testingFunction = partial(getLayoutScores_multiprocessing, [layouts, asciiArray[:], bigrams, bigramFrequency, prevScores, groupSize, flowList])
+                testingFunction = partial(getLayoutScores_multiprocessing, [layouts, asciiArray[:], bigrams, bigramFrequency, prevScores, flowList, groupSize])
                 
                 # Using multithreading, test the layouts for their flow. Only test 64 or less than 64 at once.
                 maxNrProcesses = 64 # Max number of simuntaneous processes
@@ -595,27 +596,17 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
                 while j < len(prevScores):
                     print("j =", j)
                     print('actual nr of processes:', len(prevScores[j:j+maxNrProcesses]))
+                    groupScoresList = []
+
                     # Using multithreading, test the layouts for their flow
                     with multiprocessing.Pool(processes=len(prevScores[j:j+maxNrProcesses])) as pool:
-                        groupScoresList = []
                         groupScoresList = pool.map(testingFunction, groupBeginnings[j:j+maxNrProcesses])
                         pool.close()
+
                     # Add all the results to the scoresList
                     for groupScores in groupScoresList:
                         scoresList.extend(groupScores)
                     j += maxNrProcesses
-                
-                # If there are less than 64 "nrOfBestPermutations" (or if there are any remaining prevscores from the while-loop directly above,) test them using multithreading.
-                # j-=64
-                # print("j =", j)
-                # # Using multithreading, test the layouts for their flow
-                # with multiprocessing.Pool(processes=len(prevScores)-j) as pool:
-                #     groupScoresList = []
-                #     groupScoresList = pool.map(testingFunction, groupBeginnings[j:])
-                #     pool.close()
-                # # Add all the results to the scoresList
-                # for groupScores in groupScoresList:
-                #     scoresList.extend(groupScores)
 
             else:
                 # Test the layouts for their flow
@@ -713,7 +704,7 @@ def getLayoutScores_multiprocessing(*args):
     mapArgs = args[1]
     staticArgs = args[0]
 
-    groupSize = staticArgs[5]
+    groupSize = staticArgs[6]
 
     groupBeginning = mapArgs
     groupEnding = groupBeginning + groupSize
@@ -724,11 +715,10 @@ def getLayoutScores_multiprocessing(*args):
     bigramFrequency = staticArgs[3]
     prevScore = staticArgs[4][ int(groupBeginning/groupSize)]
 
-    flowList = staticArgs[6]
     [flow_evenNumbers_L1, flow_oddNumbers_L1,
         flow_evenNumbers_L2, flow_oddNumbers_L2,
         flow_evenNumbers_L3, flow_oddNumbers_L3,
-        flow_evenNumbers_L4, flow_oddNumbers_L4] = flowList
+        flow_evenNumbers_L4, flow_oddNumbers_L4] = staticArgs[5]
 
     scoresList = [0]*groupSize
 
