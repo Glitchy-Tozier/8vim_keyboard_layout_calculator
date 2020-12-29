@@ -370,3 +370,28 @@ To-do's:
 - What If a language needs really rare letters that don't exist in ascii?
 - Once I know what the diacritics-movement will be, if necessary, add a mechanism to also test diacritics.
 - Clean up and rename stuff.
+
+# Fifth Post
+(Code: https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator)
+
+So I created a small program, which can calculate the best layouts.
+
+### Screenshot of what the results look like:
+![results-shot](https://user-images.githubusercontent.com/59611881/103307486-76eb5b00-4a10-11eb-9d65-6a6ae70e70ae.png)
+
+
+### To keep this post clean, here's a few links:
+- Previous posts about this script (containing some of the thought-process): https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator/blob/main/first%20posts%20about%20this%20script.md
+- How the program's workflow works: https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator/blob/main/Diagrams/How_the_layout_calculator_works.jpg
+- You want to influence the future layouts? Please tell me what movements feel comfortable to you here: https://github.com/flide/8VIM/discussions/140
+
+It is pretty much done! :)
+The program can find layouts that are (probably) the best possible ones. ((you can never be 100% sure, unless you brute-force everything completely... which is too much work for a computer.
+
+A few small things that still need to be done:
+- Make program able create layouts that contain non-ASCII-characters
+- Include the diacritics-gesture in the optimization.
+- Clean up the code a little.
+- Improve output for custom-tested layouts.
+
+For now though, I'll leave it the way it is, until I have tested the layout it currently said was the best (German) one.
