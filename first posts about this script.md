@@ -362,3 +362,10 @@ Sum of ALL Bigrams, if a whole keyboard was being used: 915463743
 ########################################### 8vim Keyboard Layout Calculator ###########################################
 #######################################################################################################################
 ```
+## Update:
+Layers 1-4 now can be calculated. I also implemented a penalty for a letter being in a higher Layer and finer control over what movements are considered to have a good flow.
+To-do's:
+- Try implementing multiprocessing to make the program (hopefully) 4x as fast. This lets us calculate more layout-possibilities.
+- What If a language needs really rare letters that don't exist in ascii?
+- Once I know what the diacritics-movement will be, if necessary, add a mechanism to also test diacritics.
+- Clean up and rename stuff.
