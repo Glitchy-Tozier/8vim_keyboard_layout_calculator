@@ -39,7 +39,7 @@ def main():
     # Define how which of the above letters are interchangeable (variable) between adjacent layers.
     # They have to be in the same order as they apear between layer1letters and layer2letters.
     # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-    varLetters_L1_L2 = ''.lower()
+    varLetters_L1_L2 = 'adhu'.lower()
     varLetters_L2_L3 = ''.lower()
     varLetters_L3_L4 = ''.lower()
 
@@ -56,14 +56,14 @@ def main():
     staticLetters = ['e', '', '', '', '', '', '', ''] # the positions go clockwise. 'e' is on the bottom left. 
 
     # Define how many layers the layouts you recieve should contain.
-    nrOfLayers = 2
+    nrOfLayers = 4
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
-    nrOfBestPermutations = 60
+    nrOfBestPermutations = 20
 
     # Define what information you want to recieve.
     showData = True
     showGeneralStats = True
-    nrOfTopLayouts = 5
+    nrOfTopLayouts = 2
     nrOfBottomLayouts = 0
 
     # You can use this section to test your custom-made layouts. Leave "'abcdefghijklmnop'," intact, but append any number of your own layouts afterwards.
@@ -586,7 +586,7 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
                 testingFunction = partial(getLayoutScores_multiprocessing, [layouts, asciiArray[:], bigrams, bigramFrequency, prevScores, flowList, groupSize])
                 
                 # Using multithreading, test the layouts for their flow. Only test <= 20 at once.
-                maxNrProcesses = 30 # Max number of simuntaneous processes
+                maxNrProcesses = 15 # Max number of simuntaneous processes
                 j=0
                 while j < len(prevScores):
                     resultsList = []
