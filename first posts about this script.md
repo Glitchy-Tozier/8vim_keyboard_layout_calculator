@@ -1,4 +1,5 @@
 It's just the history of this (https://github.com/flide/8VIM/discussions/138) conversation. It's mostly me talking to myself though.
+Some of the information, thought-processes and results may be outdated.
 
 # Very first post
 (Code: https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator)
