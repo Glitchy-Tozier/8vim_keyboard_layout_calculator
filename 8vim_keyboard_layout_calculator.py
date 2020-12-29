@@ -39,7 +39,7 @@ def main():
     # Define how which of the above letters are interchangeable (variable) between adjacent layers.
     # They have to be in the same order as they apear between layer1letters and layer2letters.
     # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-    varLetters_L1_L2 = 'adhu'.lower()
+    varLetters_L1_L2 = ''.lower()
     varLetters_L2_L3 = ''.lower()
     varLetters_L3_L4 = ''.lower()
 
@@ -56,9 +56,9 @@ def main():
     staticLetters = ['e', '', '', '', '', '', '', ''] # the positions go clockwise. 'e' is on the bottom left. 
 
     # Define how many layers the layouts you recieve should contain.
-    nrOfLayers = 4
+    nrOfLayers = 2
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
-    nrOfBestPermutations = 30
+    nrOfBestPermutations = 60
 
     # Define what information you want to recieve.
     showData = True
@@ -155,8 +155,8 @@ def main():
         ################################# Calculate the first Layer
         cycleNr+=1
 
-
-        print ('\n======> ', cycleNr, 'out of', nrOfCycles, 'cycles')
+        if nrOfCycles > 1:
+            print ('\n======> ', cycleNr, 'out of', nrOfCycles, 'cycles')
         if cycleNr == 2:
             print('\nEstimated time needed for all cycles:', round(nrOfCycles*(time.time() - start_time), 2), 'seconds')
             print("Those only are the cycles for layer 1 and 2 though. Don't worry however; Layer 3 (and 4) should be calculated quicker.")
@@ -293,8 +293,8 @@ def main():
                 customSizeLayouts.append(layout)
 
             # Get the scores for the custom layouts.
-            customScore = testLayouts([layout[:nrOfLayers*nrOfLettersInEachLayer]], asciiArray)
-            customScores.append(customScore[0])
+            customScore = testCustomLayout(layout[:nrOfLayers*nrOfLettersInEachLayer], asciiArray)
+            customScores.append(customScore)
 
         # Display the data in the terminal.
         showDataInTerminal(finalLayoutList, finalScoresList, customLayoutNames, customSizeLayouts, customScores, perfectLayoutScore, showData, showGeneralStats, nrOfTopLayouts, nrOfBottomLayouts)
@@ -585,7 +585,7 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
                 # Prepare the layout-testing-function and its "static parameters"
                 testingFunction = partial(getLayoutScores_multiprocessing, [layouts, asciiArray[:], bigrams, bigramFrequency, prevScores, flowList, groupSize])
                 
-                # Using multithreading, test the layouts for their flow. Only less than <= 60 at once.
+                # Using multithreading, test the layouts for their flow. Only test <= 20 at once.
                 maxNrProcesses = 30 # Max number of simuntaneous processes
                 j=0
                 while j < len(prevScores):
@@ -618,8 +618,8 @@ def testCustomLayout(layout, asciiArray):
 
     # Get the bigrams for the input letters 
     bigrams, bigramFrequency = getBigramList(layout)
-    score = getLayoutScores(layout, asciiArray, bigrams, bigramFrequency)
-    return score
+    score = getLayoutScores([layout], asciiArray, bigrams, bigramFrequency)
+    return score[0]  # <- the [0] corrects some weird list-mechanisms.
 
 def getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores=None, fixedLetters=None, emptySlots=None):
     # This function tests the layouts and return their scores. It's only used when single-threading.
@@ -678,24 +678,25 @@ def getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores=No
             j+=1
         k+=1
 
-    # Add the previous layouts' scores. (which weren't tested here. It would be redundant.)
-    j=0
-    while j < len(prevScores):
-        groupBeginning = int((len(layouts) / len(prevScores)) * j)
-        groupEnding = int((len(layouts) / len(prevScores)) * (j+1))
-        
-        k = groupBeginning
-        while k < groupEnding:
-            scores[k] = scores[k] + prevScores[j]
-            k+=1
-        j+=1
+    if prevScores:
+        # Add the previous layouts' scores. (which weren't tested here. It would be redundant.)
+        j=0
+        while j < len(prevScores):
+            groupBeginning = int((len(layouts) / len(prevScores)) * j)
+            groupEnding = int((len(layouts) / len(prevScores)) * (j+1))
+            
+            k = groupBeginning
+            while k < groupEnding:
+                scores[k] = scores[k] + prevScores[j]
+                k+=1
+            j+=1
 
     # if prevScores:
     #     for j in range(len(layouts)):
     #         scores[j] += prevScores
 
     if len(scores) > 1:
-        goodLayouts, goodScores = getTopScores(layouts, scores, 500)
+        goodLayouts, goodScores = getTopScores(layouts, scores, 200)
         return goodLayouts, goodScores
     else:
         return scores
@@ -770,7 +771,7 @@ def getLayoutScores_multiprocessing(*args):
         k+=1
     
     # Only use the best scores (and layouts) for performance-reasons
-    goodLayouts, goodScores = getTopScores(layouts, scores, 500)
+    goodLayouts, goodScores = getTopScores(layouts, scores, 200)
 
     return goodLayouts, goodScores
 
@@ -873,9 +874,9 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
 
                 # print(orderedLayouts[j])
 
-                print('Score:', orderedScoreList[j], '   ~%.2f' % float(100*orderedScoreList[j]/perfectLayoutScore), '%')
+                print('─'*(nrOfLettersInEachLayer*nrOfLayers+nrOfLayers+9) + '> Score:', orderedScoreList[j], '   ~%.2f' % float(100*orderedScoreList[j]/perfectLayoutScore), '%')
                 
-                print('Layout-placing:', nrOfLayouts-j)
+                print('─'*(nrOfLettersInEachLayer*nrOfLayers+nrOfLayers+9) + '> Layout-placing:', nrOfLayouts-j)
                 j-=1
 
         if showBottomLayouts != 0:
@@ -911,7 +912,7 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
             while j < len(customLayouts):
                 print('\n{}:'.format(customLayoutNames[j]))
                 print(customLayouts[j])
-                print('Score:', customScores[j], '   ~%.2f' % float(100*customScores[j]/perfectLayoutScore), '%')
+                print('─'*(nrOfLettersInEachLayer*nrOfLayers+3) + '> Score:', customScores[j], '   ~%.2f' % float(100*customScores[j]/perfectLayoutScore), '%')
                 j+=1
 
 
