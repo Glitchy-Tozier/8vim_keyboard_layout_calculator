@@ -927,7 +927,7 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
             print('                                                    General Stats:')
             # print('Number of Layouts tested:', nrOfLayouts)
             print('Time needed for the whole runthrough: %s seconds.' % round((time.time() - start_time), 2))
-            print('Amount of bigrams that can be written with the letters used in this layout (without factoring in fow or layer-penalty):')
+            print('Amount of bigrams that can be written with the letters used in this layout (without factoring in flow or layer-penalty):')
             print(unweightedWriteableFrequency, 'out of', sumOfALLbigrams, ' (', '~%.2f' % float(100*unweightedWriteableFrequency/sumOfALLbigrams), '%)')
         print('#######################################################################################################################')
         print('########################################### 8vim Keyboard Layout Calculator ###########################################')
