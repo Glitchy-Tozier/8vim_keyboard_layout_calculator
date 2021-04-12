@@ -21,14 +21,14 @@ def main():
     global nrOfLayers
     global nrOfBestPermutations
 
-    global flow_evenNumbers_L1
-    global flow_oddNumbers_L1
-    global flow_evenNumbers_L2
-    global flow_oddNumbers_L2
-    global flow_evenNumbers_L3
-    global flow_oddNumbers_L3
-    global flow_evenNumbers_L4
-    global flow_oddNumbers_L4
+    global rating_evenPos_L1
+    global rating_oddPos_L1
+    global rating_evenPos_L2
+    global rating_oddPos_L2
+    global rating_evenPos_L3
+    global rating_oddPos_L3
+    global rating_evenPos_L4
+    global rating_oddPos_L4
 
     # Define the letters you want to use
     layer1letters = 'etaoinsr'.lower() # All letters for the first cycleNr of calculation, including 'e' (or whatever you put in >staticLetters<)
@@ -68,8 +68,22 @@ def main():
 
     # You can use this section to test your custom-made layouts. Leave "'abcdefghijklmnop'," intact, but append any number of your own layouts afterwards.
     testCustomLayouts = True
-    customLayoutNames = ['Old / original 8VIM layout', 'English layout by sslater11', "G-layout-lultiprocessing-nr-1 (I'm not sure why this is here)", 'English layout by kjoetom', 'English layout 2 by kjoetom', 'Best English layout found by this script1', 'Best English layout found by this script2']
-    customLayouts = ['eitsyanolhcdbrmukjzgpxfv----q--w', 'hitanerolfydmcsujwkgpxbv----q--z', 'eatnsdrigcloumbhzwykpjfvq-----x-', 'oilseatncpdhrmfubjgvxwky----q-z-', 'enotiraspugdlhcmfjkbywxvz-q-----', 'eotdnraisgcfumlhyvkxbjwpq---z---', 'eotrnsaidfcugmlhxvjykpwbq-z-----']
+    customLayoutNames = [
+        'Old / original 8VIM layout',
+        'English layout by sslater11',
+        'English layout by kjoetom',
+        'English layout 2 by kjoetom',
+        'English layout 3 by kjoetom',
+        'English layout 4 by kjoetom',
+        'Best English layout found by this script']
+    customLayouts = [
+        'eitsyanolhcdbrmukjzgpxfv----q--w',
+        'hitanerolfydmcsujwkgpxbv----q--z',
+        'oilseatncpdhrmfubjgvxwky----q-z-',
+        'enotiraspugdlhcmfjkbywxvz-q-----',
+        'aoierntlgfcmhsudzyvpjbwkq------x',
+        'ieaorntsubdhmcflvqypwgkj-x---z--',
+        'eotrnsaidfcugmlhxvjykpwbq-z-----']
 
 
 
@@ -94,17 +108,18 @@ def main():
     # ( = where the 'e' is in the current Layout)
     # +1 is one step clockwise. +2 is two steps clockwise. -1 is one step counterclockwise. -2 is two steps counterclockwise.
     # Place the score-numbers in a way that reflects how well the second letter follows after the first one.
+    # For explanations, see https://github.com/flide/8VIM/discussions/99#discussioncomment-585774 and the following messages.
     #                     -7  -6   -5   -4  -3  -2   -1  ~0~ 1   2    3    4   5    6    7
-    flow_evenNumbers_L1 = [0, 0.3, 0.8, 0.5, 1, 0.9, 0.8, 1, 0, 0.3, 0.8, 0.5, 1, 0.9, 0.8]
+    flow_evenPos_L1 = [0, 0.3, 0.8, 0.5, 1, 0.9, 0.8, 1, 0, 0.3, 0.8, 0.5, 1, 0.9, 0.8]
 
     #                      -7   -6  -5  -4   -3   -2    -1  ~0~  1    2   3   4    5    6     7
-    flow_evenNumbers_L2 = [0.5, 0.9, 0, 0.5, 0.8, 0.5, 0.95, 1, 0.5, 0.9, 0, 0.5, 0.8, 0.5, 0.95]
+    flow_evenPos_L2 = [0.5, 0.9, 0, 0.5, 0.8, 0.5, 0.95, 1, 0.5, 0.9, 0, 0.5, 0.8, 0.5, 0.95]
 
     #                     -7 -6  -5   -4  -3  -2   -1   ~0~  1  2   3    4   5   6    7
-    flow_evenNumbers_L3 = [1, 1, 0.4, 0.9, 0, 0.3, 0.5, 0.5, 1, 1, 0.4, 0.9, 0, 0.3, 0.5]
+    flow_evenPos_L3 = [1, 1, 0.4, 0.9, 0, 0.3, 0.5, 0.5, 1, 1, 0.4, 0.9, 0, 0.3, 0.5]
 
     #                      -7   -6    -5  -4  -3   -2  -1  ~0~   1    2    3    4   5    6   7
-    flow_evenNumbers_L4 = [0.9, 0.5, 0.95, 1, 0.5, 0.9, 0, 0.3, 0.9, 0.5, 0.95, 1, 0.5, 0.9, 0]
+    flow_evenPos_L4 = [0.9, 0.5, 0.95, 1, 0.5, 0.9, 0, 0.3, 0.9, 0.5, 0.95, 1, 0.5, 0.9, 0]
 
 
     # Unless you're trying out a super funky layout with more (or less) than 4 sectors, this should be 8.
@@ -126,10 +141,10 @@ def main():
     ###########################################################################################################################
 
     staticLetters = lowercaseList(staticLetters)
-    flow_evenNumbers_L1, flow_oddNumbers_L1 = getImportance(flow_evenNumbers_L1, L1_comfort, layerVsFlow)
-    flow_evenNumbers_L2, flow_oddNumbers_L2 = getImportance(flow_evenNumbers_L2, L2_comfort, layerVsFlow)
-    flow_evenNumbers_L3, flow_oddNumbers_L3 = getImportance(flow_evenNumbers_L3, L3_comfort, layerVsFlow)
-    flow_evenNumbers_L4, flow_oddNumbers_L4 = getImportance(flow_evenNumbers_L4, L4_comfort, layerVsFlow)
+    rating_evenPos_L1, rating_oddPos_L1 = getScoreList(flow_evenPos_L1, L1_comfort, layerVsFlow)
+    rating_evenPos_L2, rating_oddPos_L2 = getScoreList(flow_evenPos_L2, L2_comfort, layerVsFlow)
+    rating_evenPos_L3, rating_oddPos_L3 = getScoreList(flow_evenPos_L3, L3_comfort, layerVsFlow)
+    rating_evenPos_L4, rating_oddPos_L4 = getScoreList(flow_evenPos_L4, L4_comfort, layerVsFlow)
 
     # create the asciiArray
     asciiArray, emptySlots = prepareAsciiArray(staticLetters)
@@ -367,26 +382,26 @@ def getVariableLetters(fullLayer, staticLetters):
 
     return varLetters
 
-def getImportance(flowList, layerComfort, layerVsFlow):
+def getScoreList(flowList, layerComfort, layerVsFlow):
     # This prepares the fow-list and its reverse for the rest of the program.
 
     layerImportance = layerVsFlow
     flowImportance = 1-layerVsFlow
 
     layerScore = layerComfort * layerImportance
-    iList = []
-
+    ratingList = []
+    
     for flow in flowList:
         flowScore = flow * flowImportance
         
-        iList.append(flowScore + layerScore)
+        ratingList.append(flowScore + layerScore)
 
-    importanceList = enlargeList(iList)
+    ratings = enlargeList(ratingList)
 
-    reverseImportanceList = importanceList[:] # The flow-list for the letters at the odd positions (see beginning of program) is just the
-    reverseImportanceList.reverse()     # same thing, but reversed.
+    reverseRatings = ratings[:] # The flow-list for the letters at the odd positions (see beginning of program) is just the
+    reverseRatings.reverse()     # same thing, but reversed.
 
-    return importanceList, reverseImportanceList
+    return ratings, reverseRatings
 
 def enlargeList(flowList):
     # This makes the flowList larger, in accordance to the number of layers
@@ -581,10 +596,10 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
                 groupSize = groupBeginnings[1]
 
                 # Prepare the flow-lists so they can be used in the next line
-                flowList = [flow_evenNumbers_L1, flow_oddNumbers_L1,
-                    flow_evenNumbers_L2, flow_oddNumbers_L2,
-                    flow_evenNumbers_L3, flow_oddNumbers_L3,
-                    flow_evenNumbers_L4, flow_oddNumbers_L4]
+                flowList = [rating_evenPos_L1, rating_oddPos_L1,
+                    rating_evenPos_L2, rating_oddPos_L2,
+                    rating_evenPos_L3, rating_oddPos_L3,
+                    rating_evenPos_L4, rating_oddPos_L4]
 
                 # Prepare the layout-testing-function and its "static parameters"
                 testingFunction = partial(getLayoutScores_multiprocessing, [layouts, asciiArray[:], bigrams, bigramFrequency, prevScores, flowList, groupSize])
@@ -657,28 +672,28 @@ def getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores=No
             secondLetterPlacement = asciiArray[ord(bigram[1])]
 
             if firstLetterPlacement < 8:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the flow_evenNumbers array
-                    scores[k] += bigramFrequency[j] * flow_evenNumbers_L1[secondLetterPlacement - firstLetterPlacement + 7]
-                else: # if it's ODD, check the reversed flow_oddNumbers array
-                    scores[k] += bigramFrequency[j] * flow_oddNumbers_L1[secondLetterPlacement - firstLetterPlacement + 7]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
+                    scores[k] += bigramFrequency[j] * rating_evenPos_L1[secondLetterPlacement - firstLetterPlacement + 7]
+                else: # if it's ODD, check the reversed rating_oddPos array
+                    scores[k] += bigramFrequency[j] * rating_oddPos_L1[secondLetterPlacement - firstLetterPlacement + 7]
 
             elif firstLetterPlacement < 16:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the flow_evenNumbers array
-                    scores[k] += bigramFrequency[j] * flow_evenNumbers_L2[secondLetterPlacement - firstLetterPlacement + 15]
-                else: # if it's ODD, check the reversed flow_oddNumbers array
-                    scores[k] += bigramFrequency[j] * flow_oddNumbers_L2[secondLetterPlacement - firstLetterPlacement + 15]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
+                    scores[k] += bigramFrequency[j] * rating_evenPos_L2[secondLetterPlacement - firstLetterPlacement + 15]
+                else: # if it's ODD, check the reversed rating_oddPos array
+                    scores[k] += bigramFrequency[j] * rating_oddPos_L2[secondLetterPlacement - firstLetterPlacement + 15]
 
             elif firstLetterPlacement < 24:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the flow_evenNumbers array
-                    scores[k] += bigramFrequency[j] * flow_evenNumbers_L3[secondLetterPlacement - firstLetterPlacement + 23]
-                else: # if it's ODD, check the reversed flow_oddNumbers array
-                    scores[k] += bigramFrequency[j] * flow_oddNumbers_L3[secondLetterPlacement - firstLetterPlacement + 23]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
+                    scores[k] += bigramFrequency[j] * rating_evenPos_L3[secondLetterPlacement - firstLetterPlacement + 23]
+                else: # if it's ODD, check the reversed rating_oddPos array
+                    scores[k] += bigramFrequency[j] * rating_oddPos_L3[secondLetterPlacement - firstLetterPlacement + 23]
 
             else:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the flow_evenNumbers array
-                    scores[k] += bigramFrequency[j] * flow_evenNumbers_L4[secondLetterPlacement - firstLetterPlacement + 31]
-                else: # if it's ODD, check the reversed flow_oddNumbers array
-                    scores[k] += bigramFrequency[j] * flow_oddNumbers_L4[secondLetterPlacement - firstLetterPlacement + 31]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
+                    scores[k] += bigramFrequency[j] * rating_evenPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
+                else: # if it's ODD, check the reversed rating_oddPos array
+                    scores[k] += bigramFrequency[j] * rating_oddPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
             j+=1
         k+=1
 
@@ -724,10 +739,10 @@ def getLayoutScores_multiprocessing(*args):
     bigramFrequency = staticArgs[3]
     prevScore = staticArgs[4][ int(groupBeginning/groupSize)]
 
-    [flow_evenNumbers_L1, flow_oddNumbers_L1,
-        flow_evenNumbers_L2, flow_oddNumbers_L2,
-        flow_evenNumbers_L3, flow_oddNumbers_L3,
-        flow_evenNumbers_L4, flow_oddNumbers_L4] = staticArgs[5]
+    [rating_evenPos_L1, rating_oddPos_L1,
+        rating_evenPos_L2, rating_oddPos_L2,
+        rating_evenPos_L3, rating_oddPos_L3,
+        rating_evenPos_L4, rating_oddPos_L4] = staticArgs[5]
 
     scores = [0]*groupSize
     layouts = allLayouts[groupBeginning : groupEnding]
@@ -747,28 +762,28 @@ def getLayoutScores_multiprocessing(*args):
             secondLetterPlacement = asciiArray[ord(bigram[1])]
 
             if firstLetterPlacement < 8:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the flow_evenNumbers array
-                    scores[k] += bigramFrequency[j] * flow_evenNumbers_L1[secondLetterPlacement - firstLetterPlacement + 7]
-                else: # if it's ODD, check the reversed flow_oddNumbers array
-                    scores[k] += bigramFrequency[j] * flow_oddNumbers_L1[secondLetterPlacement - firstLetterPlacement + 7]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
+                    scores[k] += bigramFrequency[j] * rating_evenPos_L1[secondLetterPlacement - firstLetterPlacement + 7]
+                else: # if it's ODD, check the reversed rating_oddPos array
+                    scores[k] += bigramFrequency[j] * rating_oddPos_L1[secondLetterPlacement - firstLetterPlacement + 7]
 
             elif firstLetterPlacement < 16:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the flow_evenNumbers array
-                    scores[k] += bigramFrequency[j] * flow_evenNumbers_L2[secondLetterPlacement - firstLetterPlacement + 15]
-                else: # if it's ODD, check the reversed flow_oddNumbers array
-                    scores[k] += bigramFrequency[j] * flow_oddNumbers_L2[secondLetterPlacement - firstLetterPlacement + 15]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
+                    scores[k] += bigramFrequency[j] * rating_evenPos_L2[secondLetterPlacement - firstLetterPlacement + 15]
+                else: # if it's ODD, check the reversed rating_oddPos array
+                    scores[k] += bigramFrequency[j] * rating_oddPos_L2[secondLetterPlacement - firstLetterPlacement + 15]
 
             elif firstLetterPlacement < 24:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the flow_evenNumbers array
-                    scores[k] += bigramFrequency[j] * flow_evenNumbers_L3[secondLetterPlacement - firstLetterPlacement + 23]
-                else: # if it's ODD, check the reversed flow_oddNumbers array
-                    scores[k] += bigramFrequency[j] * flow_oddNumbers_L3[secondLetterPlacement - firstLetterPlacement + 23]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
+                    scores[k] += bigramFrequency[j] * rating_evenPos_L3[secondLetterPlacement - firstLetterPlacement + 23]
+                else: # if it's ODD, check the reversed rating_oddPos array
+                    scores[k] += bigramFrequency[j] * rating_oddPos_L3[secondLetterPlacement - firstLetterPlacement + 23]
 
             else:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the flow_evenNumbers array
-                    scores[k] += bigramFrequency[j] * flow_evenNumbers_L4[secondLetterPlacement - firstLetterPlacement + 31]
-                else: # if it's ODD, check the reversed flow_oddNumbers array
-                    scores[k] += bigramFrequency[j] * flow_oddNumbers_L4[secondLetterPlacement - firstLetterPlacement + 31]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
+                    scores[k] += bigramFrequency[j] * rating_evenPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
+                else: # if it's ODD, check the reversed rating_oddPos array
+                    scores[k] += bigramFrequency[j] * rating_oddPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
             j+=1
         
         scores[k] += prevScore
