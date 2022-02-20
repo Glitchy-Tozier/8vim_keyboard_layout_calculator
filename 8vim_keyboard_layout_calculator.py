@@ -1,6 +1,8 @@
 import os.path
 import itertools
+from copy import deepcopy
 import math
+import random
 import time
 import multiprocessing #import Process
 #from threading import Thread
@@ -291,6 +293,8 @@ def main():
         finalLayoutList = tempLayoutList[:]
         finalScoresList = tempScoresList[:]
 
+    (finalLayoutList, finalScoresList) = greedyOptimization(finalLayoutList, finalScoresList, asciiArray)
+
 
     # Calculate what the perfect score would be (when including )
     perfectLayoutScore = getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters, L1_comfort, L2_comfort, L3_comfort, L4_comfort, layerVsFlow)
@@ -311,7 +315,7 @@ def main():
                 customSizeLayouts.append(layout)
 
             # Get the scores for the custom layouts.
-            customScore = testCustomLayout(layout[:nrOfLayers*nrOfLettersInEachLayer], asciiArray)
+            customScore = testSingleLayout(layout[:nrOfLayers*nrOfLettersInEachLayer], asciiArray)
             customScores.append(customScore)
 
         # Display the data in the terminal.
@@ -633,13 +637,12 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
     
     return goodLayouts, goodScores
 
-def testCustomLayout(layout, asciiArray):
+def testSingleLayout(layout, asciiArray):
     # This is a toned-down version of testLayouts() and is only used for testing custom layouts. (only one at a time)
 
     # Get the bigrams for the input letters 
     bigrams, bigramFrequency = getBigramList(layout)
-    score = getLayoutScores([layout], asciiArray, bigrams, bigramFrequency)
-    return score[0]  # <- the [0] corrects some weird list-mechanisms.
+    return getLayoutScores([layout], asciiArray, bigrams, bigramFrequency)[0]  # <- the [0] corrects some weird list-mechanisms.
 
 def getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores=None, fixedLetters=None, emptySlots=None):
     # This function tests the layouts and return their scores. It's only used when single-threading.
@@ -846,6 +849,48 @@ def combinePermutations(list1, list2):
             listOfStrings.append(a + b)
 
     return listOfStrings
+
+def greedyOptimization(layouts, scores, asciiArray):
+    returnLayouts = layouts
+    returnScores = scores
+    print("Number of layouts to optimize:", len(layouts))
+    for layout, score in zip(deepcopy(layouts), deepcopy(scores)):
+        optimizing = True
+        while optimizing:
+            optimizing = False
+            layoutPermutations = performSingleSwaps(layout)
+            print("Number of permutations:", len(layoutPermutations))
+            for permutatedLayout in layoutPermutations:
+                permutatedScore = testSingleLayout(permutatedLayout, asciiArray)
+                if permutatedScore > score:
+                    print('\nnew better:')
+                    print(layout, score)
+                    print(permutatedLayout, permutatedScore)
+
+                    optimizing = True
+                    layout = permutatedLayout
+                    score = permutatedScore
+                    break
+        print("\nDone optimizing one layout.\n")
+        if layout not in returnLayouts:            
+            returnLayouts.append(layout)
+            returnScores.append(score)
+    return returnLayouts, returnScores
+
+
+def performSingleSwaps(layout):
+    """Get all layouts that are possible through 2-letter-swaps."""
+    layouts = [layout]
+    originalLayout = list(layout)
+    for i1 in range(len(layout)):
+        for i2 in range(i1+1, len(layout)):
+            copy = deepcopy(originalLayout)
+            copy[i1], copy[i2] = copy[i2], copy[i1]
+            layoutStr = ''.join(copy)
+            if layoutStr not in layouts:
+                layouts.append(layoutStr)
+    random.shuffle(layouts)
+    return layouts
 
 def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, customScores, perfectLayoutScore, showData, showGeneralStats, showTopLayouts, showBottomLayouts):
     # Display the results; The best layouts, maybe (if i decide to keep this in here) the worst, and some general data.
