@@ -67,7 +67,7 @@ def main():
     # Define what information you want to recieve.
     showData = True
     showGeneralStats = True
-    nrOfTopLayouts = 3
+    nrOfTopLayouts = 5
     nrOfBottomLayouts = 0
 
     # You can use this section to test your custom-made layouts. Leave "'abcdefghijklmnop'," intact, but append any number of your own layouts afterwards.
@@ -79,6 +79,7 @@ def main():
         'Best English layout found by this script',
         ' ......should be ~91.01 %',]
     customLayouts = [
+        # Uses a different formatting than the XML.
         'eitsyanolhcdbrmukjzgpxfv----q--w',
         'hitanerolfydmcsujwkgpxbv----q--z',
         'ieaorntsubdhmcflvqypwgkj-x---z--',
@@ -931,18 +932,18 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
             
             j=nrOfLayouts-1
             while j > nrOfLayouts-showTopLayouts-1:
-                layoutStr = orderedLayouts[j]
+                layout = orderedLayouts[j]
                 layoutScore = orderedScoreList[j]
-                firstLayerLetters =  layoutStr[0:nrOfLettersInEachLayer]
-                secondLayerLetters = layoutStr[nrOfLettersInEachLayer:nrOfLettersInEachLayer*2]
-                thirdLayerLetters =  layoutStr[nrOfLettersInEachLayer*2:nrOfLettersInEachLayer*3]
-                fourthLayerLetters = layoutStr[nrOfLettersInEachLayer*3:nrOfLettersInEachLayer*4]
+                firstLayerLetters =  layout[0:nrOfLettersInEachLayer]
+                secondLayerLetters = layout[nrOfLettersInEachLayer:nrOfLettersInEachLayer*2]
+                thirdLayerLetters =  layout[nrOfLettersInEachLayer*2:nrOfLettersInEachLayer*3]
+                fourthLayerLetters = layout[nrOfLettersInEachLayer*3:nrOfLettersInEachLayer*4]
                 
-                print('\nLayout:')
-                print(firstLayerLetters, secondLayerLetters, thirdLayerLetters, fourthLayerLetters)
+                print('\n')
+                print(layoutVisualisation(layout))
+                print(getXmlString(layout))
                 print('─'*(nrOfLettersInEachLayer*nrOfLayers+nrOfLayers+9) + '> Layout-placing:', nrOfLayouts-j)
                 print('─'*(nrOfLettersInEachLayer*nrOfLayers+nrOfLayers+9) + '> Score:', layoutScore, '   ~%.2f' % float(100*layoutScore/perfectLayoutScore), '%')
-                print(layoutVisualisation(layoutStr), '\n')
                 j-=1
 
         if showBottomLayouts != 0:
@@ -955,19 +956,19 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
                 print('                                                The top', showBottomLayouts, 'WORST layouts:')
             while j < showBottomLayouts:
                 i = showBottomLayouts-j
-                layoutStr = orderedLayouts[i]
+                layout = orderedLayouts[i]
                 layoutScore = orderedScoreList[i]
 
-                firstLayerLetters =  layoutStr[0:nrOfLettersInEachLayer]
-                secondLayerLetters = layoutStr[nrOfLettersInEachLayer:nrOfLettersInEachLayer*2]
-                thirdLayerLetters =  layoutStr[nrOfLettersInEachLayer*2:nrOfLettersInEachLayer*3]
-                fourthLayerLetters = layoutStr[nrOfLettersInEachLayer*3:nrOfLettersInEachLayer*4]
+                firstLayerLetters =  layout[0:nrOfLettersInEachLayer]
+                secondLayerLetters = layout[nrOfLettersInEachLayer:nrOfLettersInEachLayer*2]
+                thirdLayerLetters =  layout[nrOfLettersInEachLayer*2:nrOfLettersInEachLayer*3]
+                fourthLayerLetters = layout[nrOfLettersInEachLayer*3:nrOfLettersInEachLayer*4]
 
-                print('\nLayout:')
-                print(firstLayerLetters, secondLayerLetters, thirdLayerLetters, fourthLayerLetters)
+                print('\n')
+                print(layoutVisualisation(layout), '\n')
+                print(getXmlString(layout))
                 print('Layout-placing:', nrOfLayouts+1-i)
                 print('Good bigrams:', layoutScore, '   ~%.2f' % float(100*layoutScore/perfectLayoutScore), '%')
-                print(layoutVisualisation(layoutStr), '\n')
                 j+=1
             print('Worst Layout: ^^^^')
 
@@ -979,7 +980,7 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
 
             while j < len(customLayouts):
                 print('\n{}:'.format(customLayoutNames[j]))
-                print(customLayouts[j])
+                print(getXmlString(customLayouts[j]))
                 print('─'*(nrOfLettersInEachLayer*nrOfLayers+3) + '> Score:', customScores[j], '   ~%.2f' % float(100*customScores[j]/perfectLayoutScore), '%')
                 j+=1
 
@@ -1001,21 +1002,26 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
         print('########################################### 8vim Keyboard Layout Calculator ###########################################')
         print('#######################################################################################################################')
 
+def getXmlString(layout):
+    b1 = "{6}{7}{14}{15}{22}{23}{30}{31} {0}{1}{8}{9}{16}{17}{24}{25} {2}{3}{10}{11}{18}{19}{26}{27} {4}{5}{12}{13}{20}{21}{28}{29}"
+    b2 = "{6}{7}{14}{15}{22}{23}{30}{31} {0}{1}{8}{9}{16}{17}{24}{25} {2}{3}{10}{11}{18}{19}{26}{27} {4}{5}{12}{13}{20}{21}{28}{29}"
+    return b1.format(*layout) + "\n" + b2.format(*layout.upper())
+
 def layoutVisualisation(layout):
     """Takes the layout-letters and gives a visual representation of them.
     Currently only supports layouts with 4-sections."""
-    blueprint = """   ⟍  {27}                {28} ⟋
-   {26} ⟍  {19}            {20} ⟋  {29}
-     {18} ⟍  {11}        {12} ⟋  {21}
-       {10} ⟍  {3}    {4} ⟋  {13}
-         {2} ⟍     ⟋  {5}
-             ⟍ ⟋
-             ⟋ ⟍
-         {1} ⟋     ⟍  {6}
-       {9} ⟋  {0}    {7} ⟍  {14}
-     {17} ⟋  {8}        {15} ⟍  {22}
-   {25} ⟋  {16}            {23} ⟍  {30}
-   ⟋  {24}                {31} ⟍"""
+    blueprint = """      ⟍  {27}                {28} ⟋
+      {26} ⟍  {19}            {20} ⟋  {29}
+        {18} ⟍  {11}        {12} ⟋  {21}
+          {10} ⟍  {3}    {4} ⟋  {13}
+            {2} ⟍     ⟋  {5}
+                ⟍ ⟋
+                ⟋ ⟍
+            {1} ⟋     ⟍  {6}
+          {9} ⟋  {0}    {7} ⟍  {14}
+        {17} ⟋  {8}        {15} ⟍  {22}
+      {25} ⟋  {16}            {23} ⟍  {30}
+      ⟋  {24}                {31} ⟍"""
     layout = layout.replace(fillSymbol, '▓')
     return blueprint.format(*layout)
 
