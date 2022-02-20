@@ -12,41 +12,43 @@ start_time = time.time()
 def main():
     global n_gramLength
     global bigramTxt
-    global debugMode
     global testingCustomLayouts
+    global debugMode
+    global useMultiProcessing
     global fillSymbol
 
-    global useDiacriticsGesture
+    #global useDiacriticsGesture
     global nrOfLettersInEachLayer
     global nrOfLayers
     global nrOfBestPermutations
 
-    global rating_evenPos_L1
-    global rating_oddPos_L1
-    global rating_evenPos_L2
-    global rating_oddPos_L2
-    global rating_evenPos_L3
-    global rating_oddPos_L3
-    global rating_evenPos_L4
-    global rating_oddPos_L4
+    global ratings_evenPos_L1
+    global ratings_oddPos_L1
+    global ratings_evenPos_L2
+    global ratings_oddPos_L2
+    global ratings_evenPos_L3
+    global ratings_oddPos_L3
+    global ratings_evenPos_L4
+    global ratings_oddPos_L4
 
     # Define the letters you want to use
-    layer1letters = 'etaoinsr'.lower() # All letters for the first cycleNr of calculation, including 'e' (or whatever you put in >staticLetters<)
-    layer2letters = 'hldcumfg'.lower() # All letters for the second cycleNr of calculation
-    layer3letters = 'pwybvkjx'.lower() # All letters for the third cycleNr of calculation
-    layer4letters = 'zq'.lower() # All letters for the fourth cycleNr of calculation
+    layer1letters = 'eaiolnrt'.lower() # All letters for the first cycleNr of calculation, including 'e' (or whatever you put in >staticLetters<)
+    layer2letters = 'scdpumvg'.lower() # All letters for the second cycleNr of calculation
+    layer3letters = 'bzfhqkwy'.lower() # All letters for the third cycleNr of calculation
+    layer4letters = 'jx'.lower() # All letters for the fourth cycleNr of calculation
 
     # Define how which of the above letters are interchangeable (variable) between adjacent layers.
     # They have to be in the same order as they apear between layer1letters and layer2letters.
     # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-    varLetters_L1_L2 = 'rh'.lower()
-    varLetters_L2_L3 = ''.lower()
-    varLetters_L3_L4 = ''.lower()
+    #varLetters_L1_L2 = 'nrtscd'.lower()
+    varLetters_L1_L2 = 'ts'.lower()
+    #varLetters_L2_L3 = ''.lower()
+    #varLetters_L3_L4 = ''.lower()
 
     # Decide whether you want to include diacritics (typed with the diacritics-gesture) in your testing. If you have all the diacritics you need on your main layout, leave this on False.
-    useGestureDiacritics = False
-    gestureDiacritics = ''
-    gestureDiacritics_correspondingLetters = 'aous'
+    #useGestureDiacritics = False
+    #gestureDiacritics = ''
+    #gestureDiacritics_correspondingLetters = 'aous'
 
 
     # For layer 1, define that a certain Letter ('e') doesn't change.
@@ -58,7 +60,7 @@ def main():
     # Define how many layers the layouts you recieve should contain.
     nrOfLayers = 4
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
-    nrOfBestPermutations = 4
+    nrOfBestPermutations = 1
 
     # Define what information you want to recieve.
     showData = True
@@ -71,25 +73,22 @@ def main():
     customLayoutNames = [
         'Old / original 8VIM layout',
         'English layout by sslater11',
-        'English layout by kjoetom',
-        'English layout 2 by kjoetom',
-        'English layout 3 by kjoetom',
         'English layout 4 by kjoetom',
-        'Best English layout found by this script']
+        'Best English layout found by this script',
+        ' ......should be ~91.01 %',]
     customLayouts = [
         'eitsyanolhcdbrmukjzgpxfv----q--w',
         'hitanerolfydmcsujwkgpxbv----q--z',
-        'oilseatncpdhrmfubjgvxwky----q-z-',
-        'enotiraspugdlhcmfjkbywxvz-q-----',
-        'aoierntlgfcmhsudzyvpjbwkq------x',
         'ieaorntsubdhmcflvqypwgkj-x---z--',
-        'eotrnsaidfcugmlhxvjykpwbq-z-----']
+        'eotrnsaidfcugmlhxvjykpwbq-z-----',
+        'eotrnsaidgcpumlhxvjfbywzq---k---']
+
 
 
 
     # Define bigram-stuff
     n_gramLength = 2
-    bigramTxt = './bigram_dictionaries/english_bigrams.txt' # <- This is the main thing you want to change. Name it whatever your bigram is called.
+    bigramTxt = './bigram_dictionaries/italian_bigrams.txt' # <- This is the main thing you want to change. Name it whatever your bigram is called.
 
 
 
@@ -128,6 +127,9 @@ def main():
     # Ignore this variable:
     debugMode = False
 
+    # Use Multiprocessing (disable this when using `pypy3 8vim_keyboard_layout_calculator.py`)
+    useMultiProcessing = False
+
     # Symbol used for filling up layer 4. If your alphabet or your bigram-list for some reason contains "-", change - to something else.
     fillSymbol = '-'
 
@@ -141,10 +143,10 @@ def main():
     ###########################################################################################################################
 
     staticLetters = lowercaseList(staticLetters)
-    rating_evenPos_L1, rating_oddPos_L1 = getScoreList(flow_evenPos_L1, L1_comfort, layerVsFlow)
-    rating_evenPos_L2, rating_oddPos_L2 = getScoreList(flow_evenPos_L2, L2_comfort, layerVsFlow)
-    rating_evenPos_L3, rating_oddPos_L3 = getScoreList(flow_evenPos_L3, L3_comfort, layerVsFlow)
-    rating_evenPos_L4, rating_oddPos_L4 = getScoreList(flow_evenPos_L4, L4_comfort, layerVsFlow)
+    ratings_evenPos_L1, ratings_oddPos_L1 = getScoreList(flow_evenPos_L1, L1_comfort, layerVsFlow)
+    ratings_evenPos_L2, ratings_oddPos_L2 = getScoreList(flow_evenPos_L2, L2_comfort, layerVsFlow)
+    ratings_evenPos_L3, ratings_oddPos_L3 = getScoreList(flow_evenPos_L3, L3_comfort, layerVsFlow)
+    ratings_evenPos_L4, ratings_oddPos_L4 = getScoreList(flow_evenPos_L4, L4_comfort, layerVsFlow)
 
     # create the asciiArray
     asciiArray, emptySlots = prepareAsciiArray(staticLetters)
@@ -583,8 +585,7 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
         bigrams, bigramFrequency = filterBigrams(lastLayerLetters, bigrams, bigramFrequency)
     
 
-    useMultiprocessing = True
-    if useMultiprocessing:
+    if useMultiProcessing:
         if prevScores:
             if len(prevScores) > 1:
                 goodLayouts = []
@@ -596,10 +597,10 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
                 groupSize = groupBeginnings[1]
 
                 # Prepare the flow-lists so they can be used in the next line
-                flowList = [rating_evenPos_L1, rating_oddPos_L1,
-                    rating_evenPos_L2, rating_oddPos_L2,
-                    rating_evenPos_L3, rating_oddPos_L3,
-                    rating_evenPos_L4, rating_oddPos_L4]
+                flowList = [ratings_evenPos_L1, ratings_oddPos_L1,
+                    ratings_evenPos_L2, ratings_oddPos_L2,
+                    ratings_evenPos_L3, ratings_oddPos_L3,
+                    ratings_evenPos_L4, ratings_oddPos_L4]
 
                 # Prepare the layout-testing-function and its "static parameters"
                 testingFunction = partial(getLayoutScores_multiprocessing, [layouts, asciiArray[:], bigrams, bigramFrequency, prevScores, flowList, groupSize])
@@ -672,28 +673,28 @@ def getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores=No
             secondLetterPlacement = asciiArray[ord(bigram[1])]
 
             if firstLetterPlacement < 8:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
-                    scores[k] += bigramFrequency[j] * rating_evenPos_L1[secondLetterPlacement - firstLetterPlacement + 7]
-                else: # if it's ODD, check the reversed rating_oddPos array
-                    scores[k] += bigramFrequency[j] * rating_oddPos_L1[secondLetterPlacement - firstLetterPlacement + 7]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the ratings_evenPos array
+                    scores[k] += bigramFrequency[j] * ratings_evenPos_L1[secondLetterPlacement - firstLetterPlacement + 7]
+                else: # if it's ODD, check the reversed ratings_oddPos array
+                    scores[k] += bigramFrequency[j] * ratings_oddPos_L1[secondLetterPlacement - firstLetterPlacement + 7]
 
             elif firstLetterPlacement < 16:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
-                    scores[k] += bigramFrequency[j] * rating_evenPos_L2[secondLetterPlacement - firstLetterPlacement + 15]
-                else: # if it's ODD, check the reversed rating_oddPos array
-                    scores[k] += bigramFrequency[j] * rating_oddPos_L2[secondLetterPlacement - firstLetterPlacement + 15]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the ratings_evenPos array
+                    scores[k] += bigramFrequency[j] * ratings_evenPos_L2[secondLetterPlacement - firstLetterPlacement + 15]
+                else: # if it's ODD, check the reversed ratings_oddPos array
+                    scores[k] += bigramFrequency[j] * ratings_oddPos_L2[secondLetterPlacement - firstLetterPlacement + 15]
 
             elif firstLetterPlacement < 24:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
-                    scores[k] += bigramFrequency[j] * rating_evenPos_L3[secondLetterPlacement - firstLetterPlacement + 23]
-                else: # if it's ODD, check the reversed rating_oddPos array
-                    scores[k] += bigramFrequency[j] * rating_oddPos_L3[secondLetterPlacement - firstLetterPlacement + 23]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the ratings_evenPos array
+                    scores[k] += bigramFrequency[j] * ratings_evenPos_L3[secondLetterPlacement - firstLetterPlacement + 23]
+                else: # if it's ODD, check the reversed ratings_oddPos array
+                    scores[k] += bigramFrequency[j] * ratings_oddPos_L3[secondLetterPlacement - firstLetterPlacement + 23]
 
             else:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
-                    scores[k] += bigramFrequency[j] * rating_evenPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
-                else: # if it's ODD, check the reversed rating_oddPos array
-                    scores[k] += bigramFrequency[j] * rating_oddPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the ratings_evenPos array
+                    scores[k] += bigramFrequency[j] * ratings_evenPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
+                else: # if it's ODD, check the reversed ratings_oddPos array
+                    scores[k] += bigramFrequency[j] * ratings_oddPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
             j+=1
         k+=1
 
@@ -739,10 +740,10 @@ def getLayoutScores_multiprocessing(*args):
     bigramFrequency = staticArgs[3]
     prevScore = staticArgs[4][ int(groupBeginning/groupSize)]
 
-    [rating_evenPos_L1, rating_oddPos_L1,
-        rating_evenPos_L2, rating_oddPos_L2,
-        rating_evenPos_L3, rating_oddPos_L3,
-        rating_evenPos_L4, rating_oddPos_L4] = staticArgs[5]
+    [ratings_evenPos_L1, ratings_oddPos_L1,
+        ratings_evenPos_L2, ratings_oddPos_L2,
+        ratings_evenPos_L3, ratings_oddPos_L3,
+        ratings_evenPos_L4, ratings_oddPos_L4] = staticArgs[5]
 
     scores = [0]*groupSize
     layouts = allLayouts[groupBeginning : groupEnding]
@@ -762,28 +763,28 @@ def getLayoutScores_multiprocessing(*args):
             secondLetterPlacement = asciiArray[ord(bigram[1])]
 
             if firstLetterPlacement < 8:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
-                    scores[k] += bigramFrequency[j] * rating_evenPos_L1[secondLetterPlacement - firstLetterPlacement + 7]
-                else: # if it's ODD, check the reversed rating_oddPos array
-                    scores[k] += bigramFrequency[j] * rating_oddPos_L1[secondLetterPlacement - firstLetterPlacement + 7]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the ratings_evenPos array
+                    scores[k] += bigramFrequency[j] * ratings_evenPos_L1[secondLetterPlacement - firstLetterPlacement + 7]
+                else: # if it's ODD, check the reversed ratings_oddPos array
+                    scores[k] += bigramFrequency[j] * ratings_oddPos_L1[secondLetterPlacement - firstLetterPlacement + 7]
 
             elif firstLetterPlacement < 16:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
-                    scores[k] += bigramFrequency[j] * rating_evenPos_L2[secondLetterPlacement - firstLetterPlacement + 15]
-                else: # if it's ODD, check the reversed rating_oddPos array
-                    scores[k] += bigramFrequency[j] * rating_oddPos_L2[secondLetterPlacement - firstLetterPlacement + 15]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the ratings_evenPos array
+                    scores[k] += bigramFrequency[j] * ratings_evenPos_L2[secondLetterPlacement - firstLetterPlacement + 15]
+                else: # if it's ODD, check the reversed ratings_oddPos array
+                    scores[k] += bigramFrequency[j] * ratings_oddPos_L2[secondLetterPlacement - firstLetterPlacement + 15]
 
             elif firstLetterPlacement < 24:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
-                    scores[k] += bigramFrequency[j] * rating_evenPos_L3[secondLetterPlacement - firstLetterPlacement + 23]
-                else: # if it's ODD, check the reversed rating_oddPos array
-                    scores[k] += bigramFrequency[j] * rating_oddPos_L3[secondLetterPlacement - firstLetterPlacement + 23]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the ratings_evenPos array
+                    scores[k] += bigramFrequency[j] * ratings_evenPos_L3[secondLetterPlacement - firstLetterPlacement + 23]
+                else: # if it's ODD, check the reversed ratings_oddPos array
+                    scores[k] += bigramFrequency[j] * ratings_oddPos_L3[secondLetterPlacement - firstLetterPlacement + 23]
 
             else:
-                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the rating_evenPos array
-                    scores[k] += bigramFrequency[j] * rating_evenPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
-                else: # if it's ODD, check the reversed rating_oddPos array
-                    scores[k] += bigramFrequency[j] * rating_oddPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
+                if (firstLetterPlacement % 2) == 0: # if first letter of the bigram is EVEN, check the ratings_evenPos array
+                    scores[k] += bigramFrequency[j] * ratings_evenPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
+                else: # if it's ODD, check the reversed ratings_oddPos array
+                    scores[k] += bigramFrequency[j] * ratings_oddPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
             j+=1
         
         scores[k] += prevScore
@@ -883,19 +884,19 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
                 print('                                                The top', showTopLayouts, 'BEST layouts:')
             
             j=nrOfLayouts-1
-            while j > nrOfLayouts-showTopLayouts-1:                
-                firstLayerLetters =  orderedLayouts[j][0:nrOfLettersInEachLayer]
-                secondLayerLetters = orderedLayouts[j][nrOfLettersInEachLayer:nrOfLettersInEachLayer*2]
-                thirdLayerLetters =  orderedLayouts[j][nrOfLettersInEachLayer*2:nrOfLettersInEachLayer*3]
-                fourthLayerLetters = orderedLayouts[j][nrOfLettersInEachLayer*3:nrOfLettersInEachLayer*4]
+            while j > nrOfLayouts-showTopLayouts-1:
+                layoutStr = orderedLayouts[j]
+                layoutScore = orderedScoreList[j]
+                firstLayerLetters =  layoutStr[0:nrOfLettersInEachLayer]
+                secondLayerLetters = layoutStr[nrOfLettersInEachLayer:nrOfLettersInEachLayer*2]
+                thirdLayerLetters =  layoutStr[nrOfLettersInEachLayer*2:nrOfLettersInEachLayer*3]
+                fourthLayerLetters = layoutStr[nrOfLettersInEachLayer*3:nrOfLettersInEachLayer*4]
                 
-                print('\nLayout:', firstLayerLetters, secondLayerLetters, thirdLayerLetters, fourthLayerLetters)
-
-                # print(orderedLayouts[j])
-
-                print('─'*(nrOfLettersInEachLayer*nrOfLayers+nrOfLayers+9) + '> Score:', orderedScoreList[j], '   ~%.2f' % float(100*orderedScoreList[j]/perfectLayoutScore), '%')
-                
+                print('\nLayout:')
+                print(firstLayerLetters, secondLayerLetters, thirdLayerLetters, fourthLayerLetters)
                 print('─'*(nrOfLettersInEachLayer*nrOfLayers+nrOfLayers+9) + '> Layout-placing:', nrOfLayouts-j)
+                print('─'*(nrOfLettersInEachLayer*nrOfLayers+nrOfLayers+9) + '> Score:', layoutScore, '   ~%.2f' % float(100*layoutScore/perfectLayoutScore), '%')
+                print(layoutVisualisation(layoutStr), '\n')
                 j-=1
 
         if showBottomLayouts != 0:
@@ -908,17 +909,19 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
                 print('                                                The top', showBottomLayouts, 'WORST layouts:')
             while j < showBottomLayouts:
                 i = showBottomLayouts-j
-                firstLayerLetters =  orderedLayouts[i][0:nrOfLettersInEachLayer]
-                secondLayerLetters = orderedLayouts[i][nrOfLettersInEachLayer:nrOfLettersInEachLayer*2]
-                thirdLayerLetters =  orderedLayouts[i][nrOfLettersInEachLayer*2:nrOfLettersInEachLayer*3]
-                fourthLayerLetters = orderedLayouts[i][nrOfLettersInEachLayer*3:nrOfLettersInEachLayer*4]
+                layoutStr = orderedLayouts[i]
+                layoutScore = orderedScoreList[i]
+
+                firstLayerLetters =  layoutStr[0:nrOfLettersInEachLayer]
+                secondLayerLetters = layoutStr[nrOfLettersInEachLayer:nrOfLettersInEachLayer*2]
+                thirdLayerLetters =  layoutStr[nrOfLettersInEachLayer*2:nrOfLettersInEachLayer*3]
+                fourthLayerLetters = layoutStr[nrOfLettersInEachLayer*3:nrOfLettersInEachLayer*4]
 
                 print('\nLayout:')
                 print(firstLayerLetters, secondLayerLetters, thirdLayerLetters, fourthLayerLetters)
-
-                print('Good bigrams:', orderedScoreList[i], '   ~%.2f' % float(100*orderedScoreList[i]/perfectLayoutScore), '%')
-
-                print('Layout-placing:', nrOfLayouts+1-i)###############################################################################
+                print('Layout-placing:', nrOfLayouts+1-i)
+                print('Good bigrams:', layoutScore, '   ~%.2f' % float(100*layoutScore/perfectLayoutScore), '%')
+                print(layoutVisualisation(layoutStr), '\n')
                 j+=1
             print('Worst Layout: ^^^^')
 
@@ -951,6 +954,24 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
         print('#######################################################################################################################')
         print('########################################### 8vim Keyboard Layout Calculator ###########################################')
         print('#######################################################################################################################')
+
+def layoutVisualisation(layout):
+    """Takes the layout-letters and gives a visual representation of them.
+    Currently only supports layouts with 4-sections."""
+    blueprint = """   ⟍  {27}                {28} ⟋
+   {26} ⟍  {19}            {20} ⟋  {29}
+     {18} ⟍  {11}        {12} ⟋  {21}
+       {10} ⟍  {3}    {4} ⟋  {13}
+         {2} ⟍     ⟋  {5}
+             ⟍ ⟋
+             ⟋ ⟍
+         {1} ⟋     ⟍  {6}
+       {9} ⟋  {0}    {7} ⟍  {14}
+     {17} ⟋  {8}        {15} ⟍  {22}
+   {25} ⟋  {16}            {23} ⟍  {30}
+   ⟋  {24}                {31} ⟍"""
+    layout = layout.replace(fillSymbol, '▓')
+    return blueprint.format(*layout)
 
 if __name__ == '__main__':
     main()
