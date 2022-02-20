@@ -43,7 +43,7 @@ def main():
     # They have to be in the same order as they apear between layer1letters and layer2letters.
     # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
     #varLetters_L1_L2 = 'nrtscd'.lower()
-    varLetters_L1_L2 = 'ts'.lower()
+    varLetters_L1_L2 = 'nrtscd'.lower()
     #varLetters_L2_L3 = ''.lower()
     #varLetters_L3_L4 = ''.lower()
 
@@ -62,7 +62,7 @@ def main():
     # Define how many layers the layouts you recieve should contain.
     nrOfLayers = 4
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
-    nrOfBestPermutations = 1
+    nrOfBestPermutations = 500
 
     # Define what information you want to recieve.
     showData = True
@@ -293,13 +293,15 @@ def main():
         finalLayoutList = tempLayoutList[:]
         finalScoresList = tempScoresList[:]
 
+    print("\nStarting greedy optimization.")
     (finalLayoutList, finalScoresList) = greedyOptimization(finalLayoutList, finalScoresList, asciiArray)
+    print("Finished greedy optimization.")
 
 
     # Calculate what the perfect score would be (when including )
     perfectLayoutScore = getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters, L1_comfort, L2_comfort, L3_comfort, L4_comfort, layerVsFlow)
 
-    print("------------------------ %s seconds --- Done computing" % round((time.time() - start_time), 2))
+    print("\n------------------------ %s seconds --- Done computing" % round((time.time() - start_time), 2))
 
     testingCustomLayouts = testCustomLayouts
     if testingCustomLayouts:
@@ -315,7 +317,7 @@ def main():
                 customSizeLayouts.append(layout)
 
             # Get the scores for the custom layouts.
-            customScore = testSingleLayout(layout[:nrOfLayers*nrOfLettersInEachLayer], asciiArray)
+            customScore = testSingleLayout(layout[:nrOfLayers*nrOfLettersInEachLayer], ''.join(sorted(layout[:nrOfLayers*nrOfLettersInEachLayer])), asciiArray)
             customScores.append(customScore)
 
         # Display the data in the terminal.
@@ -423,32 +425,35 @@ def enlargeList(flowList):
         j+=1
     return flowList
 
-def getBigramList(letters):
+bigramCache = dict()
+def getBigramList(sortedLetters) -> list:
     # This opens the bigram-list (the txt-file) and returns the letters and the frequencies of the required bigrams.
-
-    fullBigramArray = []
-    bigramFrequency = []
-    bigrams = []
-    
-    # Prepare the bigram-letters
-    for bigram in itertools.permutations(letters, n_gramLength):
-        fullBigramArray.append(''.join(bigram))
-    for letter in letters:
-        fullBigramArray.append(letter+letter)
+    try: return bigramCache[sortedLetters]
+    except KeyError:
+        fullBigramArray = []
+        bigramFrequency = []
+        bigrams = []
         
-    # Filter out the bigrams that contain the predefined filler-symbol.
-    bigramArray = [ x for x in fullBigramArray if fillSymbol not in x ]
+        # Prepare the bigram-letters
+        for bigram in itertools.permutations(sortedLetters, n_gramLength):
+            fullBigramArray.append(''.join(bigram))
+        for letter in sortedLetters:
+            fullBigramArray.append(letter+letter)
+            
+        # Filter out the bigrams that contain the predefined filler-symbol.
+        bigramArray = [ x for x in fullBigramArray if fillSymbol not in x ]
 
-    # Read the file for the frequencies of the bigrams.
-    for currentBigram in bigramArray:
-        with open(bigramTxt, 'r') as bbl:
-            for line in bbl:
-                line = line.lower()
-                if currentBigram == line[0:n_gramLength]:
-                    bigramFrequency.append(int(line[line.find(' ')+1:]))
-                    bigrams.append(currentBigram)
-                    break
-    return bigrams, bigramFrequency
+        # Read the file for the frequencies of the bigrams.
+        for currentBigram in bigramArray:
+            with open(bigramTxt, 'r') as bbl:
+                for line in bbl:
+                    line = line.lower()
+                    if currentBigram == line[0:n_gramLength]:
+                        bigramFrequency.append(int(line[line.find(' ')+1:]))
+                        bigrams.append(currentBigram)
+                        break
+        bigramCache[sortedLetters] = bigrams, bigramFrequency
+        return bigrams, bigramFrequency
 
 def getAbsoluteBigramCount():
     # This returns the total number of all bigram-frequencies, even of those with letters that don't exist in the calculated layers.
@@ -465,8 +470,8 @@ def filterBigrams(neededLetters ,bigrams, bigramFrequency):
     # This function trims the bigram-list to make getPermutations() MUCH faster.
     # It basically removes all the bigrams that were already tested. I'm amazing.
     
-    trimmedBigrams = bigrams[:]
-
+    trimmedBigrams = deepcopy(bigrams)
+    trimmedFrequencies = deepcopy(bigramFrequency)
     j=0
     for bigram in bigrams: # Scan for redundant bigrams
         knockBigramOut = True
@@ -476,11 +481,11 @@ def filterBigrams(neededLetters ,bigrams, bigramFrequency):
 
         if knockBigramOut: # Remove the redundant bigrams
             trimmedBigrams.pop(j)
-            bigramFrequency.pop(j)
+            trimmedFrequencies.pop(j)
             j-=1
         j+=1
 
-    return trimmedBigrams, bigramFrequency
+    return trimmedBigrams, trimmedFrequencies
 
 def lowercaseList(list):
     # This just takes any list and turns its uppercase letters into lowercase ones.
@@ -583,7 +588,7 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
         print(lastLayerLetters)
 
     # Get the bigrams for the input letters 
-    bigrams, bigramFrequency = getBigramList(layoutLetters)
+    bigrams, bigramFrequency = getBigramList(''.join(sorted(layoutLetters)))
 
     if (len(layoutLetters) > nrOfLettersInEachLayer) & (testingCustomLayouts == False): # Filter out the previous bigrams if there are any that need filtering.
         bigrams, bigramFrequency = filterBigrams(lastLayerLetters, bigrams, bigramFrequency)
@@ -637,11 +642,12 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
     
     return goodLayouts, goodScores
 
-def testSingleLayout(layout, asciiArray):
+def testSingleLayout(layout, orderedLetters, asciiArray):
     # This is a toned-down version of testLayouts() and is only used for testing custom layouts. (only one at a time)
 
     # Get the bigrams for the input letters 
-    bigrams, bigramFrequency = getBigramList(layout)
+    
+    bigrams, bigramFrequency = getBigramList(orderedLetters)
     return getLayoutScores([layout], asciiArray, bigrams, bigramFrequency)[0]  # <- the [0] corrects some weird list-mechanisms.
 
 def getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores=None, fixedLetters=None, emptySlots=None):
@@ -719,7 +725,7 @@ def getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores=No
     #         scores[j] += prevScores
 
     if len(scores) > 1:
-        goodLayouts, goodScores = getTopScores(layouts, scores, 200)
+        goodLayouts, goodScores = getTopScores(layouts, scores, 500)
         return goodLayouts, goodScores
     else:
         return scores
@@ -794,27 +800,27 @@ def getLayoutScores_multiprocessing(*args):
         k+=1
     
     # Only use the best scores (and layouts) for performance-reasons
-    goodLayouts, goodScores = getTopScores(layouts, scores, 200)
+    goodLayouts, goodScores = getTopScores(layouts, scores, 500)
 
     return goodLayouts, goodScores
 
 def getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters, L1_comfort, L2_comfort, L3_comfort, L4_comfort, layerVsFlow):
     # This creates the score a perfect (impossible) layout would have, just for comparison's sake.
-    bigramLetters_L1, bigramFrequencies_L1 = getBigramList(layer1letters)
+    bigramLetters_L1, bigramFrequencies_L1 = getBigramList(''.join(sorted(layer1letters)))
     perfectScore = sum(bigramFrequencies_L1) * ((L1_comfort * layerVsFlow) + (1-layerVsFlow))
     
     if nrOfLayers > 1:
-        bigramLetters_L2, bigramFrequencies_L2 = getBigramList(layer1letters+layer2letters)
+        bigramLetters_L2, bigramFrequencies_L2 = getBigramList(''.join(sorted(layer1letters+layer2letters)))
         bigramLetters_L2, bigramFrequencies_L2 = filterBigrams(layer2letters, bigramLetters_L2, bigramFrequencies_L2)
         perfectScore += sum(bigramFrequencies_L2) * ((L2_comfort * layerVsFlow) + (1-layerVsFlow))
         
         if nrOfLayers > 2:
-            bigramLetters_L3, bigramFrequencies_L3 = getBigramList(layer1letters+layer2letters+layer3letters)
+            bigramLetters_L3, bigramFrequencies_L3 = getBigramList(''.join(sorted(layer1letters+layer2letters+layer3letters)))
             bigramLetters_L3, bigramFrequencies_L3 = filterBigrams(layer3letters, bigramLetters_L3, bigramFrequencies_L3)
             perfectScore += sum(bigramFrequencies_L3) * ((L3_comfort * layerVsFlow) + (1-layerVsFlow))
 
             if nrOfLayers > 3:
-                bigramLetters_L4, bigramFrequencies_L4 = getBigramList(layer1letters+layer2letters+layer3letters+layer4letters)
+                bigramLetters_L4, bigramFrequencies_L4 = getBigramList(''.join(sorted(layer1letters+layer2letters+layer3letters+layer4letters)))
                 bigramLetters_L4, bigramFrequencies_L4 = filterBigrams(layer4letters, bigramLetters_L4, bigramFrequencies_L4)
                 perfectScore += sum(bigramFrequencies_L4) * ((L4_comfort * layerVsFlow) + (1-layerVsFlow))
 
@@ -853,36 +859,31 @@ def combinePermutations(list1, list2):
 def greedyOptimization(layouts, scores, asciiArray):
     returnLayouts = layouts
     returnScores = scores
+    orderedLetters = ''.join(sorted(layouts[0]))
     print("Number of layouts to optimize:", len(layouts))
     for layout, score in zip(deepcopy(layouts), deepcopy(scores)):
         optimizing = True
         while optimizing:
             optimizing = False
-            layoutPermutations = performSingleSwaps(layout)
-            print("Number of permutations:", len(layoutPermutations))
+            layoutPermutations = performLetterSwaps(layout)
             for permutatedLayout in layoutPermutations:
-                permutatedScore = testSingleLayout(permutatedLayout, asciiArray)
+                permutatedScore = testSingleLayout(permutatedLayout, orderedLetters, asciiArray)
                 if permutatedScore > score:
-                    print('\nnew better:')
-                    print(layout, score)
-                    print(permutatedLayout, permutatedScore)
-
                     optimizing = True
                     layout = permutatedLayout
                     score = permutatedScore
                     break
-        print("\nDone optimizing one layout.\n")
         if layout not in returnLayouts:            
             returnLayouts.append(layout)
             returnScores.append(score)
+    print("Number of layouts, afterwards:", len(returnLayouts))
     return returnLayouts, returnScores
 
-
-def performSingleSwaps(layout):
+def performLetterSwaps(layout):
     """Get all layouts that are possible through 2-letter-swaps."""
     layouts = [layout]
     originalLayout = list(layout)
-    for i1 in range(len(layout)):
+    for i1 in range(1, len(layout)):
         for i2 in range(i1+1, len(layout)):
             copy = deepcopy(originalLayout)
             copy[i1], copy[i2] = copy[i2], copy[i1]
@@ -984,7 +985,7 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
 
 
         if showGeneralStats:
-            allWriteableBigramFrequencies = getBigramList(layoutList[0])[1] # Get the bigram-frequencies for the bigrams that actually can be input using this layout.
+            allWriteableBigramFrequencies = getBigramList(''.join(sorted(layoutList[0])))[1] # Get the bigram-frequencies for the bigrams that actually can be input using this layout.
             unweightedWriteableFrequency = sum(allWriteableBigramFrequencies) # Get the sum of those ^ frequencies.
 
             if (showTopLayouts == 0) & (showBottomLayouts == 0):
