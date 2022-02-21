@@ -976,7 +976,7 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
                 
                 print('\n')
                 print(layoutVisualisation(layout))
-                print(getXmlString(layout))
+                print(optStrToXmlStr(layout))
                 print('─'*(nrOfLettersInEachLayer*nrOfLayers+nrOfLayers+9) + '> Layout-placing:', nrOfLayouts-j)
                 print('─'*(nrOfLettersInEachLayer*nrOfLayers+nrOfLayers+9) + '> Score:', layoutScore, '   ~%.2f' % float(100*layoutScore/perfectLayoutScore), '%')
                 j-=1
@@ -1001,7 +1001,7 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
 
                 print('\n')
                 print(layoutVisualisation(layout), '\n')
-                print(getXmlString(layout))
+                print(optStrToXmlStr(layout))
                 print('Layout-placing:', nrOfLayouts+1-i)
                 print('Good bigrams:', layoutScore, '   ~%.2f' % float(100*layoutScore/perfectLayoutScore), '%')
                 j+=1
@@ -1015,7 +1015,7 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
 
             while j < len(customLayouts):
                 print('\n{}:'.format(customLayoutNames[j]))
-                print(getXmlString(customLayouts[j]))
+                print(optStrToXmlStr(customLayouts[j]))
                 print('─'*(nrOfLettersInEachLayer*nrOfLayers+3) + '> Score:', customScores[j], '   ~%.2f' % float(100*customScores[j]/perfectLayoutScore), '%')
                 j+=1
 
@@ -1037,7 +1037,7 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
         print('########################################### 8vim Keyboard Layout Calculator ###########################################')
         print('#######################################################################################################################')
 
-def getXmlString(layout):
+def optStrToXmlStr(layout):
     """Turns the string-representation which is used internally into one that aligns with 8vim's XML-formatting."""
     
     b1 = "{6}{7}{14}{15}{22}{23}{30}{31} {0}{1}{8}{9}{16}{17}{24}{25} {2}{3}{10}{11}{18}{19}{26}{27} {4}{5}{12}{13}{20}{21}{28}{29}"
