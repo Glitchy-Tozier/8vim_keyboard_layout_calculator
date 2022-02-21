@@ -177,16 +177,14 @@ def main():
     testingCustomLayouts = False
 
     # Start the actual testing process
-    cycleNr=0
-    for letters_L1 in firstLayers:
+    for cycleNr, letters_L1 in enumerate(firstLayers):
         letters_L2 = secondLayers[cycleNr]
         ####################################################################################################################
         ################################# Calculate the first Layer
-        cycleNr+=1
 
-        if nrOfCycles > 1:
-            print ('\n======> ', cycleNr, 'out of', nrOfCycles, 'cycles')
-        if cycleNr == 2:
+        if nrOfCycles > 0:
+            print ('\n======> ', cycleNr+1, 'out of', nrOfCycles, 'cycles')
+        if cycleNr == 1:
             print('\nEstimated time needed for all cycles:', round(nrOfCycles*(time.time() - start_time), 2), 'seconds')
             print("Those only are the cycles for layer 1 and 2 though. Don't worry however; Layer 3 (and 4) should be calculated quicker.")
         print("\n------------------------ %s seconds --- Started with layouts for layer 1" % round((time.time() - start_time), 2))
@@ -410,11 +408,9 @@ def getVariableLetters(fullLayer, staticLetters):
     varLetters='' 
 
     if staticLetters:
-        j=0
-        while j < len(fullLayer):
-            if not fullLayer[j] in staticLetters:
-                varLetters += fullLayer[j]
-            j+=1
+        for i in range(len(fullLayer)):
+            if not fullLayer[i] in staticLetters:
+                varLetters += fullLayer[i]
     else:
         varLetters = fullLayer
 
@@ -448,10 +444,8 @@ def enlargeList(flowList):
     firstSlots_flowList = flowList[:nrOfLettersInEachLayer]
     lastslots_flowList = flowList[flowList_end-nrOfLettersInEachLayer:]
 
-    j=0
-    while j < nrOfLayers:
+    for _ in range(nrOfLayers):
         flowList =  firstSlots_flowList + flowList + lastslots_flowList
-        j+=1
     return flowList
 
 bigramCache = dict()
@@ -519,10 +513,8 @@ def filterBigrams(neededLetters, bigrams, bigramFrequency):
 def lowercaseList(lst):
     """Takes any list and turns its uppercase letters into lowercase ones."""
     if len(lst) != 0:
-        j=0
-        while j < len(lst):
+        for j in range(len(lst)):
             lst[j] = lst[j].lower()
-            j+=1
         return lst
 
 def prepareAsciiArray(staticLetters):
@@ -530,9 +522,8 @@ def prepareAsciiArray(staticLetters):
     It also creates the variable "emptySlots", which tells us what slots aren't filled by static letters. (in layer 1)"""
     asciiArray = [255]*256
     emptySlots = [0]*8
-    letterPlacement = 0
     j=0
-    while letterPlacement < nrOfLettersInEachLayer:
+    for letterPlacement in range(nrOfLettersInEachLayer):
 
         if staticLetters[letterPlacement]:
             currentLetter = staticLetters[letterPlacement]
@@ -540,8 +531,6 @@ def prepareAsciiArray(staticLetters):
         else:
             emptySlots[j] = letterPlacement
             j+=1
-
-        letterPlacement += 1
 
     return asciiArray, emptySlots
 
@@ -571,24 +560,18 @@ def getPermutations(varLetters, staticLetters=[]):
     layouts = ['']*math.factorial(len(varLetters))
 
     if staticLetters: # this only activates for layer 1 (that has static letters)
-        layoutIteration=0
-        for letterCombination in itertools.permutations(varLetters): # try every layout
-            letterPlacement = 0
+        for layoutIteration, letterCombination in enumerate(itertools.permutations(varLetters)): # try every layout
             j=0
-            while letterPlacement < nrOfLettersInEachLayer:
+            for letterPlacement in range(nrOfLettersInEachLayer):
                 if staticLetters[letterPlacement]:
                     layouts[layoutIteration] += staticLetters[letterPlacement]
                 else:
                     layouts[layoutIteration] += letterCombination[j]
                     j+=1
-                letterPlacement += 1
-            layoutIteration+=1
 
     else: # This is used for all layers except for layer 1
-        layoutIteration=0
-        for letterCombination in itertools.permutations(varLetters): # try every layout
+        for layoutIteration, letterCombination in enumerate(itertools.permutations(varLetters)): # try every layout
             layouts[layoutIteration] = ''.join(letterCombination)
-            layoutIteration+=1
 
     return layouts
 
@@ -679,34 +662,28 @@ def testSingleLayout(layout, orderedLetters, asciiArray):
     bigrams, bigramFrequency = getBigramList(orderedLetters)
     return getLayoutScores([layout], asciiArray, bigrams, bigramFrequency)[0]  # <- the [0] corrects some weird list-mechanisms.
 
-def getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores=None, fixedLetters=None, emptySlots=None):
+def getLayoutScores(layouts, asciiArray, enumeratedBigrams, bigramFrequency, prevScores=None, fixedLetters=None, emptySlots=None):
     """Tests the layouts and return their scores. It's only used when single-threading."""
 
     # Create the empty scoring-list
     scores = [0]*len(layouts)
+    enumeratedBigrams = enumerate(enumeratedBigrams)
 
     # Test the flow of all the layouts.
-    k=0
-    for layout in layouts:
+    for k, layout in enumerate(layouts):
 
         if fixedLetters: # Fill up the asciiArray
-            j=0
-            while j < len(fixedLetters)-1:
+            for j in range(len(fixedLetters)-1):
                 if fixedLetters[j]:
                     varLayout = layout.replace(fixedLetters[j],'')
-                j+=1
-            l=0
-            for letter in varLayout:
-                asciiArray[ord(letter)] = emptySlots[l]
-                l+=1
+
+            for j, letter in enumerate(varLayout):
+                asciiArray[ord(letter)] = emptySlots[j]
         else:
-            j=0
-            for letter in layout:
+            for j, letter in enumerate(layout):
                 asciiArray[ord(letter)] = j
-                j+=1 # Done with filling up the asciiArray
     
-        j=0
-        for bigram in bigrams: # go through every bigram and see how well it flows.
+        for j, bigram in enumeratedBigrams: # go through every bigram and see how well it flows.
             firstLetterPlacement = asciiArray[ord(bigram[0])]
             secondLetterPlacement = asciiArray[ord(bigram[1])]
 
@@ -733,25 +710,16 @@ def getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores=No
                     scores[k] += bigramFrequency[j] * ratings_evenPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
                 else: # if it's ODD, check the reversed ratings_oddPos array
                     scores[k] += bigramFrequency[j] * ratings_oddPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
-            j+=1
-        k+=1
 
     if prevScores:
         # Add the previous layouts' scores. (which weren't tested here. It would be redundant.)
-        j=0
-        while j < len(prevScores):
+        for j in range(len(prevScores)):
             groupBeginning = int((len(layouts) / len(prevScores)) * j)
             groupEnding = int((len(layouts) / len(prevScores)) * (j+1))
             
             k = groupBeginning
-            while k < groupEnding:
+            for k in range(groupBeginning, groupEnding):
                 scores[k] = scores[k] + prevScores[j]
-                k+=1
-            j+=1
-
-    # if prevScores:
-    #     for j in range(len(layouts)):
-    #         scores[j] += prevScores
 
     if len(scores) > 1:
         goodLayouts, goodScores = getTopScores(layouts, scores, 500)
@@ -774,7 +742,7 @@ def getLayoutScores_multiprocessing(*args):
 
     allLayouts = staticArgs[0]
     asciiArray = staticArgs[1]
-    bigrams = staticArgs[2]
+    enumeratedBigrams = enumerate(staticArgs[2])
     bigramFrequency = staticArgs[3]
     prevScore = staticArgs[4][ int(groupBeginning/groupSize)]
 
@@ -787,16 +755,12 @@ def getLayoutScores_multiprocessing(*args):
     layouts = allLayouts[groupBeginning : groupEnding]
 
     # Test the flow of all the layouts.
-    k=0
-    for layout in layouts:
-        #scoresList[k] = 0
-        j=0
-        for letter in layout:
-            asciiArray[ord(letter)] = j
-            j+=1 # Done with filling up the asciiArray
+    for k, layout in enumerate(layouts):
+        
+        for j, letter in enumerate(layout):
+            asciiArray[ord(letter)] = j # Fill up asciiArray
     
-        j=0
-        for bigram in bigrams: # go through every bigram and see how well it flows.
+        for j, bigram in enumeratedBigrams: # go through every bigram and see how well it flows.
             firstLetterPlacement = asciiArray[ord(bigram[0])]
             secondLetterPlacement = asciiArray[ord(bigram[1])]
 
@@ -823,10 +787,8 @@ def getLayoutScores_multiprocessing(*args):
                     scores[k] += bigramFrequency[j] * ratings_evenPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
                 else: # if it's ODD, check the reversed ratings_oddPos array
                     scores[k] += bigramFrequency[j] * ratings_oddPos_L4[secondLetterPlacement - firstLetterPlacement + 31]
-            j+=1
         
         scores[k] += prevScore
-        k+=1
     
     # Only use the best scores (and layouts) for performance-reasons
     goodLayouts, goodScores = getTopScores(layouts, scores, 500)
@@ -945,16 +907,11 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
         orderedScoreList.sort()
 
         # Make the values more visually appealing.
-        j=0
-        while j < len(orderedScoreList):
+        for j in range(len(orderedScoreList)):
             orderedScoreList[j] = round(orderedScoreList[j], 2)
-            j+=1
         perfectLayoutScore = round(perfectLayoutScore, 2)
-        j=0
-        while j < len(customScores):
+        for j in range(len(customScores)):
             customScores[j] = round(customScores[j], 2)
-            j+=1
-
 
         if showTopLayouts != 0:
             print('\n')
@@ -982,14 +939,13 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
                 j-=1
 
         if showBottomLayouts != 0:
-            j=0
             print('#######################################################################################################################')
             print('#######################################################################################################################')
             if showBottomLayouts == 1:
                 print('                                                   The WORST layout:')
             else:
                 print('                                                The top', showBottomLayouts, 'WORST layouts:')
-            while j < showBottomLayouts:
+            for j in range(showBottomLayouts):
                 i = showBottomLayouts-j
                 layout = orderedLayouts[i]
                 layoutScore = orderedScoreList[i]
@@ -1004,21 +960,17 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
                 print(optStrToXmlStr(layout))
                 print('Layout-placing:', nrOfLayouts+1-i)
                 print('Good bigrams:', layoutScore, '   ~%.2f' % float(100*layoutScore/perfectLayoutScore), '%')
-                j+=1
             print('Worst Layout: ^^^^')
 
         if testingCustomLayouts:
-            j=0
             print('#######################################################################################################################')
             print('#######################################################################################################################')
             print('                                                    Custom layouts:')
 
-            while j < len(customLayouts):
+            for j in range(len(customLayouts)):
                 print('\n{}:'.format(customLayoutNames[j]))
                 print(optStrToXmlStr(customLayouts[j]))
                 print('─'*(nrOfLettersInEachLayer*nrOfLayers+3) + '> Score:', customScores[j], '   ~%.2f' % float(100*customScores[j]/perfectLayoutScore), '%')
-                j+=1
-
 
         if showGeneralStats:
             allWriteableBigramFrequencies = getBigramList(''.join(sorted(layoutList[0])))[1] # Get the bigram-frequencies for the bigrams that actually can be input using this layout.
