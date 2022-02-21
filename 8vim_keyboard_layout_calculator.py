@@ -34,16 +34,16 @@ def main():
     global ratings_oddPos_L4
 
     # Define the letters you want to use
-    layer1letters = 'eaiolnrt'.lower() # All letters for the first cycleNr of calculation, including 'e' (or whatever you put in >staticLetters<)
-    layer2letters = 'scdpumvg'.lower() # All letters for the second cycleNr of calculation
-    layer3letters = 'bzfhqkwy'.lower() # All letters for the third cycleNr of calculation
-    layer4letters = 'jx'.lower() # All letters for the fourth cycleNr of calculation
+    layer1letters = 'etaoinsr'.lower() # All letters for the first cycleNr of calculation, including 'e' (or whatever you put in >staticLetters<)
+    layer2letters = 'hldcumfg'.lower() # All letters for the second cycleNr of calculation
+    layer3letters = 'pwybvkjx'.lower() # All letters for the third cycleNr of calculation
+    layer4letters = 'zq'.lower() # All letters for the fourth cycleNr of calculation
 
     # Define how which of the above letters are interchangeable (variable) between adjacent layers.
     # They have to be in the same order as they apear between layer1letters and layer2letters.
     # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-    #varLetters_L1_L2 = 'nrtscd'.lower()
-    varLetters_L1_L2 = 'nrtscd'.lower()
+    #varLetters_L1_L2 = ''.lower()
+    varLetters_L1_L2 = 'nsrhld'.lower()
     #varLetters_L2_L3 = ''.lower()
     #varLetters_L3_L4 = ''.lower()
 
@@ -77,21 +77,23 @@ def main():
         'English layout by sslater11',
         'English layout 4 by kjoetom',
         'Best English layout found by this script',
-        ' ......should be ~91.01 %',]
+        ' ......should be ~91.01 %',
+        ]
     customLayouts = [
         # Uses a different formatting than the XML.
         'eitsyanolhcdbrmukjzgpxfv----q--w',
         'hitanerolfydmcsujwkgpxbv----q--z',
         'ieaorntsubdhmcflvqypwgkj-x---z--',
         'eotrnsaidfcugmlhxvjykpwbq-z-----',
-        'eotrnsaidgcpumlhxvjfbywzq---k---']
+        'eotrnsaidgcpumlhxvjfbywzq---k---'
+        ]
 
 
 
 
     # Define bigram-stuff
     n_gramLength = 2
-    bigramTxt = './bigram_dictionaries/italian_bigrams.txt' # <- This is the main thing you want to change. Name it whatever your bigram is called.
+    bigramTxt = './bigram_dictionaries/english_bigrams.txt' # <- This is the main thing you want to change. Name it whatever your bigrams-corpus is called.
 
 
 
@@ -144,6 +146,12 @@ def main():
     ############################## (There's no need to read or change anything after this line) ###############################
     ###########################################################################################################################
     ###########################################################################################################################
+
+    if validateSettings(layer1letters, layer2letters, layer3letters, layer4letters, varLetters_L1_L2, staticLetters) is True:
+        print("Starting opitimzation with bigrams-file:", bigramTxt)
+    else:
+        # If something is wrong, stop execution
+        return
 
     staticLetters = lowercaseList(staticLetters)
     ratings_evenPos_L1, ratings_oddPos_L1 = getScoreList(flow_evenPos_L1, L1_comfort, layerVsFlow)
@@ -249,8 +257,9 @@ def main():
 
 
         # Test the the combined layouts of layers 1&2 and layer 3
-        goodLayouts_L1_L2_L3, goodScores_L1_L2_L3 = testLayouts(layouts_L1_L2_L3, asciiArray, bestScores_L1_L2)
-
+        initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3 = testLayouts(layouts_L1_L2_L3, asciiArray, bestScores_L1_L2)
+        # Do an additional hillclimbing-optimization
+        goodLayouts_L1_L2_L3, goodScores_L1_L2_L3 = greedyOptimization(initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3, asciiArray)
 
         print("------------------------ %s seconds --- Got best layouts for layer 3" % round((time.time() - start_time), 2))
 
@@ -281,22 +290,18 @@ def main():
 
             print("------------------------ %s seconds --- Got best layouts for layer 4" % round((time.time() - start_time), 2))
 
-            # Add the found layouts to the list (which will later be displayed)
-            finalLayoutList = goodLayouts_L1_L2_L3_L4[:]
-            finalScoresList = goodScores_L1_L2_L3_L4[:]
+            # Do an additional hillclimbing-optimization, then
+            # add the found layouts to the list (which will later be displayed)
+            finalLayoutList, finalScoresList = greedyOptimization(goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4, asciiArray)
 
         else:
-            # Add the found layouts to the list (which will later be displayed)
-            finalLayoutList = goodLayouts_L1_L2_L3[:]
-            finalScoresList = goodScores_L1_L2_L3[:]
+            # Do an additional hillclimbing-optimization, then
+            # add the found layouts to the list (which will later be displayed)
+            finalLayoutList, finalScoresList = greedyOptimization(goodLayouts_L1_L2_L3, goodScores_L1_L2_L3, asciiArray)
     else:
         # Add the found layouts to the list (which will later be displayed). This happens if there is no layer 3 or 4.
         finalLayoutList = tempLayoutList[:]
         finalScoresList = tempScoresList[:]
-
-    print("\nStarting greedy optimization.")
-    (finalLayoutList, finalScoresList) = greedyOptimization(finalLayoutList, finalScoresList, asciiArray)
-    print("Finished greedy optimization.")
 
 
     # Calculate what the perfect score would be (when including )
@@ -329,11 +334,36 @@ def main():
         showDataInTerminal(finalLayoutList, finalScoresList, [], [], [], perfectLayoutScore, showData, showGeneralStats, nrOfTopLayouts, nrOfBottomLayouts)
 
 
+def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters, varLetters_L1_L2, staticLetters) -> bool:
+    """Checks the user's input for common errors. If everything is correct, returns `True`"""
+
+    layout = layer1letters + layer2letters + layer3letters + layer4letters
+    # Check for duplicates
+    for char in layout:
+        if layout.count(char) > 1:
+            print("Duplicate letters found:", char, "\nCheck layer1letters, layer2letters, layer3letters, and layer4letters")
+            return False
+    # Check whether varLetters_L1_L2's letters are contained in the layers 1 & 2
+    for char in varLetters_L1_L2:
+        if char not in layer1letters + layer2letters:
+            print('"', char, '" was defined in varLetters_L1_L2, but is not part of layer 1 or 2')
+            return False
+    # Check whether fixed_letters's letters are contained in the ferst layers
+    for char in staticLetters:
+        if char not in layer1letters:
+            print('"', char, '" was defined in staticLetters, but is not part of the first layer')
+            return False
+    # Check if bigram-file exists
+    if not os.path.exists(bigramTxt):
+        print("The bigram-path you provided does not point to an existing file.")
+        print(bigramTxt)
+        return False
+    return True
 
 def getLayerLetters(layer1letters, layer2letters, varLetters_L1_L2):
-    # This creates all possible layer-combinations with the letters you specified.
-    # This includes "varLetters_L1_L2" and "varLetters_L2_L3"
-    # It always returns a List (of strings).
+    """Creates all possible layer-combinations with the letters you specified.
+    This includes "varLetters_L1_L2" and "varLetters_L2_L3"
+    It always returns a List (of strings)."""
 
     if varLetters_L1_L2: # Only do all this stuff if there actually exist variable letters.
 
@@ -376,23 +406,22 @@ def getLayerLetters(layer1letters, layer2letters, varLetters_L1_L2):
         return [layer1letters], [layer2letters]
 
 def getVariableLetters(fullLayer, staticLetters):
-    # This extracts the non-fix letters for the first layer.
-    if staticLetters:
-        varLetters='' 
+    """Extracts the non-fix letters for the first layer."""
+    varLetters='' 
 
+    if staticLetters:
         j=0
         while j < len(fullLayer):
             if not fullLayer[j] in staticLetters:
                 varLetters += fullLayer[j]
             j+=1
-
     else:
         varLetters = fullLayer
 
     return varLetters
 
 def getScoreList(flowList, layerComfort, layerVsFlow):
-    # This prepares the fow-list and its reverse for the rest of the program.
+    """Prepares the fow-list and its reverse for the rest of the program."""
 
     layerImportance = layerVsFlow
     flowImportance = 1-layerVsFlow
@@ -402,7 +431,6 @@ def getScoreList(flowList, layerComfort, layerVsFlow):
     
     for flow in flowList:
         flowScore = flow * flowImportance
-        
         ratingList.append(flowScore + layerScore)
 
     ratings = enlargeList(ratingList)
@@ -413,13 +441,13 @@ def getScoreList(flowList, layerComfort, layerVsFlow):
     return ratings, reverseRatings
 
 def enlargeList(flowList):
-    # This makes the flowList larger, in accordance to the number of layers
+    """Makes the flowList larger, in accordance to the number of layers."""
     
     flowList_end = len(flowList)
 
     firstSlots_flowList = flowList[:nrOfLettersInEachLayer]
     lastslots_flowList = flowList[flowList_end-nrOfLettersInEachLayer:]
-    
+
     j=0
     while j < nrOfLayers:
         flowList =  firstSlots_flowList + flowList + lastslots_flowList
@@ -428,7 +456,7 @@ def enlargeList(flowList):
 
 bigramCache = dict()
 def getBigramList(sortedLetters) -> list:
-    # This opens the bigram-list (the txt-file) and returns the letters and the frequencies of the required bigrams.
+    """This opens the bigram-list (the txt-file) and returns the letters and the frequencies of the required bigrams."""
     try: return bigramCache[sortedLetters]
     except KeyError:
         fullBigramArray = []
@@ -457,7 +485,7 @@ def getBigramList(sortedLetters) -> list:
         return bigrams, bigramFrequency
 
 def getAbsoluteBigramCount():
-    # This returns the total number of all bigram-frequencies, even of those with letters that don't exist in the calculated layers.
+    """This returns the total number of all bigram-frequencies, even of those with letters that don't exist in the calculated layers."""
     bigramFrequencies = []
 
     with open(bigramTxt, 'r') as file:
@@ -467,9 +495,9 @@ def getAbsoluteBigramCount():
 
     return absoluteBigramCount
 
-def filterBigrams(neededLetters ,bigrams, bigramFrequency):
-    # This function trims the bigram-list to make getPermutations() MUCH faster.
-    # It basically removes all the bigrams that were already tested. I'm amazing.
+def filterBigrams(neededLetters, bigrams, bigramFrequency):
+    """Trims the bigram-list to make getPermutations() MUCH faster.
+    It basically removes all the bigrams that were already tested.""" # I'm amazing.
     
     trimmedBigrams = deepcopy(bigrams)
     trimmedFrequencies = deepcopy(bigramFrequency)
@@ -858,9 +886,10 @@ def combinePermutations(list1, list2):
     return listOfStrings
 
 def greedyOptimization(layouts, scores, asciiArray):
-    returnLayouts = layouts
-    returnScores = scores
+    allLayouts = layouts
+    allScores = scores
     orderedLetters = ''.join(sorted(layouts[0]))
+    print("\nStarting greedy optimization.")
     print("Number of layouts to optimize:", len(layouts))
     for layout, score in zip(deepcopy(layouts), deepcopy(scores)):
         optimizing = True
@@ -874,11 +903,14 @@ def greedyOptimization(layouts, scores, asciiArray):
                     layout = permutatedLayout
                     score = permutatedScore
                     break
-        if layout not in returnLayouts:            
-            returnLayouts.append(layout)
-            returnScores.append(score)
-    print("Number of layouts, afterwards:", len(returnLayouts))
-    return returnLayouts, returnScores
+        if layout not in allLayouts:            
+            allLayouts.append(layout)
+            allScores.append(score)
+    print("Number of layouts, afterwards:", len(allLayouts))
+    print("Finished greedy optimization.")
+
+    goodLayouts, goodScores = getTopScores(layouts, scores, 500)
+    return goodLayouts, goodScores
 
 def performLetterSwaps(layout):
     """Get all layouts that are possible through 2-letter-swaps."""
