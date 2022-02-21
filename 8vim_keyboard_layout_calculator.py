@@ -74,18 +74,18 @@ def main():
     testCustomLayouts = True
     customLayoutNames = [
         'Old / original 8VIM layout',
-        'English layout by sslater11',
-        'English layout 4 by kjoetom',
-        'Best English layout found by this script',
-        ' ......should be ~91.01 %',
+        #'English layout by sslater11',
+        #'English layout 4 by kjoetom',
+        #'Best English layout found by this script',
+        #' ......should be ~91.01 %',
         ]
     customLayouts = [
         # Uses a different formatting than the XML.
         'eitsyanolhcdbrmukjzgpxfv----q--w',
-        'hitanerolfydmcsujwkgpxbv----q--z',
-        'ieaorntsubdhmcflvqypwgkj-x---z--',
-        'eotrnsaidfcugmlhxvjykpwbq-z-----',
-        'eotrnsaidgcpumlhxvjfbywzq---k---'
+        #'hitanerolfydmcsujwkgpxbv----q--z',
+        #'ieaorntsubdhmcflvqypwgkj-x---z--',
+        #'eotrnsaidfcugmlhxvjykpwbq-z-----',
+        #'eotrnsaidgcpumlhxvjfbywzq---k---'
         ]
 
 
