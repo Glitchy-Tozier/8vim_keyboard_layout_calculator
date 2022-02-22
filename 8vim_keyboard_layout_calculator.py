@@ -21,7 +21,6 @@ def main():
     global asciiReplacementCharacters
     global fillSymbol
 
-    #global useDiacriticsGesture
     global nrOfLettersInEachLayer
     global nrOfLayers
     global nrOfBestPermutations
@@ -35,6 +34,12 @@ def main():
     global ratings_evenPos_L4
     global ratings_oddPos_L4
 
+
+    # Define bigram-stuff
+    n_gramLength = 2
+    bigramTxt = './bigram_dictionaries/english_bigrams.txt' # <- This is the main thing you want to change. Name it whatever your bigrams-corpus is called.
+
+
     # Define the letters you want to use
     layer1letters = 'etaoinsr'.lower() # All letters for the first cycleNr of calculation, including 'e' (or whatever you put in >staticLetters<)
     layer2letters = 'hldcumfg'.lower() # All letters for the second cycleNr of calculation
@@ -46,14 +51,6 @@ def main():
     # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
     #varLetters_L1_L2 = ''.lower()
     varLetters_L1_L2 = 'nsrhld'.lower()
-    #varLetters_L2_L3 = ''.lower()
-    #varLetters_L3_L4 = ''.lower()
-
-    # Decide whether you want to include diacritics (typed with the diacritics-gesture) in your testing. If you have all the diacritics you need on your main layout, leave this on False.
-    #useGestureDiacritics = False
-    #gestureDiacritics = ''
-    #gestureDiacritics_correspondingLetters = 'aous'
-
 
     # For layer 1, define that a certain Letter ('e') doesn't change.
     # Just pick the most common one in your language.
@@ -65,6 +62,7 @@ def main():
     nrOfLayers = 4
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
     nrOfBestPermutations = 500
+
 
     # Define what information you want to recieve.
     showData = True
@@ -84,6 +82,7 @@ def main():
         ]
     customLayouts = [
         # Uses a different formatting than the XML.
+        # They are defined, starting fromm the bottom left, going clockwise. Layer per layer, from innermost to outermost.
         'abcdefghijklmnopqrstuvwxyz------',
         'eitsyanolhcdbrmukjzgpxfv----q--w',
         #'hitanerolfydmcsujwkgpxbv----q--z',
@@ -91,14 +90,6 @@ def main():
         #'eotrnsaidfcugmlhxvjykpwbq-z-----',
         #'eotrnsaidgcpumlhxvjfbywzq---k---'
         ]
-
-
-
-
-    # Define bigram-stuff
-    n_gramLength = 2
-    bigramTxt = './bigram_dictionaries/english_bigrams.txt' # <- This is the main thing you want to change. Name it whatever your bigrams-corpus is called.
-
 
 
     # Define how important layer-placement is as opposed to flow. 0 = only flow is important. 1 =  only what layer the letter is in is important.
@@ -143,6 +134,7 @@ def main():
     fillSymbol = '-'
 
 
+    # 32 characters that aren't part of your bigram-corpus. They need to be within the first 255 slots of the ascii-table.
     replacedWithAscii = dict()
     asciiReplacementCharacters = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "[", "]", "{", "}", "(", ")", "<", ">", "/", "_", ",", "~", "¦", "±", "²", "³", "¶", "¹", "¼", "½", "¾", "¿"]
 
@@ -163,6 +155,7 @@ def main():
         # If something is wrong, stop execution
         return
     
+    # Asciify all necessary strings
     layer1letters = asciify(layer1letters)
     layer2letters = asciify(layer2letters)
     layer3letters = asciify(layer3letters)
@@ -171,10 +164,10 @@ def main():
     for idx, l in enumerate(staticLetters):
         if l is not '':
             staticLetters[idx] = asciify(l.lower())
-    
     for idx, customLayout in enumerate(customLayouts):
         customLayouts[idx] = asciify(customLayout.lower())
 
+    # Get a list of scores for all possible positions.
     staticLetters = lowercaseList(staticLetters)
     ratings_evenPos_L1, ratings_oddPos_L1 = getScoreList(flow_evenPos_L1, L1_comfort, layerVsFlow)
     ratings_evenPos_L2, ratings_oddPos_L2 = getScoreList(flow_evenPos_L2, L2_comfort, layerVsFlow)
@@ -723,8 +716,7 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
 def testSingleLayout(layout, orderedLetters, asciiArray):
     """A toned-down version of testLayouts() and is only tests one layout per call."""
 
-    # Get the bigrams for the input letters 
-    
+    # Get the bigrams that contain [orderedLetters]
     bigrams, bigramFrequency = getBigramList(orderedLetters)
     return getLayoutScores([layout], asciiArray, bigrams, bigramFrequency)[0]  # <- the [0] corrects some weird list-mechanisms.
 
