@@ -17,6 +17,8 @@ def main():
     global testingCustomLayouts
     global debugMode
     global useMultiProcessing
+    global replacedWithAscii
+    global asciiReplacementCharacters
     global fillSymbol
 
     #global useDiacriticsGesture
@@ -139,6 +141,9 @@ def main():
     fillSymbol = '-'
 
 
+    replacedWithAscii = dict()
+    asciiReplacementCharacters = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "[", "]", "{", "}", "(", ")", "<", ">", "/", "_", ",", "~", "¦", "±", "²", "³", "¶", "¹", "¼", "½", "¾", "¿"]
+
     ###########################################################################################################################
     ###########################################################################################################################
     ################################################### Start of the script ###################################################
@@ -147,11 +152,26 @@ def main():
     ###########################################################################################################################
     ###########################################################################################################################
 
+    # Make sure staticLetters are lowercase
+    staticLetters = [l.lower() for l in staticLetters]
+
     if validateSettings(layer1letters, layer2letters, layer3letters, layer4letters, varLetters_L1_L2, staticLetters) is True:
         print("Starting opitimzation with bigrams-file:", bigramTxt)
     else:
         # If something is wrong, stop execution
         return
+    
+    layer1letters = asciify(layer1letters)
+    layer2letters = asciify(layer2letters)
+    layer3letters = asciify(layer3letters)
+    layer4letters = asciify(layer4letters)
+    varLetters_L1_L2 = asciify(varLetters_L1_L2)
+    for idx, l in enumerate(staticLetters):
+        if l is not '':
+            staticLetters[idx] = asciify(l.lower())
+    
+    for idx, customLayout in enumerate(customLayouts):
+        customLayouts[idx] = asciify(customLayout.lower())
 
     staticLetters = lowercaseList(staticLetters)
     ratings_evenPos_L1, ratings_oddPos_L1 = getScoreList(flow_evenPos_L1, L1_comfort, layerVsFlow)
@@ -338,7 +358,7 @@ def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters,
     layout = layer1letters + layer2letters + layer3letters + layer4letters
     # Check for duplicates
     for char in layout:
-        if layout.count(char) > 1:
+        if (char is not fillSymbol) and (layout.count(char) > 1):
             print("Duplicate letters found:", char, "\nCheck layer1letters, layer2letters, layer3letters, and layer4letters")
             return False
     # Check whether varLetters_L1_L2's letters are contained in the layers 1 & 2
@@ -357,6 +377,29 @@ def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters,
         print(bigramTxt)
         return False
     return True
+
+def asciify(string):
+    """Take a string and replace all non-ascii-chars with ascii-versions of them"""
+    result = list(string)
+    for idx, char in enumerate(string):
+        try: char.encode('ascii')
+        except UnicodeEncodeError:
+            if char in replacedWithAscii:
+                result[idx] = replacedWithAscii[char]
+            else:
+                replacedWithAscii[char] = asciiReplacementCharacters[-1]
+                asciiReplacementCharacters.pop()
+                result[idx] = replacedWithAscii[char]
+    return ''.join(result)
+
+def deAsciify(string):
+    """Take turn all replacement-ascii-chars and turn them back into their original forms."""
+    result = list(string)
+    for idx, char in enumerate(string):
+        for replacedChar, asciiChar in replacedWithAscii.items():
+            if char is asciiChar:
+                result[idx] = replacedChar
+    return ''.join(result)
 
 def getLayerLetters(layer1letters, layer2letters, varLetters_L1_L2):
     """Creates all possible layer-combinations with the letters you specified.
@@ -464,7 +507,11 @@ def getBigramList(sortedLetters) -> list:
             fullBigramArray.append(letter+letter)
             
         # Filter out the bigrams that contain the predefined filler-symbol.
-        bigramArray = [ x for x in fullBigramArray if fillSymbol not in x ]
+        bigramArray = [ b for b in fullBigramArray if fillSymbol not in b ]
+        
+        # Make sure we also will get the replaced letters from the dictionary.
+        for i, bigram in enumerate(bigramArray):
+            bigramArray[i] = deAsciify(bigram)
 
         # Read the file for the frequencies of the bigrams.
         for currentBigram in bigramArray:
@@ -475,6 +522,11 @@ def getBigramList(sortedLetters) -> list:
                         bigramFrequency.append(int(line[line.find(' ')+1:]))
                         bigrams.append(currentBigram)
                         break
+        
+        # Turn the bigrams we're actually using only consist of ascii-characters.
+        for i, bigram in enumerate(bigrams):
+            bigrams[i] = asciify(bigram)
+
         bigramCache[sortedLetters] = bigrams, bigramFrequency
         return bigrams, bigramFrequency
 
@@ -520,7 +572,7 @@ def lowercaseList(lst):
 def prepareAsciiArray(staticLetters):
     """Initializes the ascii-array.
     It also creates the variable "emptySlots", which tells us what slots aren't filled by static letters. (in layer 1)"""
-    asciiArray = [255]*256
+    asciiArray = [0]*256
     emptySlots = [0]*8
     j=0
     for letterPlacement in range(nrOfLettersInEachLayer):
@@ -549,9 +601,11 @@ def getLayouts(varLetters, staticLetters, layer2letters, layer3letters, layer4le
     if layer4letters:
         if len(layer4letters) == nrOfLettersInEachLayer:
             layer4layouts = getPermutations(layer4letters)
-        else:
+        elif len(layer4letters) < nrOfLettersInEachLayer:
             layer4layouts = fillUpLayout(layer4letters)
-    
+        else:
+            print("Error: too many letters in fourth layer")
+
     return layer1layouts, layer2layouts, layer3layouts, layer4layouts
 
 def getPermutations(varLetters, staticLetters=[]):
@@ -816,6 +870,7 @@ def getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4let
                 bigramLetters_L4, bigramFrequencies_L4 = filterBigrams(layer4letters, bigramLetters_L4, bigramFrequencies_L4)
                 perfectScore += sum(bigramFrequencies_L4) * ((L4_comfort * layerVsFlow) + (1-layerVsFlow))
 
+    print("perfectScore:", perfectScore)
     return(perfectScore)
 
 def getTopScores(layouts, scores, nrOfBest=None):
@@ -991,9 +1046,10 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
 
 def optStrToXmlStr(layout):
     """Turns the string-representation which is used internally into one that aligns with 8vim's XML-formatting."""
-    
+
     b1 = "{6}{7}{14}{15}{22}{23}{30}{31} {0}{1}{8}{9}{16}{17}{24}{25} {2}{3}{10}{11}{18}{19}{26}{27} {4}{5}{12}{13}{20}{21}{28}{29}"
     b2 = "{6}{7}{14}{15}{22}{23}{30}{31} {0}{1}{8}{9}{16}{17}{24}{25} {2}{3}{10}{11}{18}{19}{26}{27} {4}{5}{12}{13}{20}{21}{28}{29}"
+    layout = deAsciify(layout)
     return b1.format(*layout) + "\n" + b2.format(*layout.upper())
 
 def layoutVisualisation(layout):
@@ -1011,6 +1067,7 @@ def layoutVisualisation(layout):
         {17} ⟋  {8}        {15} ⟍  {22}
       {25} ⟋  {16}            {23} ⟍  {30}
       ⟋  {24}                {31} ⟍"""
+    layout = deAsciify(layout)
     layout = layout.replace(fillSymbol, '▓')
     return blueprint.format(*layout)
 
