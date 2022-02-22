@@ -72,9 +72,10 @@ def main():
     nrOfTopLayouts = 5
     nrOfBottomLayouts = 0
 
-    # You can use this section to test your custom-made layouts. Leave "'abcdefghijklmnop'," intact, but append any number of your own layouts afterwards.
+    # You can use this section to test your custom-made layouts.
     testCustomLayouts = True
     customLayoutNames = [
+        'Example Layout',
         'Old / original 8VIM layout',
         #'English layout by sslater11',
         #'English layout 4 by kjoetom',
@@ -83,6 +84,7 @@ def main():
         ]
     customLayouts = [
         # Uses a different formatting than the XML.
+        'abcdefghijklmnopqrstuvwxyz------',
         'eitsyanolhcdbrmukjzgpxfv----q--w',
         #'hitanerolfydmcsujwkgpxbv----q--z',
         #'ieaorntsubdhmcflvqypwgkj-x---z--',
@@ -594,15 +596,25 @@ def getLayouts(varLetters, staticLetters, layer2letters, layer3letters, layer4le
     layer3layouts = ['']
     layer4layouts = ['']
     
-    if layer2letters:
-        layer2layouts = getPermutations(layer2letters)
-    if layer3letters:
-        layer3layouts = getPermutations(layer3letters)
-    if layer4letters:
+    if nrOfLayers >= 2:
+        if len(layer2letters) == nrOfLettersInEachLayer:
+            layer2layouts = getPermutations(layer2letters)
+        elif len(layer2letters) < nrOfLettersInEachLayer:
+            layer2layouts = fillAndPermuteLayout(layer2letters)
+        else:
+            print("Error: too many letters in second layer")
+    if nrOfLayers >= 3:
+        if len(layer3letters) == nrOfLettersInEachLayer:
+            layer3layouts = getPermutations(layer3letters)
+        elif len(layer3letters) < nrOfLettersInEachLayer:
+            layer3layouts = fillAndPermuteLayout(layer3letters)
+        else:
+            print("Error: too many letters in third layer")
+    if nrOfLayers == 4:
         if len(layer4letters) == nrOfLettersInEachLayer:
             layer4layouts = getPermutations(layer4letters)
         elif len(layer4letters) < nrOfLettersInEachLayer:
-            layer4layouts = fillUpLayout(layer4letters)
+            layer4layouts = fillAndPermuteLayout(layer4letters)
         else:
             print("Error: too many letters in fourth layer")
 
@@ -629,7 +641,7 @@ def getPermutations(varLetters, staticLetters=[]):
 
     return layouts
 
-def fillUpLayout(letters):
+def fillAndPermuteLayout(letters):
     """Creates full layouts out of only a few letters, while avoiding redundancy.
     # It is primarily used for layer 4, which many alphabets do not completely fill with letters."""
     newLetters = letters + (fillSymbol * (nrOfLettersInEachLayer-len(letters)))
