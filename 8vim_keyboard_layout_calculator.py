@@ -146,9 +146,11 @@ def main():
     ###########################################################################################################################
     ###########################################################################################################################
 
-    # Make sure staticLetters are lowercase
-    staticLetters = [l.lower() for l in staticLetters]
+    # Make sure staticLetters and customLayouts are lowercase
+    staticLetters = lowercaseList(staticLetters)
+    customLayouts = lowercaseList(customLayouts)
 
+    # Validate the main error-hotspots in settings
     if validateSettings(layer1letters, layer2letters, layer3letters, layer4letters, varLetters_L1_L2, staticLetters) is True:
         print("Starting opitimzation with bigrams-file:", bigramTxt)
     else:
@@ -163,12 +165,11 @@ def main():
     varLetters_L1_L2 = asciify(varLetters_L1_L2)
     for idx, l in enumerate(staticLetters):
         if l is not '':
-            staticLetters[idx] = asciify(l.lower())
+            staticLetters[idx] = asciify(l)
     for idx, customLayout in enumerate(customLayouts):
-        customLayouts[idx] = asciify(customLayout.lower())
+        customLayouts[idx] = asciify(customLayout)
 
     # Get a list of scores for all possible positions.
-    staticLetters = lowercaseList(staticLetters)
     ratings_evenPos_L1, ratings_oddPos_L1 = getScoreList(flow_evenPos_L1, L1_comfort, layerVsFlow)
     ratings_evenPos_L2, ratings_oddPos_L2 = getScoreList(flow_evenPos_L2, L2_comfort, layerVsFlow)
     ratings_evenPos_L3, ratings_oddPos_L3 = getScoreList(flow_evenPos_L3, L3_comfort, layerVsFlow)
@@ -559,10 +560,9 @@ def filterBigrams(neededLetters, bigrams, bigramFrequency):
 
 def lowercaseList(lst):
     """Takes any list and turns its uppercase letters into lowercase ones."""
-    if len(lst) != 0:
-        for j in range(len(lst)):
-            lst[j] = lst[j].lower()
-        return lst
+    for j, element in enumerate(lst):
+        lst[j] = element.lower()
+    return lst
 
 def prepareAsciiArray(staticLetters):
     """Initializes the ascii-array.
