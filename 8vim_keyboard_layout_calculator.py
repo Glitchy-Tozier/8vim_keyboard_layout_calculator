@@ -301,17 +301,16 @@ def main():
             # Test the the combined layouts of layers 1&2 and layer 3
             goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4 = testLayouts(layouts_L1_L2_L3_L4, asciiArray, bestScores_L1_L2_L3)
 
-
-            print("------------------------ %s seconds --- Got best layouts for layer 4" % round((time.time() - start_time), 2))
-
             # Do an additional hillclimbing-optimization, then
             # add the found layouts to the list (which will later be displayed)
             finalLayoutList, finalScoresList = greedyOptimization(goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4, asciiArray)
 
+            print("------------------------ %s seconds --- Got best layouts for layer 4" % round((time.time() - start_time), 2))
+
         else:
             # Do an additional hillclimbing-optimization, then
             # add the found layouts to the list (which will later be displayed)
-            finalLayoutList, finalScoresList = greedyOptimization(goodLayouts_L1_L2_L3, goodScores_L1_L2_L3, asciiArray)
+            finalLayoutList, finalScoresList = goodLayouts_L1_L2_L3, goodScores_L1_L2_L3
     else:
         # Add the found layouts to the list (which will later be displayed). This happens if there is no layer 3 or 4.
         finalLayoutList = tempLayoutList[:]
@@ -874,7 +873,6 @@ def getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4let
                 bigramLetters_L4, bigramFrequencies_L4 = filterBigrams(layer4letters, bigramLetters_L4, bigramFrequencies_L4)
                 perfectScore += sum(bigramFrequencies_L4) * ((L4_comfort * layerVsFlow) + (1-layerVsFlow))
 
-    print("perfectScore:", perfectScore)
     return(perfectScore)
 
 def getTopScores(layouts, scores, nrOfBest=None):
@@ -913,7 +911,7 @@ def greedyOptimization(layouts, scores, asciiArray):
     allLayouts = layouts
     allScores = scores
     orderedLetters = ''.join(sorted(layouts[0]))
-    print("\nStarting greedy optimization.")
+    print("Starting greedy optimization.")
     print("Number of layouts to optimize:", len(layouts))
     for layout, score in zip(deepcopy(layouts), deepcopy(scores)):
         optimizing = True
