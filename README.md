@@ -11,13 +11,13 @@ git clone https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator.git
 ```
 2. Add a bigram-file inside the folder bigram_dictionaries
 3. Open the python-file and edit the config-parameters to match your language. The most important ones are:
+    - bigramTxt
     - layer1letters
     - layer2letters
     - layer3letters
     - layer4letters
     - varLetters_L1_L2
     - nrOfBestPermutations (has a big impact on speed)
-    - bigramTxt
 4. Start the script:
 Navigate to this project's root directory and run the script.  
 Recommended: Use [pypy](https://www.pypy.org/)
