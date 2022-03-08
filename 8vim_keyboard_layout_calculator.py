@@ -7,6 +7,7 @@ import time
 import multiprocessing #import Process
 #from threading import Thread
 from functools import partial
+import platform
 
 start_time = time.time()
 
@@ -1071,6 +1072,9 @@ def layoutVisualisation(layout):
       ⟋  {24}                {31} ⟍"""
     layout = deAsciify(layout)
     layout = layout.replace(fillSymbol, '▓')
+    if platform.system() is 'Windows': # Windows-console needs special treatment.
+        blueprint = blueprint.replace('⟍', '\\')
+        blueprint = blueprint.replace('⟋', '/')
     return blueprint.format(*layout)
 
 if __name__ == '__main__':
