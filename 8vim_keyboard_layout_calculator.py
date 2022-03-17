@@ -42,8 +42,8 @@ def main():
     # Define how which of the above letters are interchangeable (variable) between adjacent layers.
     # They have to be in the same order as they apear between layer1letters and layer2letters.
     # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-    varLetters_L1_L2 = ''.lower()
-    #varLetters_L1_L2 = 'nsrhld'.lower()
+    #varLetters_L1_L2 = ''.lower()
+    varLetters_L1_L2 = 'nsrhld'.lower()
 
     # For layer 1, define that a certain Letter ('e') doesn't change.
     # Just pick the most common one in your language.
@@ -74,16 +74,6 @@ def main():
         'abcdefghijklmnopqrstuvwxyz------',
         'eitsyanolhcdbrmukjzgpxfv----q--w',
         ]
-
-
-    # Define how important layer-placement is as opposed to flow. 0 = only flow is important. 1 =  only what layer the letter is in is important.
-    layerVsFlow = 0.5  # /0.6
-
-    # Define the comfort of different Layers. Use numbers between 1 (most comfortable) and 0 (least comfortable).
-    L1_comfort = 1
-    L2_comfort = 0.7
-    L3_comfort = 0.3
-    L4_comfort = 0
 
     # Unless you're trying out a super funky layout with more (or less) than 4 sectors, this should be 8.
     nrOfLettersInEachLayer = 8
@@ -276,7 +266,7 @@ def main():
 
 
     # Calculate what the perfect score would be (when including )
-    perfectLayoutScore = getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters, L1_comfort, L2_comfort, L3_comfort, L4_comfort, layerVsFlow)
+    perfectLayoutScore = getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters)
 
     print("\n------------------------ %s seconds --- Done computing" % round((time.time() - start_time), 2))
 
@@ -462,20 +452,25 @@ def getAbsoluteBigramCount():
 
     return absoluteBigramCount
 
-def filterBigrams(neededLetters, bigrams, bigramFrequency):
+def filterBigrams(bigrams, bigramFrequencies, requiredLetters=[]):
     """Trims the bigram-list to make getPermutations() MUCH faster.
     It basically removes all the bigrams that were already tested.""" # I'm amazing.
     
     trimmedBigrams = deepcopy(bigrams)
-    trimmedFrequencies = deepcopy(bigramFrequency)
+    trimmedFrequencies = deepcopy(bigramFrequencies)
     j=0
     for bigram in bigrams: # Scan for redundant bigrams
-        knockBigramOut = True
-        for letter in neededLetters:
-            if letter in bigram:
-                knockBigramOut = False
+        keepBigram = True
+        for letterGroup in requiredLetters:
+            foundALetter = False
+            for letter in letterGroup:
+                if letter in bigram:
+                    foundALetter = True
+            if not foundALetter:
+                keepBigram = False
+                break
 
-        if knockBigramOut: # Remove the redundant bigrams
+        if keepBigram is False: # Remove the redundant bigrams
             trimmedBigrams.pop(j)
             trimmedFrequencies.pop(j)
             j-=1
@@ -587,7 +582,7 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
     bigrams, bigramFrequency = getBigramList(''.join(sorted(layoutLetters)))
 
     if (len(layoutLetters) > nrOfLettersInEachLayer) & (testingCustomLayouts == False): # Filter out the previous bigrams if there are any that need filtering.
-        bigrams, bigramFrequency = filterBigrams(lastLayerLetters, bigrams, bigramFrequency)
+        bigrams, bigramFrequency = filterBigrams(bigrams, bigramFrequency, [lastLayerLetters])
     
 
     if useMultiProcessing:
@@ -720,26 +715,63 @@ def getLayoutScores_multiprocessing(*args):
 
     return goodLayouts, goodScores
 
-def getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters, L1_comfort, L2_comfort, L3_comfort, L4_comfort, layerVsFlow):
+def getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters):
     """Creates the score a perfect (impossible) layout would have, just for comparison's sake."""
 
-    bigramLetters_L1, bigramFrequencies_L1 = getBigramList(''.join(sorted(layer1letters)))
-    perfectScore = sum(bigramFrequencies_L1) * ((L1_comfort * layerVsFlow) + (1-layerVsFlow))
+    best_score_matrix = [] # A matrix that contains the best values for any combination of two layers
+    for _ in range(nrOfLayers):
+        best_score_matrix.append([0]*nrOfLayers)
+
+    for letter1_idx, scores in enumerate(SCORE_LIST):
+        layer1_idx = math.trunc(letter1_idx/nrOfLettersInEachLayer)
+        for layer2_idx in range(layer1_idx, nrOfLayers):
+            scores_for_Lj_Lk = scores[nrOfLettersInEachLayer*layer2_idx : nrOfLettersInEachLayer*layer2_idx+nrOfLettersInEachLayer]
+            if max(scores_for_Lj_Lk) > best_score_matrix[layer1_idx][layer2_idx]:
+                best_score_matrix[layer1_idx][layer2_idx] = max(scores_for_Lj_Lk)
+
+    best_score_matrix.insert(0, [0]*nrOfLayers) # Add empty rows so that we can access the values with the layer-numbers instead of the layer-indices
+    for i in range(len(best_score_matrix)):
+        best_score_matrix[i].insert(0, 0)
+
+    bigramLetters_L1_L1, bigramFrequencies_L1_L1 = getBigramList(''.join(sorted(layer1letters)))
+    # print("bigramLetters_L1_L1", bigramLetters_L1_L1)
+    perfectScore = sum(bigramFrequencies_L1_L1) * best_score_matrix[1][1]
     
     if nrOfLayers > 1:
         bigramLetters_L2, bigramFrequencies_L2 = getBigramList(''.join(sorted(layer1letters+layer2letters)))
-        bigramLetters_L2, bigramFrequencies_L2 = filterBigrams(layer2letters, bigramLetters_L2, bigramFrequencies_L2)
-        perfectScore += sum(bigramFrequencies_L2) * ((L2_comfort * layerVsFlow) + (1-layerVsFlow))
+        bigramLetters_L1_L2, bigramFrequencies_L1_L2 = filterBigrams(bigramLetters_L2, bigramFrequencies_L2, [layer1letters, layer2letters])
+        bigramLetters_L2_L2, bigramFrequencies_L2_L2 = getBigramList(''.join(sorted(layer2letters)))
+        # print("bigramLetters_L1_L2", bigramLetters_L1_L2)
+        # print("bigramLetters_L2_L2", bigramLetters_L2_L2)
+        perfectScore += sum(bigramFrequencies_L1_L2) * best_score_matrix[1][2]
+        perfectScore += sum(bigramFrequencies_L2_L2) * best_score_matrix[2][2]
         
         if nrOfLayers > 2:
             bigramLetters_L3, bigramFrequencies_L3 = getBigramList(''.join(sorted(layer1letters+layer2letters+layer3letters)))
-            bigramLetters_L3, bigramFrequencies_L3 = filterBigrams(layer3letters, bigramLetters_L3, bigramFrequencies_L3)
-            perfectScore += sum(bigramFrequencies_L3) * ((L3_comfort * layerVsFlow) + (1-layerVsFlow))
+            bigramLetters_L1_L3, bigramFrequencies_L1_L3 = filterBigrams(bigramLetters_L3, bigramFrequencies_L3, [layer1letters, layer3letters])
+            bigramLetters_L2_L3, bigramFrequencies_L2_L3 = filterBigrams(bigramLetters_L3, bigramFrequencies_L3, [layer2letters, layer3letters])
+            bigramLetters_L3_L3, bigramFrequencies_L3_L3 = getBigramList(''.join(sorted(layer3letters)))
+            # print("bigramLetters_L1_L3", bigramLetters_L1_L3)
+            # print("bigramLetters_L2_L3", bigramLetters_L2_L3)
+            # print("bigramLetters_L3_L3", bigramLetters_L3_L3)
+            perfectScore += sum(bigramFrequencies_L1_L3) * best_score_matrix[1][3]
+            perfectScore += sum(bigramFrequencies_L2_L3) * best_score_matrix[2][3]
+            perfectScore += sum(bigramFrequencies_L3_L3) * best_score_matrix[3][3]
 
             if nrOfLayers > 3:
                 bigramLetters_L4, bigramFrequencies_L4 = getBigramList(''.join(sorted(layer1letters+layer2letters+layer3letters+layer4letters)))
-                bigramLetters_L4, bigramFrequencies_L4 = filterBigrams(layer4letters, bigramLetters_L4, bigramFrequencies_L4)
-                perfectScore += sum(bigramFrequencies_L4) * ((L4_comfort * layerVsFlow) + (1-layerVsFlow))
+                bigramLetters_L1_L4, bigramFrequencies_L1_L4 = filterBigrams(bigramLetters_L4, bigramFrequencies_L4, [layer1letters, layer4letters])
+                bigramLetters_L2_L4, bigramFrequencies_L2_L4 = filterBigrams(bigramLetters_L4, bigramFrequencies_L4, [layer2letters, layer4letters])
+                bigramLetters_L3_L4, bigramFrequencies_L3_L4 = filterBigrams(bigramLetters_L4, bigramFrequencies_L4, [layer3letters, layer4letters])
+                bigramLetters_L4_L4, bigramFrequencies_L4_L4 = getBigramList(''.join(sorted(layer4letters)))
+                # print("bigramLetters_L1_L4", bigramLetters_L1_L4)
+                # print("bigramLetters_L2_L4", bigramLetters_L2_L4)
+                # print("bigramLetters_L3_L4", bigramLetters_L3_L4)
+                # print("bigramLetters_L4_L4", bigramLetters_L4_L4)
+                perfectScore += sum(bigramFrequencies_L1_L4) * best_score_matrix[1][4]
+                perfectScore += sum(bigramFrequencies_L2_L4) * best_score_matrix[2][4]
+                perfectScore += sum(bigramFrequencies_L3_L4) * best_score_matrix[3][4]
+                perfectScore += sum(bigramFrequencies_L4_L4) * best_score_matrix[4][4]
 
     return(perfectScore)
 
