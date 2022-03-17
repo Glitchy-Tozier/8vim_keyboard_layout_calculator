@@ -68,7 +68,6 @@ def main():
     showData = True
     showGeneralStats = True
     nrOfTopLayouts = 5
-    nrOfBottomLayouts = 0
 
     # You can use this section to test your custom-made layouts.
     testCustomLayouts = True
@@ -332,11 +331,11 @@ def main():
             customScores.append(customScore)
 
         # Display the data in the terminal.
-        showDataInTerminal(finalLayoutList, finalScoresList, customLayoutNames, customSizeLayouts, customScores, perfectLayoutScore, showData, showGeneralStats, nrOfTopLayouts, nrOfBottomLayouts)
+        showDataInTerminal(finalLayoutList, finalScoresList, customLayoutNames, customSizeLayouts, customScores, perfectLayoutScore, showData, showGeneralStats, nrOfTopLayouts)
     
     else:
         # Display the data in the terminal.
-        showDataInTerminal(finalLayoutList, finalScoresList, [], [], [], perfectLayoutScore, showData, showGeneralStats, nrOfTopLayouts, nrOfBottomLayouts)
+        showDataInTerminal(finalLayoutList, finalScoresList, [], [], [], perfectLayoutScore, showData, showGeneralStats, nrOfTopLayouts)
 
 
 def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters, varLetters_L1_L2, staticLetters) -> bool:
@@ -940,7 +939,7 @@ def performLetterSwaps(layout):
     random.shuffle(layouts)
     return layouts
 
-def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, customScores, perfectLayoutScore, showData, showGeneralStats, showTopLayouts, showBottomLayouts):
+def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, customScores, perfectLayoutScore, showData, showGeneralStats, nrOfTopLayouts):
     """Displays the results; The best layouts, maybe (if i decide to keep this in here) the worst, and some general data."""
 
     if showData:
@@ -962,17 +961,17 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
         for j in range(len(customScores)):
             customScores[j] = round(customScores[j], 2)
 
-        if showTopLayouts != 0:
+        if nrOfTopLayouts != 0:
             print('\n')
             print('#######################################################################################################################')
             print('#######################################################################################################################')
-            if showTopLayouts == 1:
+            if nrOfTopLayouts == 1:
                 print('                                                       The King:')
             else:
-                print('                                                The top', showTopLayouts, 'BEST layouts:')
+                print('                                                The top', nrOfTopLayouts, 'BEST layouts:')
             
             j=nrOfLayouts-1
-            while j > nrOfLayouts-showTopLayouts-1:
+            while j > nrOfLayouts-nrOfTopLayouts-1:
                 layout = orderedLayouts[j]
                 layoutScore = orderedScoreList[j]
                 firstLayerLetters =  layout[0:nrOfLettersInEachLayer]
@@ -986,30 +985,6 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
                 print('─'*(nrOfLettersInEachLayer*nrOfLayers+nrOfLayers+9) + '> Layout-placing:', nrOfLayouts-j)
                 print('─'*(nrOfLettersInEachLayer*nrOfLayers+nrOfLayers+9) + '> Score:', layoutScore, '   ~%.2f' % float(100*layoutScore/perfectLayoutScore), '%')
                 j-=1
-
-        if showBottomLayouts != 0:
-            print('#######################################################################################################################')
-            print('#######################################################################################################################')
-            if showBottomLayouts == 1:
-                print('                                                   The WORST layout:')
-            else:
-                print('                                                The top', showBottomLayouts, 'WORST layouts:')
-            for j in range(showBottomLayouts):
-                i = showBottomLayouts-j
-                layout = orderedLayouts[i]
-                layoutScore = orderedScoreList[i]
-
-                firstLayerLetters =  layout[0:nrOfLettersInEachLayer]
-                secondLayerLetters = layout[nrOfLettersInEachLayer:nrOfLettersInEachLayer*2]
-                thirdLayerLetters =  layout[nrOfLettersInEachLayer*2:nrOfLettersInEachLayer*3]
-                fourthLayerLetters = layout[nrOfLettersInEachLayer*3:nrOfLettersInEachLayer*4]
-
-                print('\n')
-                print(layoutVisualisation(layout), '\n')
-                print(optStrToXmlStr(layout))
-                print('Layout-placing:', nrOfLayouts+1-i)
-                print('Good bigrams:', layoutScore, '   ~%.2f' % float(100*layoutScore/perfectLayoutScore), '%')
-            print('Worst Layout: ^^^^')
 
         if testingCustomLayouts:
             print('#######################################################################################################################')
@@ -1025,7 +1000,7 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
             allWriteableBigramFrequencies = getBigramList(''.join(sorted(layoutList[0])))[1] # Get the bigram-frequencies for the bigrams that actually can be input using this layout.
             unweightedWriteableFrequency = sum(allWriteableBigramFrequencies) # Get the sum of those ^ frequencies.
 
-            if (showTopLayouts == 0) & (showBottomLayouts == 0):
+            if nrOfTopLayouts == 0:
                 print('\n')
             print('#######################################################################################################################')
             print('#######################################################################################################################')
