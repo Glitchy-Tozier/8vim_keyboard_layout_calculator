@@ -8,7 +8,7 @@ import multiprocessing
 from functools import partial
 import platform
 
-from score_lists import ORIGINAL_SCORE_LIST as SCORE_LIST
+from score_lists import KJOETOM_SCORE_LIST as SCORE_LIST
 
 start_time = time.time()
 
