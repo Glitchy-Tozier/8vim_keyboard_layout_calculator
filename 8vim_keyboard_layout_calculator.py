@@ -4,8 +4,7 @@ from copy import deepcopy
 import math
 import random
 import time
-import multiprocessing #import Process
-#from threading import Thread
+import multiprocessing
 from functools import partial
 import platform
 
@@ -76,20 +75,12 @@ def main():
     customLayoutNames = [
         'Example Layout',
         'Old / original 8VIM layout',
-        #'English layout by sslater11',
-        #'English layout 4 by kjoetom',
-        #'Best English layout found by this script',
-        #' ......should be ~91.01 %',
         ]
     customLayouts = [
         # Uses a different formatting than the XML.
         # They are defined, starting fromm the bottom left, going clockwise. Layer per layer, from innermost to outermost.
         'abcdefghijklmnopqrstuvwxyz------',
         'eitsyanolhcdbrmukjzgpxfv----q--w',
-        #'hitanerolfydmcsujwkgpxbv----q--z',
-        #'ieaorntsubdhmcflvqypwgkj-x---z--',
-        #'eotrnsaidfcugmlhxvjykpwbq-z-----',
-        #'eotrnsaidgcpumlhxvjfbywzq---k---'
         ]
 
 
@@ -960,7 +951,7 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
         nrOfLayouts = len(layoutList)
         orderedLayouts = [layoutList for _,layoutList in sorted(zip(scoreList,layoutList))]
 
-        #Do the same thing to the scores.
+        # Do the same thing to the scores.
         orderedScoreList = scoreList[:]
         orderedScoreList.sort()
 
