@@ -22,11 +22,11 @@ git clone https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator.git
 Navigate to this project's root directory and run the script.  
 Recommended: Use [pypy](https://www.pypy.org/)
 ```sh
-pypy3 8vim_keyboard_layout_calculator.py
+pypy3 main.py
 ```
 If for whatever reason you can't use pypy, to at least benefit from *some* speed improvement, open the python-file and enable `useMultiProcessing`. Then start the script the regular way:
 ```sh
-python3 8vim_keyboard_layout_calculator.py
+python3 main.py
 ```
 
 ### Bigrams
