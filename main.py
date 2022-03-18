@@ -50,6 +50,7 @@ def main():
     # You can set it to other letters as well, it doesn't change anything about the quality of the layouts though.
     # IF 'e' IS NOT IN YOUR INNERMOST LAYER, PUT ANOTHER LETTER WHERE 'e' IS!!
     staticLetters = ['e', '', '', '', '', '', '', ''] # the positions go clockwise. 'e' is on the bottom left. 
+    #staticLetters = ['', '', '', '', '', '', '', '']
 
     # Define how many layers the layouts you recieve should contain.
     nrOfLayers = 4
@@ -123,8 +124,8 @@ def main():
     for idx, customLayout in enumerate(customLayouts):
         customLayouts[idx] = asciify(customLayout)
 
-    # create the asciiArray
-    asciiArray, emptySlots = prepareAsciiArray(staticLetters)
+    # Create the asciiArray
+    asciiArray = [0]*256
 
     # Get the letters for the layers possible with the letters you specified.
     firstLayers, secondLayers = getLayerLetters(layer1letters, layer2letters, varLetters_L1_L2)
@@ -162,7 +163,7 @@ def main():
         layouts_L1, layouts_L2, layouts_L3, layouts_L4 = getLayouts(varLetters, staticLetters, letters_L2, layer3letters, layer4letters)
 
         # Test the layer 1 - layouts
-        goodLayouts_L1, goodScores_L1 = testLayouts(layouts_L1, asciiArray, [], staticLetters, emptySlots)
+        goodLayouts_L1, goodScores_L1 = testLayouts(layouts_L1, asciiArray)
 
 
         print("------------------------ %s seconds --- Got best layouts for layer 1" % round((time.time() - start_time), 2))
@@ -484,23 +485,6 @@ def lowercaseList(lst):
         lst[j] = element.lower()
     return lst
 
-def prepareAsciiArray(staticLetters):
-    """Initializes the ascii-array.
-    It also creates the variable "emptySlots", which tells us what slots aren't filled by static letters. (in layer 1)"""
-    asciiArray = [0]*256
-    emptySlots = [0]*8
-    j=0
-    for letterPlacement in range(nrOfLettersInEachLayer):
-
-        if staticLetters[letterPlacement]:
-            currentLetter = staticLetters[letterPlacement]
-            asciiArray[ord(currentLetter)] = letterPlacement
-        else:
-            emptySlots[j] = letterPlacement
-            j+=1
-
-    return asciiArray, emptySlots
-
 def getLayouts(varLetters, staticLetters, layer2letters, layer3letters, layer4letters):
     """Creates and returns a list of layouts."""
 
@@ -567,7 +551,7 @@ def fillAndPermuteLayout(letters):
     
     return(layouts)
 
-def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySlots=None):
+def testLayouts(layouts, asciiArray, prevScores=None):
     """Calculates the best layouts and returns them (and their scores)."""
 
     # Combine the Letters for the layer 1 and layer 2
@@ -617,13 +601,13 @@ def testLayouts(layouts, asciiArray, prevScores=None, fixedLetters=None, emptySl
 
             else:
                 # Test the layouts for their flow
-                goodLayouts, goodScores = getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores, fixedLetters, emptySlots)
+                goodLayouts, goodScores = getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores)
         else:
             # Test the layouts for their flow
-            goodLayouts, goodScores = getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores, fixedLetters, emptySlots)
+            goodLayouts, goodScores = getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores)
     else:
         # Test the layouts for their flow
-        goodLayouts, goodScores = getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores, fixedLetters, emptySlots)
+        goodLayouts, goodScores = getLayoutScores(layouts, asciiArray, bigrams, bigramFrequency, prevScores)
     
     return goodLayouts, goodScores
 
@@ -634,26 +618,19 @@ def testSingleLayout(layout, orderedLetters, asciiArray):
     bigrams, bigramFrequency = getBigramList(orderedLetters)
     return getLayoutScores([layout], asciiArray, bigrams, bigramFrequency)[0]  # <- the [0] corrects some weird list-mechanisms.
 
-def getLayoutScores(layouts, asciiArray, enumeratedBigrams, bigramFrequency, prevScores=None, fixedLetters=None, emptySlots=None):
+def getLayoutScores(layouts, asciiArray, enumeratedBigrams, bigramFrequency, prevScores=None):
     """Tests the layouts and return their scores. It's only used when single-threading."""
 
+    # Pre-enumerate the bigrams for performance-reasons
+    enumeratedBigrams = enumerate(enumeratedBigrams)
     # Create the empty scoring-list
     scores = [0]*len(layouts)
-    enumeratedBigrams = enumerate(enumeratedBigrams)
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
 
-        if fixedLetters: # Fill up the asciiArray
-            for j in range(len(fixedLetters)-1):
-                if fixedLetters[j]:
-                    varLayout = layout.replace(fixedLetters[j],'')
-
-            for j, letter in enumerate(varLayout):
-                asciiArray[ord(letter)] = emptySlots[j]
-        else:
-            for j, letter in enumerate(layout):
-                asciiArray[ord(letter)] = j
+        for j, letter in enumerate(layout):
+            asciiArray[ord(letter)] = j # Fill up asciiArray
     
         for j, bigram in enumeratedBigrams: # Go through every bigram and see how well it flows.
             firstLetterPlacement = asciiArray[ord(bigram[0])]
@@ -681,8 +658,8 @@ def getLayoutScores_multiprocessing(*args):
     Only use this function when using multiprocessing. Otherwise, use [getLayoutScores]"""
 
     # Rename the input arguments
-    mapArgs = args[1]
     staticArgs = args[0]
+    mapArgs = args[1]
 
     groupSize = staticArgs[5]
 
@@ -691,16 +668,17 @@ def getLayoutScores_multiprocessing(*args):
 
     allLayouts = staticArgs[0]
     asciiArray = staticArgs[1]
+    # Pre-enumerate the bigrams for performance-reasons
     enumeratedBigrams = enumerate(staticArgs[2])
     bigramFrequency = staticArgs[3]
-    prevScore = staticArgs[4][ int(groupBeginning/groupSize)]
+    prevScore = staticArgs[4][int(groupBeginning/groupSize)]
 
     scores = [0]*groupSize
     layouts = allLayouts[groupBeginning : groupEnding]
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
-        
+    
         for j, letter in enumerate(layout):
             asciiArray[ord(letter)] = j # Fill up asciiArray
     
