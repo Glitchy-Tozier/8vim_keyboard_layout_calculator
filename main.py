@@ -300,7 +300,7 @@ def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters,
     """Checks the user's input for common errors. If everything is correct, returns `True`"""
 
     layout = layer1letters + layer2letters + layer3letters + layer4letters
-    # Check for duplicates
+    # Check for duplicate letters
     for char in layout:
         if (char is not fillSymbol) and (layout.count(char) > 1):
             print("Duplicate letters found:", char, "\nCheck layer1letters, layer2letters, layer3letters, and layer4letters")
@@ -322,7 +322,7 @@ def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters,
         return False
     return True
 
-def asciify(string):
+def asciify(string) -> str:
     """Take a string and replace all non-ascii-chars with ascii-versions of them"""
     result = list(string)
     for idx, char in enumerate(string):
@@ -336,7 +336,7 @@ def asciify(string):
                 result[idx] = replacedWithAscii[char]
     return ''.join(result)
 
-def deAsciify(string):
+def deAsciify(string) -> str:
     """Take turn all replacement-ascii-chars and turn them back into their original forms."""
     result = list(string)
     for idx, char in enumerate(string):
@@ -390,7 +390,7 @@ def getLayerLetters(layer1letters, layer2letters, varLetters_L1_L2):
     else: # if there are no variable letters between layer 1 and 2, do nothing.
         return [layer1letters], [layer2letters]
 
-def getVariableLetters(fullLayer, staticLetters):
+def getVariableLetters(fullLayer, staticLetters) -> str:
     """Extracts the non-fix letters for the first layer."""
     varLetters='' 
 
@@ -442,7 +442,7 @@ def getBigramList(sortedLetters) -> list:
         bigramCache[sortedLetters] = bigrams, bigramFrequency
         return bigrams, bigramFrequency
 
-def getAbsoluteBigramCount():
+def getAbsoluteBigramCount() -> int:
     """This returns the total number of all bigram-frequencies, even of those with letters that don't exist in the calculated layers."""
     bigramFrequencies = []
 
@@ -460,7 +460,7 @@ def filterBigrams(bigrams, bigramFrequencies, requiredLetters=[]):
     trimmedBigrams = deepcopy(bigrams)
     trimmedFrequencies = deepcopy(bigramFrequencies)
     j=0
-    for bigram in bigrams: # Scan for redundant bigrams
+    for bigram in bigrams:
         keepBigram = True
         for letterGroup in requiredLetters:
             foundALetter = False
@@ -479,7 +479,7 @@ def filterBigrams(bigrams, bigramFrequencies, requiredLetters=[]):
 
     return trimmedBigrams, trimmedFrequencies
 
-def lowercaseList(lst):
+def lowercaseList(lst: list) -> list:
     """Takes any list and turns its uppercase letters into lowercase ones."""
     for j, element in enumerate(lst):
         lst[j] = element.lower()
@@ -517,16 +517,16 @@ def getLayouts(varLetters, staticLetters, layer2letters, layer3letters, layer4le
 
     return layer1layouts, layer2layouts, layer3layouts, layer4layouts
 
-def getPermutations(varLetters, staticLetters=[]):
+def getPermutations(varLetters, staticLetters=[]) -> list:
     """Returns all possible letter-positions (permutations) with the input letters."""
 
     layouts = ['']*math.factorial(len(varLetters))
 
-    if staticLetters: # this only activates for layer 1 (that has static letters)
+    if len(staticLetters) > 0: # this only activates for layer 1 (that has static letters)
         for layoutIteration, letterCombination in enumerate(itertools.permutations(varLetters)): # try every layout
             j=0
             for letterPlacement in range(nrOfLettersInEachLayer):
-                if staticLetters[letterPlacement]:
+                if staticLetters[letterPlacement] is not '':
                     layouts[layoutIteration] += staticLetters[letterPlacement]
                 else:
                     layouts[layoutIteration] += letterCombination[j]
@@ -538,9 +538,9 @@ def getPermutations(varLetters, staticLetters=[]):
 
     return layouts
 
-def fillAndPermuteLayout(letters):
+def fillAndPermuteLayout(letters) -> list:
     """Creates full layouts out of only a few letters, while avoiding redundancy.
-    # It is primarily used for layer 4, which many alphabets do not completely fill with letters."""
+    It is primarily used for layer 4, which many alphabets do not completely fill with letters."""
     newLetters = letters + (fillSymbol * (nrOfLettersInEachLayer-len(letters)))
     layouts = []
 
@@ -549,7 +549,7 @@ def fillAndPermuteLayout(letters):
         if layout not in layouts:
             layouts.append(layout)
     
-    return(layouts)
+    return layouts
 
 def testLayouts(layouts, asciiArray, prevScores=None):
     """Calculates the best layouts and returns them (and their scores)."""
@@ -693,7 +693,7 @@ def getLayoutScores_multiprocessing(*args):
 
     return goodLayouts, goodScores
 
-def getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters):
+def getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters) -> float:
     """Creates the score a perfect (impossible) layout would have, just for comparison's sake."""
 
     best_score_matrix = [] # A matrix that contains the best values for any combination of two layers
@@ -751,7 +751,7 @@ def getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4let
                 perfectScore += sum(bigramFrequencies_L3_L4) * best_score_matrix[3][4]
                 perfectScore += sum(bigramFrequencies_L4_L4) * best_score_matrix[4][4]
 
-    return(perfectScore)
+    return perfectScore
 
 def getTopScores(layouts, scores, nrOfBest=None):
     """Returns the best [whatever you set "nrOfBestPermutations" to] layouts with their scores.
@@ -773,7 +773,7 @@ def getTopScores(layouts, scores, nrOfBest=None):
 
     return bestLayouts, biggestScores
 
-def combinePermutations(list1, list2):
+def combinePermutations(list1, list2) -> list:
     """Creates all possible permutations of two lists while still keeping them in the right order. (first, second) (a, then b)"""
     listOfStrings = []
 
@@ -812,7 +812,7 @@ def greedyOptimization(layouts, scores, asciiArray):
     goodLayouts, goodScores = getTopScores(layouts, scores, 500)
     return goodLayouts, goodScores
 
-def performLetterSwaps(layout):
+def performLetterSwaps(layout) -> list:
     """Get all layouts that are possible through 2-letter-swaps."""
     layouts = [layout]
     originalLayout = list(layout)
@@ -900,7 +900,7 @@ def showDataInTerminal(layoutList, scoreList, customLayoutNames, customLayouts, 
         print('########################################### 8vim Keyboard Layout Calculator ###########################################')
         print('#######################################################################################################################')
 
-def optStrToXmlStr(layout):
+def optStrToXmlStr(layout) -> str:
     """Turns the string-representation which is used internally into one that aligns with 8vim's XML-formatting."""
 
     b1 = "{6}{7}{14}{15}{22}{23}{30}{31} {0}{1}{8}{9}{16}{17}{24}{25} {2}{3}{10}{11}{18}{19}{26}{27} {4}{5}{12}{13}{20}{21}{28}{29}"
@@ -908,7 +908,7 @@ def optStrToXmlStr(layout):
     layout = deAsciify(layout)
     return b1.format(*layout) + "\n" + b2.format(*layout.upper())
 
-def layoutVisualisation(layout):
+def layoutVisualisation(layout) -> str:
     """Takes the layout-letters and gives a visual representation of them.
     Currently only supports layouts with 4-sections."""
     blueprint = """      ⟍  {27}                {28} ⟋
