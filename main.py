@@ -55,7 +55,7 @@ def main():
     # Define how many layers the layouts you recieve should contain.
     nrOfLayers = 4
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
-    nrOfBestPermutations = 50
+    nrOfBestPermutations = 500
 
 
     # Define what information you want to recieve.
