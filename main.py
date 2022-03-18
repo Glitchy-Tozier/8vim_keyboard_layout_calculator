@@ -315,7 +315,7 @@ def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters,
             print('"', char, '" was defined in staticLetters, but is not part of the first layer')
             return False
     # Check if bigram-file exists
-    if not os.path.exists(bigramTxt):
+    if os.path.exists(bigramTxt) is False:
         print("The bigram-path you provided does not point to an existing file.")
         print(bigramTxt)
         return False
@@ -466,7 +466,7 @@ def filterBigrams(bigrams, bigramFrequencies, requiredLetters=[]):
             for letter in letterGroup:
                 if letter in bigram:
                     foundALetter = True
-            if not foundALetter:
+            if foundALetter is False:
                 keepBigram = False
                 break
 
