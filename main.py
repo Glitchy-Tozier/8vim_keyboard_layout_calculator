@@ -608,13 +608,14 @@ def testSingleLayout(layout: str, orderedLetters: str, asciiArray: list) -> int:
 
     # Get the bigrams that contain [orderedLetters]
     bigrams = getBigramList(orderedLetters)
-    return getLayoutScores([layout], asciiArray, bigrams)[0]  # <- the [0] corrects some weird list-mechanisms.
+    return getLayoutScores([layout], asciiArray, bigrams)
 
 def getLayoutScores(layouts: list, asciiArray: list, bigrams: list, prevScores=None):
     """Tests the layouts and return their scores. It's only used when single-threading."""
 
     # Create the empty scoring-list
     scores = [0]*len(layouts)
+    bigrams = iter(bigrams)
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
@@ -630,18 +631,17 @@ def getLayoutScores(layouts: list, asciiArray: list, bigrams: list, prevScores=N
     if prevScores:
         # Add the previous layouts' scores. (which weren't tested here. It would be redundant.)
         for j in range(len(prevScores)):
-            groupBeginning = int((len(layouts) / len(prevScores)) * j)
-            groupEnding = int((len(layouts) / len(prevScores)) * (j+1))
+            groupSize = int((len(layouts) / len(prevScores)))
+            groupBeginning = groupSize * j
+            groupEnding = groupSize * (j+1)
             
-            k = groupBeginning
             for k in range(groupBeginning, groupEnding):
-                scores[k] = scores[k] + prevScores[j]
+                scores[k] += prevScores[j]
 
-    if len(scores) > 1:
+    if len(scores) == 1: return scores[0]
+    else:
         goodLayouts, goodScores = getTopScores(layouts, scores, 500)
         return goodLayouts, goodScores
-    else:
-        return scores
 
 def getLayoutScores_multiprocessing(*args):
     """This function tests the layouts and return their scores.
@@ -659,7 +659,7 @@ def getLayoutScores_multiprocessing(*args):
     allLayouts = staticArgs[0]
     asciiArray = staticArgs[1]
     # Pre-enumerate the bigrams for performance-reasons
-    bigrams = staticArgs[2]
+    bigrams = iter(staticArgs[2])
     prevScore = staticArgs[3][int(groupBeginning/groupSize)]
 
     scores = [0]*groupSize
@@ -746,12 +746,8 @@ def getTopScores(layouts: list, scores: list, nrOfBest=None):
     """Returns the best [whatever you set "nrOfBestPermutations" to] layouts with their scores.
     The LAST items of those lists should be the best ones."""
 
-    copiedLayouts = layouts[:]
-    orderedLayouts = [copiedLayout for _,copiedLayout in sorted(zip(scores,copiedLayouts))]
-    
-    orderedScores = scores[:]
-    orderedScores.sort()
-    
+    orderedScores, orderedLayouts = [list(l) for l in zip(*sorted(zip(scores, layouts)))]
+        
     if nrOfBest: # If a custom number of how many best layouts should be returned, return that number of layouts instead of the globally defined nrOfBestPermutations
         index_firstGoodLayout = (len(layouts)-nrOfBest)
     else:
@@ -775,8 +771,7 @@ def combinePermutations(list1: list, list2: list) -> list:
 def greedyOptimization(layouts: list, scores: list, asciiArray: list):
     """Randomly switches letters in each of the layouts to see whether the layouts can be improved this way."""
 
-    allLayouts = layouts
-    allScores = scores
+    allLayouts = dict(zip(layouts, scores))
     orderedLetters = ''.join(sorted(layouts[0]))
     print("Starting greedy optimization.")
     print("Number of layouts to optimize:", len(layouts))
@@ -792,17 +787,16 @@ def greedyOptimization(layouts: list, scores: list, asciiArray: list):
                     break
                 else: optimizing = False
         if layout not in allLayouts:            
-            allLayouts.append(layout)
-            allScores.append(score)
+            allLayouts[layout] = score
     print("Number of layouts, afterwards:", len(allLayouts))
     print("Finished greedy optimization.")
 
-    goodLayouts, goodScores = getTopScores(layouts, scores, 500)
+    goodLayouts, goodScores = getTopScores(allLayouts.keys(), allLayouts.values(), 500)
     return goodLayouts, goodScores
 
 def performLetterSwaps(layout: str) -> list:
     """Get all layouts that are possible through 2-letter-swaps."""
-    layouts = [layout]
+    layouts = set([layout])
     originalLayout = list(layout)
     for i1 in range(1, len(layout)):
         for i2 in range(i1+1, len(layout)):
@@ -810,9 +804,8 @@ def performLetterSwaps(layout: str) -> list:
             copy[i1], copy[i2] = copy[i2], copy[i1]
             layoutStr = ''.join(copy)
             if layoutStr not in layouts:
-                layouts.append(layoutStr)
-    random.shuffle(layouts)
-    return layouts
+                layouts.add(layoutStr)
+    return list(layouts)
 
 def showDataInTerminal(
         layoutList: list,
