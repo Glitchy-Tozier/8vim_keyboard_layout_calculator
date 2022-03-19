@@ -272,7 +272,7 @@ def main():
     print("\n------------------------ %s seconds --- Done computing" % round((time.time() - start_time), 2))
 
     testingCustomLayouts = testCustomLayouts
-    if testingCustomLayouts:
+    if testingCustomLayouts is True:
         customScores = []
         customSizeLayouts = []
         for layout in customLayouts:
@@ -374,14 +374,14 @@ def getLayerCombinations(layer1letters: str, layer2letters: str, varLetters_L1_L
                     addCombination = False
                     break
 
-            if addCombination: # Only add letter-combinations that are new.
+            if addCombination is True: # Only add letter-combinations that are new.
                 L1_LayerLetters = fixLetters_L1 + varLetters_L1 
                 L2_LayerLetters = combination[nrFlexLetters_L1:] + fixLetters_L2
 
                 L1_Layers.append(L1_LayerLetters)
                 L2_Layers.append(L2_LayerLetters)
                 
-                if debugMode:
+                if debugMode is True:
                     print(L1_Layers[j], L2_Layers[j])
 
                 j+=1
@@ -551,7 +551,7 @@ def testLayouts(layouts, asciiArray, prevScores=None):
     # Get the letters of the last layer calculated. (if you're only calculating one layer, this is what you get.)
     lastLayerLetters = layoutLetters[-nrOfLettersInEachLayer:]
 
-    if debugMode:
+    if debugMode is True:
         print(lastLayerLetters)
 
     # Get the bigrams for the input letters 
@@ -561,7 +561,7 @@ def testLayouts(layouts, asciiArray, prevScores=None):
         bigrams = filterBigrams(bigrams, [lastLayerLetters])
     
 
-    if useMultiProcessing:
+    if useMultiProcessing is True:
         if prevScores:
             if len(prevScores) > 1:
                 goodLayouts = []
@@ -827,7 +827,7 @@ def showDataInTerminal(
     ) -> None:
     """Displays the results; The best layouts, maybe (if i decide to keep this in here) the worst, and some general data."""
 
-    if showData:
+    if showData is True:
         # Get the total number of all bigram-frequencies, even of those with letters that don't exist in the calculated layers.
         sumOfALLbigrams = getAbsoluteBigramCount()
 
@@ -871,7 +871,7 @@ def showDataInTerminal(
                 print('─'*(nrOfLettersInEachLayer*nrOfLayers+nrOfLayers+9) + '> Score:', layoutScore, '   ~%.2f' % float(100*layoutScore/perfectLayoutScore), '%')
                 j-=1
 
-        if testingCustomLayouts:
+        if testingCustomLayouts is True:
             print('#######################################################################################################################')
             print('#######################################################################################################################')
             print('                                                    Custom layouts:')
@@ -881,7 +881,7 @@ def showDataInTerminal(
                 print(optStrToXmlStr(customLayouts[j]))
                 print('─'*(nrOfLettersInEachLayer*nrOfLayers+3) + '> Score:', customScores[j], '   ~%.2f' % float(100*customScores[j]/perfectLayoutScore), '%')
 
-        if showGeneralStats:
+        if showGeneralStats is True:
             allWriteableBigrams = getBigramList(''.join(sorted(layoutList[0]))) # Get all bigrams that actually can be written using this layout.
             unweightedWriteableFrequency = sum([bigram.frequency for bigram in allWriteableBigrams]) # Get the sum of those ^ frequencies.
 
