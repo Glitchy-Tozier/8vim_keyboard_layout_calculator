@@ -608,7 +608,6 @@ def getLayoutScores(layouts: list, asciiArray: list, bigrams: list, prevScores=N
 
     # Create the empty scoring-list
     scores = [0]*len(layouts)
-    bigrams = bigrams
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
