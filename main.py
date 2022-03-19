@@ -55,7 +55,7 @@ def main():
     # Define how many layers the layouts you recieve should contain.
     NR_OF_LAYERS = 4
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
-    nrOfBestPermutations = 50
+    nrOfBestPermutations = 100
 
 
     # Define what information you want to recieve.
@@ -738,14 +738,14 @@ def getTopScores(layouts: list, scores: list, nrOfBest=None):
     """Returns the best [whatever you set "nrOfBestPermutations" to] layouts with their scores.
     The LAST items of those lists should be the best ones."""
 
-    orderedScoreLayoutTuples = sorted(zip(scores, layouts))
-        
-    if nrOfBest: # If a custom number of how many best layouts should be returned, return that number of layouts instead of the globally defined nrOfBestPermutations
-        index_firstGoodLayout = (len(layouts)-nrOfBest)
-    else:
-        index_firstGoodLayout = (len(layouts)-nrOfBestPermutations)
+    orderedScoreIdxTuples = sorted(zip(scores, range(len(scores))))
     
-    topScores, topLayouts = [list(l) for l in zip(*orderedScoreLayoutTuples[index_firstGoodLayout:])]
+    if not nrOfBest:
+        nrOfBest = nrOfBestPermutations
+
+    topScores, topIndeces = [list(l) for l in zip(*orderedScoreIdxTuples[-nrOfBest:])]
+    topLayouts = [layouts[idx] for idx in topIndeces]
+
     return topLayouts, topScores
 
 def combinePermutations(list1: list, list2: list) -> list:
@@ -781,7 +781,7 @@ def greedyOptimization(layouts: list, scores: list, asciiArray: list):
     print("Number of layouts, afterwards:", len(allLayouts))
     print("Finished greedy optimization.")
 
-    goodLayouts, goodScores = getTopScores(allLayouts.keys(), allLayouts.values(), 500)
+    goodLayouts, goodScores = getTopScores(list(allLayouts.keys()), list(allLayouts.values()), 500)
     return goodLayouts, goodScores
 
 def performLetterSwaps(layout: str) -> list:
