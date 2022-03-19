@@ -42,8 +42,8 @@ def main():
     # Define how which of the above letters are interchangeable (variable) between adjacent layers.
     # They have to be in the same order as they apear between layer1letters and layer2letters.
     # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-    #varLetters_L1_L2 = ''.lower()
-    varLetters_L1_L2 = 'nsrhld'.lower()
+    varLetters_L1_L2 = ''.lower()
+    #varLetters_L1_L2 = 'nsrhld'.lower()
 
     # For layer 1, define that a certain Letter ('e') doesn't change.
     # Just pick the most common one in your language.
@@ -55,7 +55,7 @@ def main():
     # Define how many layers the layouts you recieve should contain.
     nrOfLayers = 4
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
-    nrOfBestPermutations = 500
+    nrOfBestPermutations = 50
 
 
     # Define what information you want to recieve.
@@ -194,10 +194,9 @@ def main():
         else:
             layoutList, scoresList = goodLayouts_L1, goodScores_L1
 
-        for j in  range(len(layoutList)):
-            # Add the found layouts to the list (which will later be displayed)
-            tempLayoutList.append(layoutList[j])
-            tempScoresList.append(scoresList[j])
+        # Add the found layouts to the list (which will later be displayed)
+        tempLayoutList.extend(layoutList)
+        tempScoresList.extend(scoresList)
     
 
     if nrOfLayers >= 3:
@@ -531,14 +530,11 @@ def fillAndPermuteLayout(letters: str) -> list:
     """Creates full layouts out of only a few letters, while avoiding redundancy.
     It is primarily used for layer 4, which many alphabets do not completely fill with letters."""
     newLetters = letters + (fillSymbol * (nrOfLettersInEachLayer-len(letters)))
-    layouts = []
 
-    for letterCombination in itertools.permutations(newLetters):
-        layout = ''.join(letterCombination)
-        if layout not in layouts:
-            layouts.append(layout)
-    
-    return layouts
+    permutations = itertools.permutations(newLetters) # Get permutations
+    layouts = set([''.join(letterList) for letterList in permutations]) # Remove all duplicates
+
+    return list(layouts)
 
 def testLayouts(layouts, asciiArray, prevScores=None):
     """Calculates the best layouts and returns them (and their scores)."""
@@ -743,17 +739,15 @@ def getTopScores(layouts: list, scores: list, nrOfBest=None):
     """Returns the best [whatever you set "nrOfBestPermutations" to] layouts with their scores.
     The LAST items of those lists should be the best ones."""
 
-    orderedScores, orderedLayouts = [list(l) for l in zip(*sorted(zip(scores, layouts)))]
+    orderedScoreLayoutTuples = sorted(zip(scores, layouts))
         
     if nrOfBest: # If a custom number of how many best layouts should be returned, return that number of layouts instead of the globally defined nrOfBestPermutations
         index_firstGoodLayout = (len(layouts)-nrOfBest)
     else:
         index_firstGoodLayout = (len(layouts)-nrOfBestPermutations)
-
-    bestLayouts = orderedLayouts[index_firstGoodLayout:]
-    biggestScores = orderedScores[index_firstGoodLayout:]
-
-    return bestLayouts, biggestScores
+    
+    topScores, topLayouts = [list(l) for l in zip(*orderedScoreLayoutTuples[index_firstGoodLayout:])]
+    return topLayouts, topScores
 
 def combinePermutations(list1: list, list2: list) -> list:
     """Creates all possible permutations of two lists while still keeping them in the right order. (first, second) (a, then b)"""
@@ -805,8 +799,8 @@ def performLetterSwaps(layout: str) -> list:
     return list(layouts)
 
 def showDataInTerminal(
-        layoutList: list,
-        scoreList: list,
+        layouts: list,
+        scores: list,
         customLayoutNames: list,
         customLayouts: list,
         customScores: list,
@@ -821,17 +815,13 @@ def showDataInTerminal(
         # Get the total number of all bigram-frequencies, even of those with letters that don't exist in the calculated layers.
         sumOfALLbigrams = getAbsoluteBigramCount()
 
+        nrOfLayouts = len(layouts)
         # Order the layouts. [0] is the worst layout, [nrOfLayouts] is the best.
-        nrOfLayouts = len(layoutList)
-        orderedLayouts = [layoutList for _,layoutList in sorted(zip(scoreList,layoutList))]
-
-        # Do the same thing to the scores.
-        orderedScoreList = scoreList[:]
-        orderedScoreList.sort()
+        orderedScores, orderedLayouts = [list(l) for l in zip(*sorted(zip(scores, layouts)))]
 
         # Make the values more visually appealing.
-        for j in range(len(orderedScoreList)):
-            orderedScoreList[j] = round(orderedScoreList[j], 2)
+        for j in range(len(orderedScores)):
+            orderedScores[j] = round(orderedScores[j], 2)
         perfectLayoutScore = round(perfectLayoutScore, 2)
         for j in range(len(customScores)):
             customScores[j] = round(customScores[j], 2)
@@ -848,7 +838,7 @@ def showDataInTerminal(
             j=nrOfLayouts-1
             while j > nrOfLayouts-nrOfTopLayouts-1:
                 layout = orderedLayouts[j]
-                layoutScore = orderedScoreList[j]
+                layoutScore = orderedScores[j]
                 firstLayerLetters =  layout[0:nrOfLettersInEachLayer]
                 secondLayerLetters = layout[nrOfLettersInEachLayer:nrOfLettersInEachLayer*2]
                 thirdLayerLetters =  layout[nrOfLettersInEachLayer*2:nrOfLettersInEachLayer*3]
@@ -872,7 +862,7 @@ def showDataInTerminal(
                 print('─'*(nrOfLettersInEachLayer*nrOfLayers+3) + '> Score:', customScores[j], '   ~%.2f' % float(100*customScores[j]/perfectLayoutScore), '%')
 
         if showGeneralStats is True:
-            allWriteableBigrams = getBigramList(''.join(sorted(layoutList[0]))) # Get all bigrams that actually can be written using this layout.
+            allWriteableBigrams = getBigramList(''.join(sorted(layouts[0]))) # Get all bigrams that actually can be written using this layout.
             unweightedWriteableFrequency = sum([bigram.frequency for bigram in allWriteableBigrams]) # Get the sum of those ^ frequencies.
 
             if nrOfTopLayouts == 0:
