@@ -426,7 +426,7 @@ def getBigramList(sortedLetters: str) -> list:
                 for line in corpus:
                     line = line.lower()
                     if currentBigram == line[0:N_GRAM_LENGTH]:
-                        bigrams.append(Bigram(currentBigram, int(line[line.find(' ')+1:])))
+                        bigrams.append( Bigram(currentBigram, int(line[line.find(' ')+1:])) )
                         break
 
         bigramCache[sortedLetters] = bigrams
@@ -611,14 +611,14 @@ def getLayoutScores(layouts: list, asciiArray: list, bigrams: list, prevScores=N
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
+        for j, letter in enumerate(layout): asciiArray[ord(letter)] = j # Fill up asciiArray    
+        scores[k] = sum([bigram.frequency * SCORE_LIST[asciiArray[bigram.letter1AsciiCode]][asciiArray[bigram.letter2AsciiCode]] for bigram in bigrams])
 
-        for j, letter in enumerate(layout):
-            asciiArray[ord(letter)] = j # Fill up asciiArray
-    
-        for bigram in bigrams: # Go through every bigram and see how well it flows.
-            firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
-            secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
-            scores[k] += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
+    ### The monstrous line above ^ has the same function as the following block of code:
+    # for bigram in bigrams: # Go through every bigram and see how well it flows.
+    #         firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
+    #         secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
+    #         scores[k] += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
 
     if prevScores:
         # Add the previous layouts' scores. (which weren't tested here. It would be redundant.)
@@ -647,31 +647,29 @@ def getLayoutScores_multiprocessing(*args):
 
     groupBeginning = mapArgs
     groupEnding = groupBeginning + groupSize
-
     allLayouts = staticArgs[0]
-    asciiArray = staticArgs[1]
-    # Pre-enumerate the bigrams for performance-reasons
-    bigrams = staticArgs[2]
-    prevScore = staticArgs[3][int(groupBeginning/groupSize)]
 
-    scores = [0]*groupSize
+    asciiArray = staticArgs[1]
     layouts = allLayouts[groupBeginning : groupEnding]
+    bigrams = staticArgs[2]
+
+    prevScore = staticArgs[3][int(groupBeginning/groupSize)]
+    scores = [0]*groupSize
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
-    
-        for j, letter in enumerate(layout):
-            asciiArray[ord(letter)] = j # Fill up asciiArray
-    
-        for bigram in bigrams: # go through every bigram and see how well it flows.
-            firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
-            secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
-            scores[k] += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
-        scores[k] += prevScore
-    
+        for j, letter in enumerate(layout): asciiArray[ord(letter)] = j # Fill up asciiArray
+        scores[k] = prevScore + sum([bigram.frequency * SCORE_LIST[asciiArray[bigram.letter1AsciiCode]][asciiArray[bigram.letter2AsciiCode]] for bigram in bigrams])
+
+    ### The monstrous line above ^ has the same function as the following block of code:
+    # scores[k] += prevScore
+    # for bigram in bigrams: # Go through every bigram and see how well it flows.
+    #         firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
+    #         secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
+    #         scores[k] += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
+
     # Only use the best scores (and layouts) for performance-reasons
     goodLayouts, goodScores = getTopScores(layouts, scores, 500)
-
     return goodLayouts, goodScores
 
 def getPerfectLayoutScore(layer1letters: str, layer2letters: str, layer3letters: str, layer4letters: str) -> int:
