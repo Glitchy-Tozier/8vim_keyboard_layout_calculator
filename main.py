@@ -608,7 +608,7 @@ def getLayoutScores(layouts: list, asciiArray: list, bigrams: list, prevScores=N
 
     # Create the empty scoring-list
     scores = [0]*len(layouts)
-    bigrams = iter(bigrams)
+    bigrams = bigrams
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
@@ -652,7 +652,7 @@ def getLayoutScores_multiprocessing(*args):
     allLayouts = staticArgs[0]
     asciiArray = staticArgs[1]
     # Pre-enumerate the bigrams for performance-reasons
-    bigrams = iter(staticArgs[2])
+    bigrams = staticArgs[2]
     prevScore = staticArgs[3][int(groupBeginning/groupSize)]
 
     scores = [0]*groupSize
