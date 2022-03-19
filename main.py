@@ -613,8 +613,6 @@ def testSingleLayout(layout: str, orderedLetters: str, asciiArray: list) -> int:
 def getLayoutScores(layouts: list, asciiArray: list, bigrams: list, prevScores=None):
     """Tests the layouts and return their scores. It's only used when single-threading."""
 
-    # Pre-enumerate the bigrams for performance-reasons
-    enumeratedBigrams = enumerate(bigrams)
     # Create the empty scoring-list
     scores = [0]*len(layouts)
 
@@ -624,7 +622,7 @@ def getLayoutScores(layouts: list, asciiArray: list, bigrams: list, prevScores=N
         for j, letter in enumerate(layout):
             asciiArray[ord(letter)] = j # Fill up asciiArray
     
-        for j, bigram in enumeratedBigrams: # Go through every bigram and see how well it flows.
+        for bigram in bigrams: # Go through every bigram and see how well it flows.
             firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
             secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
             scores[k] += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
@@ -661,7 +659,7 @@ def getLayoutScores_multiprocessing(*args):
     allLayouts = staticArgs[0]
     asciiArray = staticArgs[1]
     # Pre-enumerate the bigrams for performance-reasons
-    enumeratedBigrams = enumerate(staticArgs[2])
+    bigrams = staticArgs[2]
     prevScore = staticArgs[3][int(groupBeginning/groupSize)]
 
     scores = [0]*groupSize
@@ -673,7 +671,7 @@ def getLayoutScores_multiprocessing(*args):
         for j, letter in enumerate(layout):
             asciiArray[ord(letter)] = j # Fill up asciiArray
     
-        for j, bigram in enumeratedBigrams: # go through every bigram and see how well it flows.
+        for bigram in bigrams: # go through every bigram and see how well it flows.
             firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
             secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
             scores[k] += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
