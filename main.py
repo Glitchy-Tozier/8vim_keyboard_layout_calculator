@@ -1,5 +1,6 @@
 import os.path
 import itertools
+from collections import OrderedDict
 from copy import deepcopy
 import math
 import random
@@ -42,8 +43,8 @@ def main():
     # Define how which of the above letters are interchangeable (variable) between adjacent layers.
     # They have to be in the same order as they apear between layer1letters and layer2letters.
     # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-    varLetters_L1_L2 = ''.lower()
-    #varLetters_L1_L2 = 'nsrhld'.lower()
+    #varLetters_L1_L2 = ''.lower()
+    varLetters_L1_L2 = 'nsrhld'.lower()
 
     # For layer 1, define that a certain Letter ('e') doesn't change.
     # Just pick the most common one in your language.
@@ -55,7 +56,7 @@ def main():
     # Define how many layers the layouts you recieve should contain.
     NR_OF_LAYERS = 4
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
-    nrOfBestPermutations = 100
+    nrOfBestPermutations = 500
 
 
     # Define what information you want to recieve.
@@ -65,16 +66,11 @@ def main():
 
     # You can use this section to test your custom-made layouts.
     TEST_CUSTOM_LAYOUTS = True
-    customLayoutNames = [
-        'Example Layout',
-        'Old / original 8VIM layout',
-        ]
-    customLayouts = [
-        # Uses a different formatting than the XML.
-        # They are defined, starting fromm the bottom left, going clockwise. Layer per layer, from innermost to outermost.
-        'abcdefghijklmnopqrstuvwxyz------',
-        'eitsyanolhcdbrmukjzgpxfv----q--w',
-        ]
+    # The layout-strings use a different formatting than the XML.
+    # They are defined, starting fromm the bottom left, going clockwise. Layer per layer, from innermost to outermost.
+    customLayouts = OrderedDict()
+    customLayouts['Example Layout'] =               'abcdefghijklmnopqrstuvwxyz------'
+    customLayouts['Old / original 8VIM layout'] =   'eitsyanolhcdbrmukjzgpxfv----q--w'
 
     # Unless you're trying out a super funky layout with more (or less) than 4 sectors, this should be 8.
     LETTERS_PER_LAYER = 8
@@ -103,7 +99,8 @@ def main():
 
     # Make sure staticLetters and customLayouts are lowercase
     staticLetters = lowercaseList(staticLetters)
-    customLayouts = lowercaseList(customLayouts)
+    for name, layout in customLayouts.items():
+        customLayouts[name] = asciify(layout.lower())
 
     # Validate the main error-hotspots in settings
     if validateSettings(layer1letters, layer2letters, layer3letters, layer4letters, varLetters_L1_L2, staticLetters) is True:
@@ -121,8 +118,6 @@ def main():
     for idx, l in enumerate(staticLetters):
         if l is not '':
             staticLetters[idx] = asciify(l)
-    for idx, customLayout in enumerate(customLayouts):
-        customLayouts[idx] = asciify(customLayout)
 
     # Create the asciiArray
     asciiArray = [0]*256
@@ -270,26 +265,24 @@ def main():
     testingCustomLayouts = TEST_CUSTOM_LAYOUTS
     if testingCustomLayouts is True:
         customScores = []
-        customSizeLayouts = []
-        for layout in customLayouts:
-
-            # If yout're only testing a certain nuber of layers, only use that amount of layers of the custom layouts.
-            if len(layout) > (NR_OF_LAYERS*LETTERS_PER_LAYER):
-                layoutName = layout[:NR_OF_LAYERS*LETTERS_PER_LAYER] + "... (+ more letters that weren't tested. Change nrOfLayers to the correct number to test all of them.)"
-                customSizeLayouts.append(layoutName)
-            else:
-                customSizeLayouts.append(layout)
-
+        for name, layout in customLayouts.items():
             # Get the scores for the custom layouts.
-            customScore = testSingleLayout(layout[:NR_OF_LAYERS*LETTERS_PER_LAYER], ''.join(sorted(layout[:NR_OF_LAYERS*LETTERS_PER_LAYER])), asciiArray)
+            partialLayout = layout[:NR_OF_LAYERS*LETTERS_PER_LAYER]
+            lettersToTest = ''.join(sorted(partialLayout))
+            customScore = testSingleLayout(partialLayout, lettersToTest, asciiArray)
             customScores.append(customScore)
 
+            # If yout're only testing a certain nuber of layers, only use that amount of layers in the name of the custom layouts.
+            if len(layout) > (NR_OF_LAYERS*LETTERS_PER_LAYER):
+                layoutStr = layout[:NR_OF_LAYERS*LETTERS_PER_LAYER] + "... (+ more letters that weren't tested. Change nrOfLayers to the correct number to test all of them.)"
+                customLayouts[name] = layoutStr
+
         # Display the data in the terminal.
-        showDataInTerminal(finalLayoutList, finalScoresList, customLayoutNames, customSizeLayouts, customScores, perfectLayoutScore, SHOW_DATA, SHOW_GENERAL_STATS, NR_OF_TOP_LAYOUTS)
+        showDataInTerminal(finalLayoutList, finalScoresList, customLayouts, customScores, perfectLayoutScore, SHOW_DATA, SHOW_GENERAL_STATS, NR_OF_TOP_LAYOUTS)
     
     else:
         # Display the data in the terminal.
-        showDataInTerminal(finalLayoutList, finalScoresList, [], [], [], perfectLayoutScore, SHOW_DATA, SHOW_GENERAL_STATS, NR_OF_TOP_LAYOUTS)
+        showDataInTerminal(finalLayoutList, finalScoresList, [], [], perfectLayoutScore, SHOW_DATA, SHOW_GENERAL_STATS, NR_OF_TOP_LAYOUTS)
 
 
 def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters, varLetters_L1_L2, staticLetters) -> bool:
@@ -798,8 +791,7 @@ def performLetterSwaps(layout: str) -> list:
 def showDataInTerminal(
         layouts: list,
         scores: list,
-        customLayoutNames: list,
-        customLayouts: list,
+        customLayouts: OrderedDict,
         customScores: list,
         perfectLayoutScore: int,
         showData: bool,
@@ -853,9 +845,9 @@ def showDataInTerminal(
             print('#######################################################################################################################')
             print('                                                    Custom layouts:')
 
-            for j in range(len(customLayouts)):
-                print('\n{}:'.format(customLayoutNames[j]))
-                print(optStrToXmlStr(customLayouts[j]))
+            for j, (name, layout) in enumerate(customLayouts.items()):
+                print('\n{}:'.format(name))
+                print(optStrToXmlStr(layout))
                 print('─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+3) + '> Score:', customScores[j], '   ~%.2f' % float(100*customScores[j]/perfectLayoutScore), '%')
 
         if showGeneralStats is True:
