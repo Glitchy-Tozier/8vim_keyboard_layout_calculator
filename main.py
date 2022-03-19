@@ -170,7 +170,7 @@ def main():
         
         
         # If the user says so, calculate the second layer.
-        if nrOfLayers > 1:
+        if nrOfLayers >= 2:
             ####################################################################################################################
             ################################  Calculate the second Layer
 
@@ -200,10 +200,7 @@ def main():
             tempScoresList.append(scoresList[j])
     
 
-
-
-
-    if nrOfLayers > 2:
+    if nrOfLayers >= 3:
         ####################################################################################################################
         ################################  Calculate the third Layer
 
@@ -226,7 +223,7 @@ def main():
 
         print("------------------------ %s seconds --- Got best layouts for layer 3" % round((time.time() - start_time), 2))
 
-        if nrOfLayers > 3:
+        if nrOfLayers >= 4:
             ####################################################################################################################
             ################################  Calculate the fourth Layer
 
