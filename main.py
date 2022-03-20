@@ -86,7 +86,7 @@ def main():
     FILL_SYMBOL = '-'
 
 
-    # 32 characters that aren't part of your bigram-corpus. They need to be within the first 255 slots of the ascii-table.
+    # 32 characters that aren't part of your bigram-corpus. They need to be within the first 256 slots of the ascii-table.
     replacedWithAscii = dict()
     asciiReplacementCharacters = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "[", "]", "{", "}", "(", ")", "<", ">", "/", "_", ",", "~", "¦", "±", "²", "³", "¶", "¹", "¼", "½", "¾", "¿"]
 
@@ -600,8 +600,9 @@ def testSingleLayout(layout: str, orderedLetters: str, asciiArray: list) -> floa
 def getLayoutScores(layouts: list, asciiArray: list, bigrams: list, prevScores=None):
     """Tests the layouts and return their scores. It's only used when single-threading."""
 
+    nrLayouts = len(layouts)
     # Create the empty scoring-list
-    scores = [0.0]*len(layouts)
+    scores = [0.0]*nrLayouts
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
@@ -617,14 +618,14 @@ def getLayoutScores(layouts: list, asciiArray: list, bigrams: list, prevScores=N
     if prevScores:
         # Add the previous layouts' scores. (which weren't tested here. It would be redundant.)
         for j in range(len(prevScores)):
-            groupSize = int((len(layouts) / len(prevScores)))
+            groupSize = int((nrLayouts / len(prevScores)))
             groupBeginning = groupSize * j
             groupEnding = groupSize * (j+1)
             
             for k in range(groupBeginning, groupEnding):
                 scores[k] += prevScores[j]
 
-    if len(scores) == 1: return scores[0]
+    if nrLayouts == 1: return scores[0]
     else:
         goodLayouts, goodScores = getTopScores(layouts, scores, 500)
         return goodLayouts, goodScores
