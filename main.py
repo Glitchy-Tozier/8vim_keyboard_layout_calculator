@@ -345,7 +345,7 @@ def getLayerCombinations(layer1letters: str, layer2letters: str, varLetters_L1_L
         L1_Layers = []
         L2_Layers = []
 
-        nrFlexLetters_L1 = int(round(len(varLetters_L1_L2)/2))
+        nrFlexLetters_L1 = round(len(varLetters_L1_L2)/2)
         nrFlexLetters_L2 = len(varLetters_L1_L2) - nrFlexLetters_L1
 
         fixLetters_L1 = layer1letters[:-nrFlexLetters_L1]
