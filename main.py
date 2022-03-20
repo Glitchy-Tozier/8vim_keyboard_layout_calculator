@@ -420,20 +420,20 @@ def getBigramList(sortedLetters: str) -> list:
                 for line in corpus:
                     line = line.lower()
                     if currentBigram == line[0:N_GRAM_LENGTH]:
-                        bigrams.append( Bigram(currentBigram, int(line[line.find(' ')+1:])) )
+                        bigrams.append( Bigram(currentBigram, float(line[line.find(' ')+1:])) )
                         break
 
         bigramCache[sortedLetters] = bigrams
         return bigrams
 
-def getAbsoluteBigramCount() -> int:
+def getAbsoluteBigramCount() -> float:
     """This returns the total number of all bigram-frequencies, even of those with letters that don't exist in the calculated layers."""
     
-    frequencySum = 0
+    frequencySum = 0.0
     with open(BIGRAMS_PATH, 'r') as corpus:
         for line in corpus:
-            frequencySum += int(line[line.find(' ')+1:]) # Add up the frequencies of ALL bigrams
-    return int(frequencySum)
+            frequencySum += float(line[line.find(' ')+1:]) # Add up the frequencies of ALL bigrams
+    return frequencySum
 
 def filterBigrams(bigrams: list, requiredLetters=[]) -> list:
     """Trims the bigram-list to make getPermutations() MUCH faster.
@@ -590,7 +590,7 @@ def testLayouts(layouts, asciiArray, prevScores=None):
     
     return goodLayouts, goodScores
 
-def testSingleLayout(layout: str, orderedLetters: str, asciiArray: list) -> int:
+def testSingleLayout(layout: str, orderedLetters: str, asciiArray: list) -> float:
     """A toned-down version of testLayouts() and is only tests one layout per call."""
 
     # Get the bigrams that contain [orderedLetters]
@@ -601,7 +601,7 @@ def getLayoutScores(layouts: list, asciiArray: list, bigrams: list, prevScores=N
     """Tests the layouts and return their scores. It's only used when single-threading."""
 
     # Create the empty scoring-list
-    scores = [0]*len(layouts)
+    scores = [0.0]*len(layouts)
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
@@ -648,7 +648,7 @@ def getLayoutScores_multiprocessing(*args):
     bigrams = staticArgs[2]
 
     prevScore = staticArgs[3][int(groupBeginning/groupSize)]
-    scores = [0]*groupSize
+    scores = [0.0]*groupSize
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
@@ -666,12 +666,12 @@ def getLayoutScores_multiprocessing(*args):
     goodLayouts, goodScores = getTopScores(layouts, scores, 500)
     return goodLayouts, goodScores
 
-def getPerfectLayoutScore(layer1letters: str, layer2letters: str, layer3letters: str, layer4letters: str) -> int:
+def getPerfectLayoutScore(layer1letters: str, layer2letters: str, layer3letters: str, layer4letters: str) -> float:
     """Creates the score a perfect (impossible) layout would have, just for comparison's sake."""
 
     best_score_matrix = [] # A matrix that contains the best values for any combination of two layers
     for _ in range(NR_OF_LAYERS):
-        best_score_matrix.append([0]*NR_OF_LAYERS)
+        best_score_matrix.append([0.0]*NR_OF_LAYERS)
 
     for letter1_idx, scores in enumerate(SCORE_LIST):
         layer1_idx = math.trunc(letter1_idx/LETTERS_PER_LAYER)
@@ -680,7 +680,7 @@ def getPerfectLayoutScore(layer1letters: str, layer2letters: str, layer3letters:
             if max(scores_for_Lj_Lk) > best_score_matrix[layer1_idx][layer2_idx]:
                 best_score_matrix[layer1_idx][layer2_idx] = max(scores_for_Lj_Lk)
 
-    best_score_matrix.insert(0, [0]*NR_OF_LAYERS) # Add empty rows so that we can access the values with the layer-numbers instead of the layer-indices
+    best_score_matrix.insert(0, [0.0]*NR_OF_LAYERS) # Add empty rows so that we can access the values with the layer-numbers instead of the layer-indices
     for i in range(len(best_score_matrix)):
         best_score_matrix[i].insert(0, 0)
 
@@ -806,7 +806,7 @@ def showDataInTerminal(
         scores: list,
         customLayouts: OrderedDict,
         customScores: list,
-        perfectLayoutScore: int,
+        perfectLayoutScore: float,
         showData: bool,
         showGeneralStats: bool,
         nrOfTopLayouts: int,
@@ -911,7 +911,7 @@ def layoutVisualisation(layout: str) -> str:
     return blueprint.format(*layout)
 
 class Bigram:
-    def __init__(self, bigramCharacters: str, frequency: int):
+    def __init__(self, bigramCharacters: str, frequency: float):
         # Make sure the bigrams we're actually using only consist of ascii-characters.
         bigramCharacters = asciify(bigramCharacters)
         self.letter1AsciiCode = ord(bigramCharacters[0])
