@@ -1,3 +1,4 @@
+from array import array
 import os.path
 import itertools
 from collections import OrderedDict
@@ -45,8 +46,8 @@ def main():
     # Define how which of the above letters are interchangeable (variable) between adjacent layers.
     # They have to be in the same order as they apear between layer1letters and layer2letters.
     # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-    #varLetters_L1_L2 = ''.lower()
-    varLetters_L1_L2 = 'nsrhld'.lower()
+    varLetters_L1_L2 = ''.lower()
+    #varLetters_L1_L2 = 'nsrhld'.lower()
 
     # For layer 1, define that a certain Letter ('e') doesn't change.
     # Just pick the most common one in your language.
@@ -58,10 +59,10 @@ def main():
     # Define how many layers the layouts you recieve should contain.
     NR_OF_LAYERS = 4
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
-    nrOfBestPermutations = 500
+    nrOfBestPermutations = 50
 
     # Define whether to add a greedy optimization after layers 3 and 4 (recommended)
-    PERFORM_GREEDY_OPTIMIZATION = True
+    PERFORM_GREEDY_OPTIMIZATION = False
 
 
     # Define what information you want to recieve.
@@ -125,7 +126,7 @@ def main():
             staticLetters[idx] = asciify(l)
 
     # Create the asciiArray
-    asciiArray = [0]*256
+    asciiArray = array("B", [0]*256)
 
     # Get the letters for the layers possible with the letters you specified.
     firstLayers, secondLayers = getLayerCombinations(layer1letters, layer2letters, varLetters_L1_L2)
@@ -271,7 +272,7 @@ def main():
 
     testingCustomLayouts = TEST_CUSTOM_LAYOUTS
     if testingCustomLayouts is True:
-        customScores = []
+        customScores = array("f", [])
         for name, layout in customLayouts.items():
             # Get the scores for the custom layouts.
             partialLayout = layout[:NR_OF_LAYERS*LETTERS_PER_LAYER]
@@ -289,7 +290,7 @@ def main():
 
     else:
         # Display the data in the terminal.
-        showDataInTerminal(finalLayoutList, finalScoresList, [], [], perfectLayoutScore, SHOW_DATA, SHOW_GENERAL_STATS, NR_OF_TOP_LAYOUTS)
+        showDataInTerminal(finalLayoutList, finalScoresList, [], array("f", []), perfectLayoutScore, SHOW_DATA, SHOW_GENERAL_STATS, NR_OF_TOP_LAYOUTS)
 
 
 def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters, varLetters_L1_L2, staticLetters) -> bool:
@@ -535,7 +536,7 @@ def fillAndPermuteLayout(letters: str) -> list:
 
     return list(layouts)
 
-def testLayouts(layouts, asciiArray, prevScores=None):
+def testLayouts(layouts: tuple, asciiArray: array, prevScores=None):
     """Calculates the best layouts and returns them (and their scores)."""
 
     # Combine the Letters for the layer 1 and layer 2
@@ -557,7 +558,7 @@ def testLayouts(layouts, asciiArray, prevScores=None):
         if prevScores:
             if len(prevScores) > 1:
                 goodLayouts = []
-                goodScores = []
+                goodScores = array("f", [])
                 # Prepare the group-sizes of the layout-groups for multiprozessing
                 groupBeginnings = []
                 for j in range(len(prevScores)):
@@ -602,12 +603,12 @@ def testSingleLayout(layout: str, orderedLetters: str, asciiArray: list) -> floa
     bigrams = getBigramList(orderedLetters)
     return getLayoutScores([layout], asciiArray, bigrams)
 
-def getLayoutScores(layouts: list, asciiArray: list, bigrams: list, prevScores=None):
+def getLayoutScores(layouts: list, asciiArray: list, bigrams: tuple, prevScores=None):
     """Tests the layouts and return their scores. It's only used when single-threading."""
 
     nrLayouts = len(layouts)
     # Create the empty scoring-list
-    scores = [0.0]*nrLayouts
+    scores = array("f", [0.0]*nrLayouts)
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
@@ -654,7 +655,7 @@ def getLayoutScores_multiprocessing(*args):
     bigrams = staticArgs[2]
 
     prevScore = staticArgs[3][int(groupBeginning/groupSize)]
-    scores = [0.0]*groupSize
+    scores = array("f", [0.0]*groupSize)
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
@@ -732,7 +733,7 @@ def getPerfectLayoutScore(layer1letters: str, layer2letters: str, layer3letters:
 
     return perfectScore
 
-def getTopScores(layouts: list, scores: list, nrOfBest=None):
+def getTopScores(layouts: list, scores: array, nrOfBest=None):
     """Returns the best [whatever you set "nrOfBestPermutations" to] layouts with their scores.
     The LAST items of those lists should be the best ones."""
 
@@ -755,8 +756,9 @@ def getTopScores(layouts: list, scores: list, nrOfBest=None):
     # Sort scores & indices. This is way faster thanks to the above while-loop
     sortedScoreIdxTuples = sorted(zip(scores, indices))
 
-    topScores, topIndices = [list(l) for l in zip(*sortedScoreIdxTuples[-nrOfBest:])]
+    topScores, topIndices = (l for l in zip(*sortedScoreIdxTuples[-nrOfBest:]))
     topLayouts = [layouts[idx] for idx in topIndices]
+    topScores = array("f", topScores)
 
     return topLayouts, topScores
 
@@ -770,7 +772,7 @@ def combinePermutations(list1: list, list2: list) -> list:
 
     return listOfStrings
 
-def greedyOptimization(layouts: list, scores: list, asciiArray: list):
+def greedyOptimization(layouts: list, scores: array, asciiArray: list):
     """Randomly switches letters in each of the layouts to see whether the layouts can be improved this way."""
 
     allLayouts = dict(zip(layouts, scores))
@@ -793,7 +795,7 @@ def greedyOptimization(layouts: list, scores: list, asciiArray: list):
     print("Number of layouts, afterwards:", len(allLayouts))
     print("Finished greedy optimization.")
 
-    goodLayouts, goodScores = getTopScores(list(allLayouts.keys()), list(allLayouts.values()), 500)
+    goodLayouts, goodScores = getTopScores(list(allLayouts.keys()), array("f", allLayouts.values()), 500)
     return goodLayouts, goodScores
 
 def performLetterSwaps(layout: str) -> Iterator:
@@ -811,9 +813,9 @@ def performLetterSwaps(layout: str) -> Iterator:
 
 def showDataInTerminal(
         layouts: list,
-        scores: list,
+        scores: array,
         customLayouts: OrderedDict,
-        customScores: list,
+        customScores: array,
         perfectLayoutScore: float,
         showData: bool,
         showGeneralStats: bool,
