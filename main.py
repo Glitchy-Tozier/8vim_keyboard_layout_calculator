@@ -734,15 +734,17 @@ def getTopScores(layouts: list, scores: list, nrOfBest=None):
     # Make sure we have some value for how many layouts should get returned
     if not nrOfBest:
         nrOfBest = nrOfBestPermutations
+    if nrOfBest > len(scores):
+        nrOfBest = len(scores)
 
     indices = range(len(scores))
 
     # BEFORE sorting the lists, make sure they're not unnecessarily large
-    while len(scores) > nrOfBest*3:
+    while len(scores) > nrOfBest*3 and len(scores) > LETTERS_PER_LAYER*2:
         mean = statistics.mean(scores)
         # Get all indices & scores that are above the mean of the remaining scores.
         # This roughly halfes or tripples the remaining scores.
-        indices = [i for i, score in enumerate(scores) if score > mean]
+        indices = [i for i, score in enumerate(scores) if score >= mean]
         scores = [scores[idx] for idx in indices]
 
     # Sort scores & indices. This is way faster thanks to the above while-loop
