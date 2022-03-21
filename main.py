@@ -51,13 +51,16 @@ def main():
     # Just pick the most common one in your language.
     # You can set it to other letters as well, it doesn't change anything about the quality of the layouts though.
     # IF 'e' IS NOT IN YOUR INNERMOST LAYER, PUT ANOTHER LETTER WHERE 'e' IS!!
-    #staticLetters = ['e', '', '', '', '', '', '', ''] # the positions go clockwise. 'e' is on the bottom left. 
-    staticLetters = ['', '', '', '', '', '', '', '']
+    staticLetters = ['e', '', '', '', '', '', '', ''] # the positions go clockwise. 'e' is on the bottom left.
+    #staticLetters = ['', '', '', '', '', '', '', '']
 
     # Define how many layers the layouts you recieve should contain.
     NR_OF_LAYERS = 4
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
     nrOfBestPermutations = 500
+
+    # Define whether to add a greedy optimization after layers 3 and 4 (recommended)
+    PERFORM_GREEDY_OPTIMIZATION = True
 
 
     # Define what information you want to recieve.
@@ -70,8 +73,8 @@ def main():
     # The layout-strings use a different formatting than the XML.
     # They are defined, starting fromm the bottom left, going clockwise. Layer per layer, from innermost to outermost.
     customLayouts = OrderedDict()
-    customLayouts['Old / original 8VIM layout'] =   'nomufv-w eilhkj-- tscdzg-- yabrpxq-'.lower()
-    #customLayouts['Example Layout'] =               'ghopwx-- abijqryz cdklst-- efmnuv--'.lower()
+    customLayouts['Old / original 8VIM layout'] = 'nomufv-w eilhkj-- tscdzg-- yabrpxq-'.lower()
+    #customLayouts['Example Layout'] = 'ghopwx-- abijqryz cdklst-- efmnuv--'.lower()
 
     # Unless you're trying out a super funky layout with more (or less) than 4 sectors, this should be 8.
     LETTERS_PER_LAYER = 8
@@ -109,7 +112,7 @@ def main():
     else:
         # If something is wrong, stop execution
         return
-    
+
     # Asciify all necessary strings
     layer1letters = asciify(layer1letters)
     layer2letters = asciify(layer2letters)
@@ -117,7 +120,7 @@ def main():
     layer4letters = asciify(layer4letters)
     varLetters_L1_L2 = asciify(varLetters_L1_L2)
     for idx, l in enumerate(staticLetters):
-        if l is not '':
+        if l != '':
             staticLetters[idx] = asciify(l)
 
     # Create the asciiArray
@@ -149,7 +152,7 @@ def main():
             print('\nEstimated time needed for all cycles:', round(nrOfCycles*(time.time() - start_time), 2), 'seconds')
             print("Those only are the cycles for layer 1 and 2 though. Don't worry however; Layer 3 (and 4) should be calculated quicker.")
         print("\n------------------------ %s seconds --- Started with layouts for layer 1" % round((time.time() - start_time), 2))
-        
+
 
         # get the letters in layer 1 that can actually move.
         varLetters = getVariableLetters(letters_L1, staticLetters)
@@ -163,8 +166,8 @@ def main():
 
 
         print("------------------------ %s seconds --- Got best layouts for layer 1" % round((time.time() - start_time), 2))
-        
-        
+
+
         # If the user says so, calculate the second layer.
         if NR_OF_LAYERS >= 2:
             ####################################################################################################################
@@ -193,7 +196,7 @@ def main():
         # Add the found layouts to the list (which will later be displayed)
         tempLayoutList.extend(layoutList)
         tempScoresList.extend(scoresList)
-    
+
 
     if NR_OF_LAYERS >= 3:
         ####################################################################################################################
@@ -213,8 +216,12 @@ def main():
 
         # Test the the combined layouts of layers 1&2 and layer 3
         initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3 = testLayouts(layouts_L1_L2_L3, asciiArray, bestScores_L1_L2)
-        # Do an additional hillclimbing-optimization
-        goodLayouts_L1_L2_L3, goodScores_L1_L2_L3 = greedyOptimization(initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3, asciiArray)
+
+        if PERFORM_GREEDY_OPTIMIZATION:
+            # Do an additional hillclimbing-optimization
+            goodLayouts_L1_L2_L3, goodScores_L1_L2_L3 = greedyOptimization(initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3, asciiArray)
+        else:
+            goodLayouts_L1_L2_L3, goodScores_L1_L2_L3 = initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3
 
         print("------------------------ %s seconds --- Got best layouts for layer 3" % round((time.time() - start_time), 2))
 
@@ -230,11 +237,6 @@ def main():
             bestLayouts_L1_L2_L3, bestScores_L1_L2_L3 = getTopScores(goodLayouts_L1_L2_L3, goodScores_L1_L2_L3)
 
 
-            # If layer 4 isn't completely filled with letters, fill the remaining slots of layer 4 with blanks.
-            if len(layer4letters) < LETTERS_PER_LAYER:
-                pass
-                
-
             # Combine the layouts of layer 1 and layer 2 to all possible variants
             layouts_L1_L2_L3_L4 = combinePermutations(bestLayouts_L1_L2_L3, layouts_L4)
 
@@ -242,9 +244,12 @@ def main():
             # Test the the combined layouts of layers 1&2 and layer 3
             goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4 = testLayouts(layouts_L1_L2_L3_L4, asciiArray, bestScores_L1_L2_L3)
 
-            # Do an additional hillclimbing-optimization, then
-            # add the found layouts to the list (which will later be displayed)
-            finalLayoutList, finalScoresList = greedyOptimization(goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4, asciiArray)
+            if PERFORM_GREEDY_OPTIMIZATION:
+                # Do an additional hillclimbing-optimization, then
+                # add the found layouts to the list (which will later be displayed)
+                finalLayoutList, finalScoresList = greedyOptimization(goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4, asciiArray)
+            else:
+                finalLayoutList, finalScoresList = goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4
 
             print("------------------------ %s seconds --- Got best layouts for layer 4" % round((time.time() - start_time), 2))
 
@@ -258,7 +263,7 @@ def main():
         finalScoresList = tempScoresList[:]
 
 
-    # Calculate what the perfect score would be (when including )
+    # Calculate what the perfect score would be
     perfectLayoutScore = getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters)
 
     print("\n------------------------ %s seconds --- Done computing" % round((time.time() - start_time), 2))
@@ -280,7 +285,7 @@ def main():
 
         # Display the data in the terminal.
         showDataInTerminal(finalLayoutList, finalScoresList, customLayouts, customScores, perfectLayoutScore, SHOW_DATA, SHOW_GENERAL_STATS, NR_OF_TOP_LAYOUTS)
-    
+
     else:
         # Display the data in the terminal.
         showDataInTerminal(finalLayoutList, finalScoresList, [], [], perfectLayoutScore, SHOW_DATA, SHOW_GENERAL_STATS, NR_OF_TOP_LAYOUTS)
@@ -292,7 +297,7 @@ def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters,
     layout = layer1letters + layer2letters + layer3letters + layer4letters
     # Check for duplicate letters
     for char in layout:
-        if (char is not FILL_SYMBOL) and (layout.count(char) > 1):
+        if (char != FILL_SYMBOL) and (layout.count(char) > 1):
             print("Duplicate letters found:", char, "\nCheck layer1letters, layer2letters, layer3letters, and layer4letters")
             return False
     # Check whether varLetters_L1_L2's letters are contained in the layers 1 & 2
@@ -331,7 +336,7 @@ def deAsciify(string: str) -> str:
     result = list(string)
     for idx, char in enumerate(string):
         for replacedChar, asciiChar in replacedWithAscii.items():
-            if char is asciiChar:
+            if char != asciiChar:
                 result[idx] = replacedChar
     return ''.join(result)
 
@@ -508,7 +513,7 @@ def getPermutations(varLetters: str, staticLetters=[]) -> list:
         for layoutIteration, letterCombination in enumerate(itertools.permutations(varLetters)): # try every layout
             j=0
             for letterPlacement in range(LETTERS_PER_LAYER):
-                if staticLetters[letterPlacement] is not '':
+                if staticLetters[letterPlacement] != '':
                     layouts[layoutIteration] += staticLetters[letterPlacement]
                 else:
                     layouts[layoutIteration] += letterCombination[j]
@@ -523,7 +528,8 @@ def getPermutations(varLetters: str, staticLetters=[]) -> list:
 def fillAndPermuteLayout(letters: str) -> list:
     """Creates full layouts out of only a few letters, while avoiding redundancy.
     It is primarily used for layer 4, which many alphabets do not completely fill with letters."""
-    newLetters = letters + (FILL_SYMBOL * (LETTERS_PER_LAYER-len(letters)))
+    missingSlotCount = LETTERS_PER_LAYER - len(letters)
+    newLetters = letters + (FILL_SYMBOL * missingSlotCount)
 
     permutations = itertools.permutations(newLetters) # Get permutations
     layouts = set([''.join(letterList) for letterList in permutations]) # Remove all duplicates
@@ -918,7 +924,7 @@ def layoutVisualisation(layout: str) -> str:
     layout = deAsciify(layout)
     while len(layout) < 32: layout += " "
     layout = layout.replace(FILL_SYMBOL, '▓')
-    if platform.system() is 'Windows': # Windows-console needs special treatment.
+    if platform.system() == 'Windows': # Windows-console needs special treatment.
         blueprint = blueprint.replace('⟍', '\\')
         blueprint = blueprint.replace('⟋', '/')
     return blueprint.format(*layout)
