@@ -46,8 +46,8 @@ def main():
     # Define how which of the above letters are interchangeable (variable) between adjacent layers.
     # They have to be in the same order as they apear between layer1letters and layer2letters.
     # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-    varLetters_L1_L2 = ''.lower()
-    #varLetters_L1_L2 = 'nsrhld'.lower()
+    #varLetters_L1_L2 = ''.lower()
+    varLetters_L1_L2 = 'nsrhld'.lower()
 
     # For layer 1, define that a certain Letter ('e') doesn't change.
     # Just pick the most common one in your language.
@@ -59,10 +59,10 @@ def main():
     # Define how many layers the layouts you recieve should contain.
     NR_OF_LAYERS = 4
     # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
-    nrOfBestPermutations = 50
+    nrOfBestPermutations = 500
 
     # Define whether to add a greedy optimization after layers 3 and 4 (recommended)
-    PERFORM_GREEDY_OPTIMIZATION = False
+    PERFORM_GREEDY_OPTIMIZATION = True
 
 
     # Define what information you want to recieve.
@@ -523,9 +523,9 @@ def getPermutations(varLetters: str, staticLetters=[]) -> list:
         for layoutIteration, letterCombination in enumerate(itertools.permutations(varLetters)): # try every layout
             layouts[layoutIteration] = ''.join(letterCombination)
 
-    return layouts
+    return tuple(layouts)
 
-def fillAndPermuteLayout(letters: str) -> list:
+def fillAndPermuteLayout(letters: str) -> tuple:
     """Creates full layouts out of only a few letters, while avoiding redundancy.
     It is primarily important for layer 4, which many alphabets do not completely fill with letters."""
     missingSlotCount = LETTERS_PER_LAYER - len(letters)
@@ -534,7 +534,7 @@ def fillAndPermuteLayout(letters: str) -> list:
     permutations = itertools.permutations(newLetters) # Get permutations
     layouts = set(''.join(letterList) for letterList in permutations) # Remove all duplicates
 
-    return list(layouts)
+    return tuple(layouts)
 
 def testLayouts(layouts: tuple, asciiArray: array, prevScores=None):
     """Calculates the best layouts and returns them (and their scores)."""
@@ -583,6 +583,7 @@ def testLayouts(layouts: tuple, asciiArray: array, prevScores=None):
                         goodLayouts.extend(results[0])
                         goodScores.extend(results[1])
                     j += maxNrProcesses
+                goodLayouts = tuple(goodLayouts)
 
             else:
                 # Test the layouts for their flow
@@ -596,14 +597,14 @@ def testLayouts(layouts: tuple, asciiArray: array, prevScores=None):
     
     return goodLayouts, goodScores
 
-def testSingleLayout(layout: str, orderedLetters: str, asciiArray: list) -> float:
+def testSingleLayout(layout: str, orderedLetters: str, asciiArray: array) -> float:
     """A toned-down version of testLayouts() and is only tests one layout per call."""
 
     # Get the bigrams that contain [orderedLetters]
     bigrams = getBigramList(orderedLetters)
-    return getLayoutScores([layout], asciiArray, bigrams)
+    return getLayoutScores(tuple([layout]), asciiArray, bigrams)
 
-def getLayoutScores(layouts: list, asciiArray: list, bigrams: tuple, prevScores=None):
+def getLayoutScores(layouts: tuple, asciiArray: array, bigrams: tuple, prevScores=None):
     """Tests the layouts and return their scores. It's only used when single-threading."""
 
     nrLayouts = len(layouts)
@@ -733,7 +734,7 @@ def getPerfectLayoutScore(layer1letters: str, layer2letters: str, layer3letters:
 
     return perfectScore
 
-def getTopScores(layouts: list, scores: array, nrOfBest=None):
+def getTopScores(layouts: tuple, scores: array, nrOfBest=None):
     """Returns the best [whatever you set "nrOfBestPermutations" to] layouts with their scores.
     The LAST items of those lists should be the best ones."""
 
@@ -757,29 +758,28 @@ def getTopScores(layouts: list, scores: array, nrOfBest=None):
     sortedScoreIdxTuples = sorted(zip(scores, indices))
 
     topScores, topIndices = (l for l in zip(*sortedScoreIdxTuples[-nrOfBest:]))
-    topLayouts = [layouts[idx] for idx in topIndices]
+    topLayouts = tuple(layouts[idx] for idx in topIndices)
     topScores = array("f", topScores)
 
     return topLayouts, topScores
 
-def combinePermutations(list1: list, list2: list) -> list:
-    """Creates all possible permutations of two lists while still keeping them in the right order. (first, second) (a, then b)"""
+def combinePermutations(list1: tuple, list2: tuple) -> tuple:
+    """Creates all possible permutations of two tuples while still keeping them in the right order. (first, second) (a, then b)"""
     listOfStrings = []
 
     for a in list1:
-        for b in list2:
-            listOfStrings.append(a + b)
+        listOfStrings.extend(a + b for b in list2)
 
-    return listOfStrings
+    return tuple(listOfStrings)
 
-def greedyOptimization(layouts: list, scores: array, asciiArray: list):
+def greedyOptimization(layouts: tuple, scores: array, asciiArray: array):
     """Randomly switches letters in each of the layouts to see whether the layouts can be improved this way."""
 
     allLayouts = dict(zip(layouts, scores))
     orderedLetters = ''.join(sorted(layouts[0]))
     print("Starting greedy optimization.")
     print("Number of layouts to optimize:", len(layouts))
-    for layout, score in zip(deepcopy(layouts), deepcopy(scores)):
+    for layout, score in zip(layouts, deepcopy(scores)):
         optimizing = True
         while optimizing is True:
             layoutPermutations = performLetterSwaps(layout)
@@ -812,7 +812,7 @@ def performLetterSwaps(layout: str) -> Iterator:
     return iter(layouts)
 
 def showDataInTerminal(
-        layouts: list,
+        layouts: tuple,
         scores: array,
         customLayouts: OrderedDict,
         customScores: array,
