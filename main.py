@@ -916,6 +916,7 @@ def layoutVisualisation(layout: str) -> str:
       {25} ⟋  {16}            {23} ⟍  {30}
       ⟋  {24}                {31} ⟍"""
     layout = deAsciify(layout)
+    while len(layout) < 32: layout += " "
     layout = layout.replace(FILL_SYMBOL, '▓')
     if platform.system() is 'Windows': # Windows-console needs special treatment.
         blueprint = blueprint.replace('⟍', '\\')
