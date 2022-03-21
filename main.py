@@ -70,8 +70,8 @@ def main():
     # The layout-strings use a different formatting than the XML.
     # They are defined, starting fromm the bottom left, going clockwise. Layer per layer, from innermost to outermost.
     customLayouts = OrderedDict()
-    customLayouts['Example Layout'] =               'abcdefghijklmnopqrstuvwxyz------'
-    customLayouts['Old / original 8VIM layout'] =   'eitsyanolhcdbrmukjzgpxfv----q--w'
+    customLayouts['Old / original 8VIM layout'] =   'nomufv-w eilhkj-- tscdzg-- yabrpxq-'.lower()
+    #customLayouts['Example Layout'] =               'ghopwx-- abijqryz cdklst-- efmnuv--'.lower()
 
     # Unless you're trying out a super funky layout with more (or less) than 4 sectors, this should be 8.
     LETTERS_PER_LAYER = 8
@@ -101,7 +101,7 @@ def main():
     # Make sure staticLetters and customLayouts are lowercase
     staticLetters = lowercaseList(staticLetters)
     for name, layout in customLayouts.items():
-        customLayouts[name] = asciify(layout.lower())
+        customLayouts[name] = xmlStrToOptStr(layout)
 
     # Validate the main error-hotspots in settings
     if validateSettings(layer1letters, layer2letters, layer3letters, layer4letters, varLetters_L1_L2, staticLetters) is True:
@@ -886,10 +886,19 @@ def showDataInTerminal(
 def optStrToXmlStr(layout: str) -> str:
     """Turns the string-representation which is used internally into one that aligns with 8vim's XML-formatting."""
 
-    b1 = "{6}{7}{14}{15}{22}{23}{30}{31} {0}{1}{8}{9}{16}{17}{24}{25} {2}{3}{10}{11}{18}{19}{26}{27} {4}{5}{12}{13}{20}{21}{28}{29}"
-    b2 = "{6}{7}{14}{15}{22}{23}{30}{31} {0}{1}{8}{9}{16}{17}{24}{25} {2}{3}{10}{11}{18}{19}{26}{27} {4}{5}{12}{13}{20}{21}{28}{29}"
+    b = "{6}{7}{14}{15}{22}{23}{30}{31} {0}{1}{8}{9}{16}{17}{24}{25} {2}{3}{10}{11}{18}{19}{26}{27} {4}{5}{12}{13}{20}{21}{28}{29}"
     layout = deAsciify(layout)
-    return b1.format(*layout) + "\n" + b2.format(*layout.upper())
+    return b.format(*layout) + "\n" + b.format(*layout.upper())
+
+def xmlStrToOptStr(layout: str) -> str:
+    """Turns a layout which uses 8vim's XML-formatting into the string-representation which is used internally while optimizing."""
+
+    b = "{8}{9}{16}{17}{24}{25}{0}{1} {10}{11}{18}{19}{26}{27}{2}{3} {12}{13}{20}{21}{28}{29}{4}{5} {14}{15}{22}{23}{30}{31}{6}{7}"
+    layout = layout.replace(' ', '') # Remove whitespaces
+    layout = asciify(layout)
+    layout = b.format(*layout) + "\n" + b.format(*layout.upper())
+    layout = layout.replace(' ', '') # Remove whitespaces
+    return layout
 
 def layoutVisualisation(layout: str) -> str:
     """Takes the layout-letters and gives a visual representation of them.
