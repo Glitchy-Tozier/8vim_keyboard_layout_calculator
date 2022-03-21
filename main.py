@@ -400,7 +400,7 @@ def getVariableLetters(fullLayer: str, staticLetters: str) -> str:
     return varLetters
 
 bigramCache = dict()
-def getBigramList(sortedLetters: str) -> list:
+def getBigramList(sortedLetters: str) -> tuple:
     """This opens the bigram-list (the txt-file) and returns the letters and the frequencies of the required bigrams."""
     try: return bigramCache[sortedLetters]
     except KeyError:
@@ -428,7 +428,7 @@ def getBigramList(sortedLetters: str) -> list:
                     if currentBigram == line[0:N_GRAM_LENGTH]:
                         bigrams.append( Bigram(currentBigram, float(line[line.find(' ')+1:])) )
                         break
-
+        bigrams = tuple(bigrams)
         bigramCache[sortedLetters] = bigrams
         return bigrams
 
@@ -441,13 +441,12 @@ def getAbsoluteBigramCount() -> float:
             frequencySum += float(line[line.find(' ')+1:]) # Add up the frequencies of ALL bigrams
     return frequencySum
 
-def filterBigrams(bigrams: list, requiredLetters=[]) -> list:
+def filterBigrams(bigrams: tuple, requiredLetters=[]) -> tuple:
     """Trims the bigram-list to make getPermutations() MUCH faster.
     It basically removes all the bigrams that were already tested.""" # I'm amazing.
     
-    trimmedBigrams = deepcopy(bigrams)
-    j=0
-    for bigram in bigrams:
+    indicesToKeep = []
+    for j, bigram in enumerate(bigrams):
         bigramLetters = bigram.getAsciifiedLetters()
 
         keepBigram = True
@@ -460,11 +459,10 @@ def filterBigrams(bigrams: list, requiredLetters=[]) -> list:
                 keepBigram = False
                 break
 
-        if keepBigram is False: # Remove the redundant bigrams
-            trimmedBigrams.pop(j)
-            j-=1
-        j+=1
+        if keepBigram is True: # Remove the redundant bigrams
+            indicesToKeep.append(j)
 
+    trimmedBigrams = tuple(bigrams[index] for index in indicesToKeep)
     return trimmedBigrams
 
 def lowercaseList(lst: list) -> list:
