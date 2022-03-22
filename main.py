@@ -6,124 +6,45 @@ from copy import deepcopy
 import math
 import random
 import statistics
-from typing import Iterator
+from typing import Iterator, Iterable
 import time
 import multiprocessing
 from functools import partial
 import platform
 
-from score_lists import KJOETOM_SCORE_LIST as SCORE_LIST
+from config import N_GRAM_LENGTH, BIGRAMS_PATH, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, NR_OF_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST
 
 start_time = time.time()
 
-
 def main():
-    global N_GRAM_LENGTH
-    global BIGRAMS_PATH
-    global testingCustomLayouts
-    global DEBUG_MODE
-    global USE_MULTIPROCESSING
-    global replacedWithAscii
-    global asciiReplacementCharacters
-    global FILL_SYMBOL
-
-    global LETTERS_PER_LAYER
-    global NR_OF_LAYERS
-    global nrOfBestPermutations
-
-
-    # Define bigram-stuff
-    N_GRAM_LENGTH = 2
-    BIGRAMS_PATH = './bigram_dictionaries/english_bigrams.txt' # <- This is the main thing you want to change. Name it whatever your bigrams-corpus is called.
-
-
-    # Define the letters you want to use
-    layer1letters = 'etaoinsr'.lower() # All letters for the first cycleNr of calculation, including 'e' (or whatever you put in >staticLetters<)
-    layer2letters = 'hldcumfg'.lower() # All letters for the second cycleNr of calculation
-    layer3letters = 'pwybvkjx'.lower() # All letters for the third cycleNr of calculation
-    layer4letters = 'zq'.lower() # All letters for the fourth cycleNr of calculation
-
-    # Define how which of the above letters are interchangeable (variable) between adjacent layers.
-    # They have to be in the same order as they apear between layer1letters and layer2letters.
-    # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-    #varLetters_L1_L2 = ''.lower()
-    varLetters_L1_L2 = 'nsrhld'.lower()
-
-    # For layer 1, define that a certain Letter ('e') doesn't change.
-    # Just pick the most common one in your language.
-    # You can set it to other letters as well, it doesn't change anything about the quality of the layouts though.
-    # IF 'e' IS NOT IN YOUR INNERMOST LAYER, PUT ANOTHER LETTER WHERE 'e' IS!!
-    staticLetters = ['e', '', '', '', '', '', '', ''] # the positions go clockwise. 'e' is on the bottom left.
-    #staticLetters = ['', '', '', '', '', '', '', '']
-
-    # Define how many layers the layouts you recieve should contain.
-    NR_OF_LAYERS = 4
-    # Define how many of the best layer-versions should be. This has a HUGE impact on how long this program will take, so be careful.
-    nrOfBestPermutations = 500
-
-    # Define whether to add a greedy optimization after layers 3 and 4 (recommended)
-    PERFORM_GREEDY_OPTIMIZATION = True
-
-
-    # Define what information you want to recieve.
-    SHOW_DATA = True
-    SHOW_GENERAL_STATS = True
-    NR_OF_TOP_LAYOUTS = 5
-
-    # You can use this section to test your custom-made layouts.
-    TEST_CUSTOM_LAYOUTS = True
-    # The layout-strings use a different formatting than the XML.
-    # They are defined, starting fromm the bottom left, going clockwise. Layer per layer, from innermost to outermost.
-    customLayouts = OrderedDict()
-    customLayouts['Old / original 8VIM layout'] = 'nomufv-w eilhkj-- tscdzg-- yabrpxq-'.lower()
-    #customLayouts['Example Layout'] = 'ghopwx-- abijqryz cdklst-- efmnuv--'.lower()
-
-    # Unless you're trying out a super funky layout with more (or less) than 4 sectors, this should be 8.
-    LETTERS_PER_LAYER = 8
-
-    # Ignore this variable:
-    DEBUG_MODE = False
-
-    # Use Multiprocessing (disable this when using `pypy3 8vim_keyboard_layout_calculator.py`)
-    USE_MULTIPROCESSING = False
-
-    # Symbol used for filling up layer 4. If your alphabet or your bigram-list for some reason contains "-", change - to something else.
-    FILL_SYMBOL = '-'
-
-
-    # 32 characters that aren't part of your bigram-corpus. They need to be within the first 256 slots of the ascii-table.
-    replacedWithAscii = dict()
-    asciiReplacementCharacters = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "[", "]", "{", "}", "(", ")", "<", ">", "/", "_", ",", "~", "¦", "±", "²", "³", "¶", "¹", "¼", "½", "¾", "¿"]
-
     ###########################################################################################################################
     ###########################################################################################################################
     ################################################### Start of the script ###################################################
     ###########################################################################################################################
-    ############################## (There's no need to read or change anything after this line) ###############################
+    ############################# (Edit `config.py` and `score_list.py` to influence the results) #############################
     ###########################################################################################################################
     ###########################################################################################################################
 
-    # Make sure staticLetters and customLayouts are lowercase
-    staticLetters = lowercaseList(staticLetters)
-    for name, layout in customLayouts.items():
+    # Make sure staticLetters and customLayouts are lowercase and properly formatted
+    staticLetters = lowerStaticLetters(STATIC_LETTERS)
+    customLayouts = OrderedDict()
+    for name, layout in CUSTOM_LAYOUTS:
         customLayouts[name] = xmlStrToOptStr(layout)
 
     # Validate the main error-hotspots in settings
-    if validateSettings(layer1letters, layer2letters, layer3letters, layer4letters, varLetters_L1_L2, staticLetters) is True:
+    if validateSettings(LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, staticLetters) is True:
         print("Starting opitimzation with bigrams-file:", BIGRAMS_PATH)
     else:
         # If something is wrong, stop execution
         return
 
     # Asciify all necessary strings
-    layer1letters = asciify(layer1letters)
-    layer2letters = asciify(layer2letters)
-    layer3letters = asciify(layer3letters)
-    layer4letters = asciify(layer4letters)
-    varLetters_L1_L2 = asciify(varLetters_L1_L2)
-    for idx, l in enumerate(staticLetters):
-        if l != '':
-            staticLetters[idx] = asciify(l)
+    layer1letters = asciify(LAYER_1_LETTERS)
+    layer2letters = asciify(LAYER_2_LETTERS)
+    layer3letters = asciify(LAYER_3_LETTERS)
+    layer4letters = asciify(LAYER_4_LETTERS)
+    varLetters_L1_L2 = asciify(VAR_LETTERS_L1_L2)
+    staticLetters = tuple(asciify(l) for l  in staticLetters)
 
     # Create the asciiArray
     asciiArray = array("B", [0]*256)
@@ -139,8 +60,6 @@ def main():
 
     tempLayoutList = []
     tempScoresList = []
-
-    testingCustomLayouts = False
 
     # Start the actual testing process
     for cycleNr, letters_L1 in enumerate(firstLayers):
@@ -158,7 +77,6 @@ def main():
 
         # get the letters in layer 1 that can actually move.
         varLetters = getVariableLetters(letters_L1, staticLetters)
-
 
         # Get all layouts for each Layer with the current layer-letters.
         layouts_L1, layouts_L2, layouts_L3, layouts_L4 = getLayouts(varLetters, staticLetters, letters_L2, layer3letters, layer4letters)
@@ -183,15 +101,12 @@ def main():
             # Combine the layouts of layer 1 and layer 2 to all possible variants
             layouts_L1_L2 = combinePermutations(bestLayouts_L1, layouts_L2)
 
-
             # Test the the combined layouts of layer 1 and layer2
             goodLayouts_L1_L2, goodScores_L1_L2 = testLayouts(layouts_L1_L2, asciiArray, bestScores_L1)
-
 
             print("------------------------ %s seconds --- Got best layouts for layer 2" % round((time.time() - start_time), 2))
 
             layoutList, scoresList = goodLayouts_L1_L2, goodScores_L1_L2
-
         else:
             layoutList, scoresList = goodLayouts_L1, goodScores_L1
 
@@ -206,15 +121,13 @@ def main():
 
         print("\n------------------------ %s seconds --- Started with layouts for layer 3" % round((time.time() - start_time), 2))
 
-        nrOfBestPermutations = nrOfBestPermutations * 2
+        nrOfBestPermutations = NR_OF_BEST_LAYOUTS * 2
 
         # Sort the best layer-1 layouts and only return the best ones
         bestLayouts_L1_L2, bestScores_L1_L2 = getTopScores(tempLayoutList, tempScoresList)
 
-
         # Combine the layouts of layer 1 and layer 2 to all possible variants
         layouts_L1_L2_L3 = combinePermutations(bestLayouts_L1_L2, layouts_L3)
-
 
         # Test the the combined layouts of layers 1&2 and layer 3
         initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3 = testLayouts(layouts_L1_L2_L3, asciiArray, bestScores_L1_L2)
@@ -238,10 +151,8 @@ def main():
             # Sort the best layer-1 layouts and only return the best ones
             bestLayouts_L1_L2_L3, bestScores_L1_L2_L3 = getTopScores(goodLayouts_L1_L2_L3, goodScores_L1_L2_L3)
 
-
             # Combine the layouts of layer 1 and layer 2 to all possible variants
             layouts_L1_L2_L3_L4 = combinePermutations(bestLayouts_L1_L2_L3, layouts_L4)
-
 
             # Test the the combined layouts of layers 1&2 and layer 3
             goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4 = testLayouts(layouts_L1_L2_L3_L4, asciiArray, bestScores_L1_L2_L3)
@@ -270,8 +181,7 @@ def main():
 
     print("\n------------------------ %s seconds --- Done computing" % round((time.time() - start_time), 2))
 
-    testingCustomLayouts = TEST_CUSTOM_LAYOUTS
-    if testingCustomLayouts is True:
+    if TEST_CUSTOM_LAYOUTS is True:
         customScores = array("f", [])
         for name, layout in customLayouts.items():
             # Get the scores for the custom layouts.
@@ -290,7 +200,7 @@ def main():
 
     else:
         # Display the data in the terminal.
-        showDataInTerminal(finalLayoutList, finalScoresList, [], array("f", []), perfectLayoutScore, SHOW_DATA, SHOW_GENERAL_STATS, NR_OF_TOP_LAYOUTS)
+        showDataInTerminal(finalLayoutList, finalScoresList, OrderedDict(), array("f", []), perfectLayoutScore, SHOW_DATA, SHOW_GENERAL_STATS, NR_OF_TOP_LAYOUTS)
 
 
 def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters, varLetters_L1_L2, staticLetters) -> bool:
@@ -319,6 +229,8 @@ def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters,
         return False
     return True
 
+replacedWithAscii = dict()
+asciiReplacementChars = ASCII_REPLACEMENT_CHARS
 def asciify(string: str) -> str:
     """Take a string and replace all non-ascii-chars with ascii-versions of them"""
     result = list(string)
@@ -328,8 +240,8 @@ def asciify(string: str) -> str:
             if char in replacedWithAscii:
                 result[idx] = replacedWithAscii[char]
             else:
-                replacedWithAscii[char] = asciiReplacementCharacters[-1]
-                asciiReplacementCharacters.pop()
+                replacedWithAscii[char] = asciiReplacementChars[-1]
+                asciiReplacementChars.pop()
                 result[idx] = replacedWithAscii[char]
     return ''.join(result)
 
@@ -405,24 +317,24 @@ def getBigramList(sortedLetters: str) -> tuple:
     """This opens the bigram-list (the txt-file) and returns the letters and the frequencies of the required bigrams."""
     try: return bigramCache[sortedLetters]
     except KeyError:
-        fullBigramArray = []
+        fullBigramList = []
         bigrams = []
         
         # Prepare the bigram-letters
         for bigram in itertools.permutations(sortedLetters, N_GRAM_LENGTH):
-            fullBigramArray.append(''.join(bigram))
+            fullBigramList.append(''.join(bigram))
         for letter in sortedLetters:
-            fullBigramArray.append(letter+letter)
-            
+            fullBigramList.append(letter+letter)
+        
         # Filter out the bigrams that contain the predefined filler-symbol.
-        bigramArray = [ b for b in fullBigramArray if FILL_SYMBOL not in b ]
+        bigramList = [ b for b in fullBigramList if FILL_SYMBOL not in b ]
         
         # Make sure we also will get the replaced letters from the dictionary.
-        for i, bigram in enumerate(bigramArray):
-            bigramArray[i] = deAsciify(bigram)
+        for i, bigram in enumerate(bigramList):
+            bigramList[i] = deAsciify(bigram)
 
         # Read the file for the frequencies of the bigrams.
-        for currentBigram in bigramArray:
+        for currentBigram in bigramList:
             with open(BIGRAMS_PATH, 'r') as corpus:
                 for line in corpus:
                     line = line.lower()
@@ -466,11 +378,12 @@ def filterBigrams(bigrams: tuple, requiredLetters=[]) -> tuple:
     trimmedBigrams = tuple(bigrams[index] for index in indicesToKeep)
     return trimmedBigrams
 
-def lowercaseList(lst: list) -> list:
-    """Takes any list and turns its uppercase letters into lowercase ones."""
-    for j, element in enumerate(lst):
+def lowerStaticLetters(staticLetters: tuple) -> tuple:
+    """Takes any Iterable and turns its uppercase letters into lowercase ones."""
+    lst = list(staticLetters)
+    for j, element in enumerate(staticLetters):
         lst[j] = element.lower()
-    return lst
+    return tuple(lst)
 
 def getLayouts(varLetters: str, staticLetters: list, layer2letters: str, layer3letters: str, layer4letters: str):
     """Creates and returns a list of layouts."""
@@ -550,7 +463,7 @@ def testLayouts(layouts: tuple, asciiArray: array, prevScores=None):
     # Get the bigrams for the input letters 
     bigrams = getBigramList(''.join(sorted(layoutLetters)))
 
-    if (len(layoutLetters) > LETTERS_PER_LAYER) & (testingCustomLayouts == False): # Filter out the previous bigrams if there are any that need filtering.
+    if len(layoutLetters) > LETTERS_PER_LAYER: # Filter out the previous bigrams if there are any that need filtering.
         bigrams = filterBigrams(bigrams, [lastLayerLetters])
     
 
@@ -740,7 +653,7 @@ def getTopScores(layouts: tuple, scores: array, nrOfBest=None):
 
     # Make sure we have some value for how many layouts should get returned
     if not nrOfBest:
-        nrOfBest = nrOfBestPermutations
+        nrOfBest = NR_OF_BEST_LAYOUTS
     if nrOfBest > len(scores):
         nrOfBest = len(scores)
 
@@ -863,7 +776,7 @@ def showDataInTerminal(
                 print('─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+NR_OF_LAYERS+9) + '> Score:', layoutScore, '   ~%.2f' % float(100*layoutScore/perfectLayoutScore), '%')
                 j-=1
 
-        if testingCustomLayouts is True:
+        if TEST_CUSTOM_LAYOUTS is True:
             print('#######################################################################################################################')
             print('#######################################################################################################################')
             print('                                                    Custom layouts:')
