@@ -647,13 +647,11 @@ def getPerfectLayoutScore(layer1letters: str, layer2letters: str, layer3letters:
 
     return perfectScore
 
-def getTopScores(layouts: tuple, scores: array, nrOfBest=None):
+def getTopScores(layouts: tuple, scores: array, nrOfBest=NR_OF_BEST_LAYOUTS):
     """Returns the best [whatever you set "nrOfBestPermutations" to] layouts with their scores.
     The LAST items of those lists should be the best ones."""
 
-    # Make sure we have some value for how many layouts should get returned
-    if not nrOfBest:
-        nrOfBest = NR_OF_BEST_LAYOUTS
+    # Make sure we don't try to get more scores than actually exist
     if nrOfBest > len(scores):
         nrOfBest = len(scores)
 
