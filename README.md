@@ -19,8 +19,9 @@ git clone https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator.git
     - VAR_LETTERS_L1_L2
     - NR_OF_BEST_LAYOUTS (has a big impact on speed)
 4. Start the script:
-_(Install a recent version of [Python](https://www.python.org/))_
-Navigate to this project's root directory and run the script.  
+    - _(Install a recent version of [Python](https://www.python.org/))_
+    - Navigate to this project's root directory and run the script.  
+
 Recommended: Use [pypy](https://www.pypy.org/)
 ```sh
 pypy3 main.py
