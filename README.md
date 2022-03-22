@@ -10,21 +10,22 @@ The discussion regarding this program can be found here: https://github.com/flid
 git clone https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator.git
 ```
 2. Add a bigram-file inside the folder bigram_dictionaries
-3. Open the python-file and edit the config-parameters to match your language. The most important ones are:
-    - bigramTxt
-    - layer1letters
-    - layer2letters
-    - layer3letters
-    - layer4letters
-    - varLetters_L1_L2
-    - nrOfBestPermutations (has a big impact on speed)
+3. Open `config.py` and edit the config-parameters to match your language. The most important ones are:
+    - BIGRAMS_PATH
+    - LAYER_1_LETTERS
+    - LAYER_2_LETTERS
+    - LAYER_3_LETTERS
+    - LAYER_4_LETTERS
+    - VAR_LETTERS_L1_L2
+    - NR_OF_BEST_LAYOUTS (has a big impact on speed)
 4. Start the script:
+_(Install a recent version of [Python](https://www.python.org/))_
 Navigate to this project's root directory and run the script.  
 Recommended: Use [pypy](https://www.pypy.org/)
 ```sh
 pypy3 main.py
 ```
-If for whatever reason you can't use pypy, to at least benefit from *some* speed improvement, open the python-file and enable `useMultiProcessing`. Then start the script the regular way:
+If for whatever reason you can't use pypy, to at least benefit from *some* speed improvement, open the `config.py` and enable `USE_MULTIPROCESSING`. Then start the script the regular way:
 ```sh
 python3 main.py
 ```
@@ -35,7 +36,6 @@ I'm sure there also are other amazing websites out there, but I'm quite happy wi
 
 ## Future to-do's (PRs are welcome)
 - [ ] If on Windows, don't show results in Terminal. Instead log them to a `results.txt` file. This might prevent crashes when optimizing for non-ascii alphabets.
-- [ ] Improve custom layouts: Currently, the layout-strings are formatted differently than 8Vim's XML-strings. This is suboptimal.
 - [ ] Multiple languages:
     - [ ] Add option to provide multiple bigram-files and use them for optimization. (If you want to implement this, please first open an issue)
     - [ ] Add option to show how good a layout is for each language separately
