@@ -250,7 +250,7 @@ def deAsciify(string: str) -> str:
     result = list(string)
     for idx, char in enumerate(string):
         for replacedChar, asciiChar in replacedWithAscii.items():
-            if char != asciiChar:
+            if char == asciiChar:
                 result[idx] = replacedChar
     return ''.join(result)
 
