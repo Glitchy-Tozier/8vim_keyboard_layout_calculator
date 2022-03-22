@@ -22,7 +22,7 @@ git clone https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator.git
     - _(Install a recent version of [Python](https://www.python.org/))_
     - Navigate to this project's root directory and run the script.  
 
-Recommended: Use [pypy](https://www.pypy.org/)
+Recommended: Use [pypy](https://www.pypy.org/) (needs to be installed)
 ```sh
 pypy3 main.py
 ```
