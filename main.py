@@ -12,7 +12,7 @@ import multiprocessing
 from functools import partial
 import platform
 
-from config import N_GRAM_LENGTH, BIGRAMS_PATH, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, NR_OF_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST
+from config import N_GRAM_LENGTH, BIGRAMS_PATH, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST
 
 start_time = time.time()
 
@@ -196,11 +196,11 @@ def main():
                 customLayouts[name] = layoutStr
 
         # Display the data in the terminal.
-        showDataInTerminal(finalLayoutList, finalScoresList, customLayouts, customScores, perfectLayoutScore, SHOW_DATA, SHOW_GENERAL_STATS, NR_OF_TOP_LAYOUTS)
+        showDataInTerminal(finalLayoutList, finalScoresList, perfectLayoutScore, customLayouts, customScores)
 
     else:
         # Display the data in the terminal.
-        showDataInTerminal(finalLayoutList, finalScoresList, OrderedDict(), array("f", []), perfectLayoutScore, SHOW_DATA, SHOW_GENERAL_STATS, NR_OF_TOP_LAYOUTS)
+        showDataInTerminal(finalLayoutList, finalScoresList, perfectLayoutScore)
 
 
 def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters, varLetters_L1_L2, staticLetters) -> bool:
@@ -725,16 +725,13 @@ def performLetterSwaps(layout: str) -> Iterator:
 def showDataInTerminal(
         layouts: tuple,
         scores: array,
-        customLayouts: OrderedDict,
-        customScores: array,
         perfectLayoutScore: float,
-        showData: bool,
-        showGeneralStats: bool,
-        nrOfTopLayouts: int,
+        customLayouts = OrderedDict(),
+        customScores = array("f"),
     ) -> None:
     """Displays the results; The best layouts, maybe (if i decide to keep this in here) the worst, and some general data."""
 
-    if showData is True:
+    if SHOW_DATA is True:
         # Get the total number of all bigram-frequencies, even of those with letters that don't exist in the calculated layers.
         sumOfALLbigrams = getAbsoluteBigramCount()
 
@@ -749,17 +746,17 @@ def showDataInTerminal(
         for j in range(len(customScores)):
             customScores[j] = round(customScores[j], 2)
 
-        if nrOfTopLayouts != 0:
+        if SHOW_TOP_LAYOUTS != 0:
             print('\n')
             print('#######################################################################################################################')
             print('#######################################################################################################################')
-            if nrOfTopLayouts == 1:
+            if SHOW_TOP_LAYOUTS == 1:
                 print('                                                       The King:')
             else:
-                print('                                                The top', nrOfTopLayouts, 'BEST layouts:')
+                print('                                                The top', SHOW_TOP_LAYOUTS, 'BEST layouts:')
             
             j=nrOfLayouts-1
-            while j > nrOfLayouts-nrOfTopLayouts-1:
+            while j > nrOfLayouts-SHOW_TOP_LAYOUTS-1:
                 layout = orderedLayouts[j]
                 layoutScore = orderedScores[j]
                 firstLayerLetters =  layout[0:LETTERS_PER_LAYER]
@@ -784,11 +781,11 @@ def showDataInTerminal(
                 print(optStrToXmlStr(layout))
                 print('─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+3) + '> Score:', customScores[j], '   ~%.2f' % float(100*customScores[j]/perfectLayoutScore), '%')
 
-        if showGeneralStats is True:
+        if SHOW_GENERAL_STATS is True:
             allWriteableBigrams = getBigramList(''.join(sorted(layouts[0]))) # Get all bigrams that actually can be written using this layout.
             unweightedWriteableFrequency = sum(bigram.frequency for bigram in allWriteableBigrams) # Get the sum of those ^ frequencies.
 
-            if nrOfTopLayouts == 0:
+            if SHOW_TOP_LAYOUTS == 0:
                 print('\n')
             print('#######################################################################################################################')
             print('#######################################################################################################################')

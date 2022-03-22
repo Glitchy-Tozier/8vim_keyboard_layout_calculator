@@ -36,7 +36,7 @@ PERFORM_GREEDY_OPTIMIZATION = True
 # Define what information you want to recieve.
 SHOW_DATA = True
 SHOW_GENERAL_STATS = True
-NR_OF_TOP_LAYOUTS = 500
+SHOW_TOP_LAYOUTS = 5
 
 # You can use this section to test your custom-made layouts.
 TEST_CUSTOM_LAYOUTS = True
