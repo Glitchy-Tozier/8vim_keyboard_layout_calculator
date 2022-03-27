@@ -55,11 +55,11 @@ def main():
     nrOfCycles = len(firstLayers)
 
     # Prepare variables for later.
-    finalLayoutList = []
-    finalScoresList = []
-
     tempLayoutList = []
     tempScoresList = []
+
+    finalLayoutList = []
+    finalScoresList = []
 
     # Start the actual testing process
     for cycleNr, letters_L1 in enumerate(firstLayers):
@@ -83,6 +83,7 @@ def main():
 
         # Test the layer 1 - layouts
         goodLayouts_L1, goodScores_L1 = testLayouts(layouts_L1, asciiArray)
+        del layouts_L1
 
 
         print("------------------------ %s seconds --- Got best layouts for layer 1" % round((time.time() - start_time), 2))
@@ -97,23 +98,27 @@ def main():
 
             # Sort the best layer-1 layouts and only return the best ones
             bestLayouts_L1, bestScores_L1 = getTopScores(goodLayouts_L1, goodScores_L1)
+            del goodLayouts_L1, goodScores_L1
 
             # Combine the layouts of layer 1 and layer 2 to all possible variants
             layouts_L1_L2 = combinePermutations(bestLayouts_L1, layouts_L2)
+            del bestLayouts_L1, layouts_L2
 
             # Test the the combined layouts of layer 1 and layer2
             goodLayouts_L1_L2, goodScores_L1_L2 = testLayouts(layouts_L1_L2, asciiArray, bestScores_L1)
+            del layouts_L1_L2, bestScores_L1
 
             print("------------------------ %s seconds --- Got best layouts for layer 2" % round((time.time() - start_time), 2))
 
-            layoutList, scoresList = goodLayouts_L1_L2, goodScores_L1_L2
+            # Add the found layouts to the list (which will later be displayed)
+            tempLayoutList.extend(goodLayouts_L1_L2)
+            tempScoresList.extend(goodScores_L1_L2)
+            del goodLayouts_L1_L2, goodScores_L1_L2
         else:
-            layoutList, scoresList = goodLayouts_L1, goodScores_L1
-
-        # Add the found layouts to the list (which will later be displayed)
-        tempLayoutList.extend(layoutList)
-        tempScoresList.extend(scoresList)
-
+            # Add the found layouts to the list (which will later be displayed)
+            tempLayoutList.extend(goodLayouts_L1)
+            tempScoresList.extend(goodScores_L1)
+            del goodLayouts_L1, goodScores_L1
 
     if NR_OF_LAYERS >= 3:
         ####################################################################################################################
@@ -125,18 +130,22 @@ def main():
 
         # Sort the best layer-1 layouts and only return the best ones
         bestLayouts_L1_L2, bestScores_L1_L2 = getTopScores(tempLayoutList, tempScoresList)
+        del tempLayoutList, tempScoresList
 
         # Combine the layouts of layer 1 and layer 2 to all possible variants
         layouts_L1_L2_L3 = combinePermutations(bestLayouts_L1_L2, layouts_L3)
+        bestLayouts_L1_L2, layouts_L3
 
         # Test the the combined layouts of layers 1&2 and layer 3
         initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3 = testLayouts(layouts_L1_L2_L3, asciiArray, bestScores_L1_L2)
+        del layouts_L1_L2_L3, bestScores_L1_L2
 
         if PERFORM_GREEDY_OPTIMIZATION:
             # Do an additional hillclimbing-optimization
             goodLayouts_L1_L2_L3, goodScores_L1_L2_L3 = greedyOptimization(initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3, asciiArray)
         else:
             goodLayouts_L1_L2_L3, goodScores_L1_L2_L3 = initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3
+        del initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3
 
         print("------------------------ %s seconds --- Got best layouts for layer 3" % round((time.time() - start_time), 2))
 
@@ -150,12 +159,15 @@ def main():
 
             # Sort the best layer-1 layouts and only return the best ones
             bestLayouts_L1_L2_L3, bestScores_L1_L2_L3 = getTopScores(goodLayouts_L1_L2_L3, goodScores_L1_L2_L3)
+            del goodLayouts_L1_L2_L3, goodScores_L1_L2_L3
 
             # Combine the layouts of layer 1 and layer 2 to all possible variants
             layouts_L1_L2_L3_L4 = combinePermutations(bestLayouts_L1_L2_L3, layouts_L4)
+            del bestLayouts_L1_L2_L3, layouts_L4
 
             # Test the the combined layouts of layers 1&2 and layer 3
             goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4 = testLayouts(layouts_L1_L2_L3_L4, asciiArray, bestScores_L1_L2_L3)
+            layouts_L1_L2_L3_L4, bestScores_L1_L2_L3
 
             if PERFORM_GREEDY_OPTIMIZATION:
                 # Do an additional hillclimbing-optimization, then
@@ -163,6 +175,7 @@ def main():
                 finalLayoutList, finalScoresList = greedyOptimization(goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4, asciiArray)
             else:
                 finalLayoutList, finalScoresList = goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4
+            del goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4
 
             print("------------------------ %s seconds --- Got best layouts for layer 4" % round((time.time() - start_time), 2))
 
@@ -170,10 +183,12 @@ def main():
             # Do an additional hillclimbing-optimization, then
             # add the found layouts to the list (which will later be displayed)
             finalLayoutList, finalScoresList = goodLayouts_L1_L2_L3, goodScores_L1_L2_L3
+            del goodLayouts_L1_L2_L3, goodScores_L1_L2_L3
     else:
         # Add the found layouts to the list (which will later be displayed). This happens if there is no layer 3 or 4.
-        finalLayoutList = tempLayoutList[:]
-        finalScoresList = tempScoresList[:]
+        finalLayoutList = tempLayoutList
+        finalScoresList = tempScoresList
+        del tempLayoutList, tempScoresList
 
 
     # Calculate what the perfect score would be
