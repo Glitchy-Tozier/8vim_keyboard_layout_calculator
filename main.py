@@ -739,7 +739,7 @@ def performLetterSwaps(layout: str) -> set:
     """Get all layouts that are possible through 2-letter-swaps."""
     layouts = set([layout])
     originalLayout = tuple(layout)
-    for idx1 in range(1, len(layout)):
+    for idx1 in range(len(layout)):
         for idx2 in range(idx1+1, len(layout)):
             copy = list(originalLayout)
             copy[idx1], copy[idx2] = copy[idx2], copy[idx1]
