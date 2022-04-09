@@ -6,7 +6,6 @@ from copy import deepcopy
 import math
 import random
 import statistics
-from typing import Iterator, Iterable
 import time
 import multiprocessing
 from functools import partial
@@ -197,12 +196,12 @@ def main():
     print("\n------------------------ %s seconds --- Done computing" % round((time.time() - start_time), 2))
 
     if TEST_CUSTOM_LAYOUTS is True:
-        customScores = array("f", [])
+        customScores = array("d", [])
         for name, layout in customLayouts.items():
             # Get the scores for the custom layouts.
             partialLayout = layout[:NR_OF_LAYERS*LETTERS_PER_LAYER]
-            lettersToTest = ''.join(sorted(partialLayout))
-            customScore = testSingleLayout(partialLayout, lettersToTest, asciiArray)
+            bigrams = getBigramList(''.join(sorted(partialLayout)))
+            customScore = testSingleLayout(partialLayout, asciiArray, bigrams)
             customScores.append(customScore)
 
             # If yout're only testing a certain nuber of layers, only use that amount of layers in the name of the custom layouts.
@@ -486,7 +485,7 @@ def testLayouts(layouts: tuple, asciiArray: array, prevScores=None):
         if prevScores:
             if len(prevScores) > 1:
                 goodLayouts = []
-                goodScores = array("f", [])
+                goodScores = array("d", [])
                 # Prepare the group-sizes of the layout-groups for multiprozessing
                 groupBeginnings = []
                 for j in range(len(prevScores)):
@@ -525,23 +524,29 @@ def testLayouts(layouts: tuple, asciiArray: array, prevScores=None):
     
     return goodLayouts, goodScores
 
-def testSingleLayout(layout: str, orderedLetters: str, asciiArray: array) -> float:
+def testSingleLayout(layout: str, asciiArray: array, bigrams: tuple) -> float:
     """A toned-down version of testLayouts() and is only tests one layout per call."""
 
     # Get the bigrams that contain [orderedLetters]
-    bigrams = getBigramList(orderedLetters)
-    return getLayoutScores(tuple([layout]), asciiArray, bigrams)
+    for j, letter in enumerate(layout): asciiArray[ord(letter)] = j # Fill up asciiArray
+    score = sum([bigram.frequency * SCORE_LIST[asciiArray[bigram.letter1AsciiCode]][asciiArray[bigram.letter2AsciiCode]] for bigram in bigrams])
+    ### The monstrous line above ^ has the same function as the following block of code:
+    # for bigram in bigrams: # Go through every bigram and see how well it flows.
+    #         firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
+    #         secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
+    #         scores[k] += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
+    return score
 
 def getLayoutScores(layouts: tuple, asciiArray: array, bigrams: tuple, prevScores=None):
     """Tests the layouts and return their scores. It's only used when single-threading."""
 
     nrLayouts = len(layouts)
     # Create the empty scoring-list
-    scores = array("f", [0.0]*nrLayouts)
+    scores = array("d", [0.0]*nrLayouts)
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
-        for j, letter in enumerate(layout): asciiArray[ord(letter)] = j # Fill up asciiArray    
+        for j, letter in enumerate(layout): asciiArray[ord(letter)] = j # Fill up asciiArray
         scores[k] = sum([bigram.frequency * SCORE_LIST[asciiArray[bigram.letter1AsciiCode]][asciiArray[bigram.letter2AsciiCode]] for bigram in bigrams])
 
     ### The monstrous line above ^ has the same function as the following block of code:
@@ -560,10 +565,8 @@ def getLayoutScores(layouts: tuple, asciiArray: array, bigrams: tuple, prevScore
             for k in range(groupBeginning, groupEnding):
                 scores[k] += prevScores[j]
 
-    if nrLayouts == 1: return scores[0]
-    else:
-        goodLayouts, goodScores = getTopScores(layouts, scores, 500)
-        return goodLayouts, goodScores
+    goodLayouts, goodScores = getTopScores(layouts, scores, 500)
+    return goodLayouts, goodScores
 
 def getLayoutScores_multiprocessing(*args):
     """This function tests the layouts and return their scores.
@@ -584,7 +587,7 @@ def getLayoutScores_multiprocessing(*args):
     bigrams = staticArgs[2]
 
     prevScore = staticArgs[3][int(groupBeginning/groupSize)]
-    scores = array("f", [0.0]*groupSize)
+    scores = array("d", [0.0]*groupSize)
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
@@ -670,29 +673,30 @@ def getTopScores(layouts: tuple, scores: array, nrOfBest=NR_OF_BEST_LAYOUTS):
     if nrOfBest > len(scores):
         nrOfBest = len(scores)
 
+    oldScores = scores
     indices = range(len(scores))
 
     # BEFORE sorting the lists, make sure they're not unnecessarily large
-    prevLenScores = len(scores)
-    while prevLenScores > nrOfBest*3 and prevLenScores > LETTERS_PER_LAYER*2:
+    nrRemainingScores = len(oldScores)
+    while nrRemainingScores > nrOfBest*3 and nrRemainingScores > LETTERS_PER_LAYER*2:
         mean = statistics.mean(scores)
         # Get all indices & scores that are above the mean of the remaining scores.
         # This roughly halfes or tripples the remaining scores.
-        indices = [i for i, score in enumerate(scores) if score >= mean]
-        scores = [scores[idx] for idx in indices]
+        indices = [i for i, score in enumerate(oldScores) if score >= mean]
+        scores = [oldScores[idx] for idx in indices]
         
-        newLenScores = len(scores)
-        if newLenScores == prevLenScores:
+        newNrRemainingScores = len(scores)
+        if newNrRemainingScores == nrRemainingScores:
             break
         else:
-            prevLenScores = newLenScores
+            nrRemainingScores = newNrRemainingScores
 
     # Sort scores & indices. This is way faster thanks to the above while-loop
     sortedScoreIdxTuples = sorted(zip(scores, indices))
 
     topScores, topIndices = (l for l in zip(*sortedScoreIdxTuples[-nrOfBest:]))
     topLayouts = tuple(layouts[idx] for idx in topIndices)
-    topScores = array("f", topScores)
+    topScores = array("d", topScores)
 
     return topLayouts, topScores
 
@@ -709,29 +713,29 @@ def greedyOptimization(layouts: tuple, scores: array, asciiArray: array):
     """Randomly switches letters in each of the layouts to see whether the layouts can be improved this way."""
 
     allLayouts = dict(zip(layouts, scores))
-    orderedLetters = ''.join(sorted(layouts[0]))
+    bigrams = getBigramList(''.join(sorted(layouts[0])))
     print("Starting greedy optimization.")
     print("Number of layouts to optimize:", len(layouts))
     for layout, score in zip(layouts, deepcopy(scores)):
         optimizing = True
         while optimizing is True:
             layoutPermutations = performLetterSwaps(layout)
-            for permutatedLayout in layoutPermutations:
-                permutatedScore = testSingleLayout(permutatedLayout, orderedLetters, asciiArray)
+            for i, permutatedLayout in enumerate(layoutPermutations):
+                permutatedScore = testSingleLayout(permutatedLayout, asciiArray, bigrams)
                 if permutatedScore > score:
                     layout = permutatedLayout
                     score = permutatedScore
                     break
-                else: optimizing = False
-        if layout not in allLayouts:            
+                elif i+1 == len(layoutPermutations):
+                    optimizing = False
+        if layout not in allLayouts:
             allLayouts[layout] = score
     print("Number of layouts, afterwards:", len(allLayouts))
     print("Finished greedy optimization.")
 
-    goodLayouts, goodScores = getTopScores(list(allLayouts.keys()), array("f", allLayouts.values()), 500)
-    return goodLayouts, goodScores
+    return tuple(allLayouts.keys()), array("d", allLayouts.values())
 
-def performLetterSwaps(layout: str) -> Iterator:
+def performLetterSwaps(layout: str) -> set:
     """Get all layouts that are possible through 2-letter-swaps."""
     layouts = set([layout])
     originalLayout = tuple(layout)
@@ -742,14 +746,14 @@ def performLetterSwaps(layout: str) -> Iterator:
             layoutStr = ''.join(copy)
             if layoutStr not in layouts:
                 layouts.add(layoutStr)
-    return iter(layouts)
+    return layouts
 
 def showDataInTerminal(
         layouts: tuple,
         scores: array,
         perfectLayoutScore: float,
         customLayouts = OrderedDict(),
-        customScores = array("f"),
+        customScores = array("d"),
     ) -> None:
     """Displays the results; The best layouts, maybe (if i decide to keep this in here) the worst, and some general data."""
 
