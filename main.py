@@ -712,7 +712,7 @@ def combinePermutations(list1: tuple, list2: tuple) -> tuple:
 def greedyOptimization(layouts: tuple, scores: array, asciiArray: array):
     """Randomly switches letters in each of the layouts to see whether the layouts can be improved this way."""
 
-    allLayouts = dict(zip(layouts, scores))
+    optimizedLayouts = dict(zip(layouts, scores))
     bigrams = getBigramList(''.join(sorted(layouts[0])))
     print("Starting greedy optimization.")
     print("Number of layouts to optimize:", len(layouts))
@@ -728,12 +728,12 @@ def greedyOptimization(layouts: tuple, scores: array, asciiArray: array):
                     break
                 elif i+1 == len(layoutPermutations):
                     optimizing = False
-        if layout not in allLayouts:
-            allLayouts[layout] = score
-    print("Number of layouts, afterwards:", len(allLayouts))
+        if layout not in optimizedLayouts:
+            optimizedLayouts[layout] = score
+    print("Number of layouts, afterwards:", len(optimizedLayouts))
     print("Finished greedy optimization.")
 
-    return tuple(allLayouts.keys()), array("d", allLayouts.values())
+    return tuple(optimizedLayouts.keys()), array("d", optimizedLayouts.values())
 
 def performLetterSwaps(layout: str) -> set:
     """Get all layouts that are possible through 2-letter-swaps."""
