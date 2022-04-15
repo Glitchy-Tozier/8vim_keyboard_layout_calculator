@@ -929,7 +929,7 @@ def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, pl
         lineToPrint += 1
         cfgName = data.name
         weight = data.weight
-        score = round(testSingleLayout(layout, asciiArray, data.bigrams), 2)
+        score = testSingleLayout(layout, asciiArray, data.bigrams)
         perfectScore = data.perfectScore
         if cfgName == "All":
             visName = "All Languages "
@@ -938,7 +938,8 @@ def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, pl
             visName = cfgName + " {}% ".format(weight)
             offset = 14
         infoStr = " "*offset + visName
-        infoStr += '─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+NR_OF_LAYERS-len(visName)-offset) + '> Score: ' + str(score)
+        infoStr += '─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+NR_OF_LAYERS-len(visName)-offset)
+        infoStr += '> Score: ' + str(score)[:7]
         infoStr += '   ~%.2f' % float(100*score/perfectScore) + '%'
         print(
             getExpandedLine(
