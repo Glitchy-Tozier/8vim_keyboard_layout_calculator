@@ -32,7 +32,7 @@ def main():
         customLayouts[name] = xmlStrToOptStr(layout)
 
     # Validate the main error-hotspots in settings
-    if validateSettings(LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, staticLetters) is True:
+    if validateSettings(staticLetters) is True:
         print("Starting opitimzation with:")
         for config in BIGRAMS_CONFIGS:
             if config.weight > 0:
@@ -227,23 +227,23 @@ def main():
         showDataInTerminal(finalLayoutList, finalScoresList, configSpecificData, asciiArray, customLayouts)
 
 
-def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters, varLetters_L1_L2, staticLetters) -> bool:
+def validateSettings(staticLetters) -> bool:
     """Checks the user's input for common errors. If everything is correct, returns `True`"""
 
-    layout = layer1letters + layer2letters + layer3letters + layer4letters
+    layout = LAYER_1_LETTERS + LAYER_2_LETTERS + LAYER_3_LETTERS + LAYER_4_LETTERS
     # Check for duplicate letters
     for char in layout:
         if (char != FILL_SYMBOL) and (layout.count(char) > 1):
-            print("Duplicate letters found:", char, "\nCheck layer1letters, layer2letters, layer3letters, and layer4letters")
+            print("Duplicate letters found:", char, "\nCheck LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, and LAYER_4_LETTERS")
             return False
-    # Check whether varLetters_L1_L2's letters are contained in the layers 1 & 2
-    for char in varLetters_L1_L2:
-        if char not in layer1letters + layer2letters:
-            print('"', char, '" was defined in varLetters_L1_L2, but is not part of layer 1 or 2')
+    # Check whether VAR_LETTERS_L1_L2's letters are contained in the layers 1 & 2
+    for char in VAR_LETTERS_L1_L2:
+        if char not in LAYER_1_LETTERS + LAYER_2_LETTERS:
+            print('"', char, '" was defined in VAR_LETTERS_L1_L2, but is not part of layer 1 or 2')
             return False
     # Check whether fixed_letters's letters are contained in the ferst layers
     for char in staticLetters:
-        if char not in layer1letters:
+        if char not in LAYER_1_LETTERS:
             print('"', char, '" was defined in staticLetters, but is not part of the first layer')
             return False
     # Check if bigram-file exists
