@@ -198,18 +198,10 @@ def main():
 
     if SHOW_DATA is True:
         if TEST_CUSTOM_LAYOUTS is True:
-            customScores = array("d", [])
             for name, layout in customLayouts.items():
-                # Get the scores for the custom layouts.
-                partialLayout = layout[:NR_OF_LAYERS*LETTERS_PER_LAYER]
-                bigrams = getBigrams(''.join(sorted(partialLayout)))
-                customScore = testSingleLayout(partialLayout, asciiArray, bigrams)
-                customScores.append(customScore)
-
                 # If yout're only testing a certain nuber of layers, only use that amount of layers in the name of the custom layouts.
                 if len(layout) > (NR_OF_LAYERS*LETTERS_PER_LAYER):
-                    layoutStr = layout[:NR_OF_LAYERS*LETTERS_PER_LAYER] + "... (+ more letters that weren't tested. Change nrOfLayers to the correct number to test all of them.)"
-                    customLayouts[name] = layoutStr
+                    customLayouts[name] = layout[:NR_OF_LAYERS*LETTERS_PER_LAYER]
 
         
         # Calculate what the perfect score would be
@@ -232,7 +224,7 @@ def main():
                 ))
 
         # Display the data in the terminal.
-        showDataInTerminal(finalLayoutList, finalScoresList, configSpecificData, asciiArray, customLayouts, customScores)
+        showDataInTerminal(finalLayoutList, finalScoresList, configSpecificData, asciiArray, customLayouts)
 
 
 def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters, varLetters_L1_L2, staticLetters) -> bool:
@@ -817,62 +809,51 @@ def showDataInTerminal(
         configSpecificData: list,
         asciiArray: array,
         customLayouts = OrderedDict(),
-        customScores = array("d"),
     ) -> None:
     """Displays the results; The best layouts, maybe (if i decide to keep this in here) the worst, and some general data."""
 
-    if SHOW_DATA is True:
-        # Get the total number of all bigram-frequencies, even of those with letters that don't exist in the calculated layers.
-        sumOfALLbigrams = getSumBigramCount()
+    # Get the total number of all bigram-frequencies, even of those with letters that don't exist in the calculated layers.
+    sumOfALLbigrams = getSumBigramCount()
 
-        nrOfLayouts = len(layouts)
-        # Order the layouts. [0] is the worst layout, [nrOfLayouts] is the best.
-        orderedScores, orderedLayouts = [list(l) for l in zip(*sorted(zip(scores, layouts)))]
+    nrOfLayouts = len(layouts)
+    # Order the layouts. [0] is the worst layout, [nrOfLayouts] is the best.
 
-        # Make the values more visually appealing.
-        for j in range(len(orderedScores)):
-            orderedScores[j] = round(orderedScores[j], 2)
-        for j in range(len(customScores)):
-            customScores[j] = round(customScores[j], 2)
+    if SHOW_TOP_LAYOUTS != 0:
+        print('\n')
+        print('#'*SCREEN_WIDTH)
+        print('#'*SCREEN_WIDTH)
+        if SHOW_TOP_LAYOUTS == 1:
+            print(' '*(int(SCREEN_WIDTH/2) - 5), 'The King:')
+        else:
+            print(' '*(int(SCREEN_WIDTH/2) - 12), 'The top', SHOW_TOP_LAYOUTS, 'BEST layouts:')
+        
+        layouts, _ = getTopScores(layouts, scores, SHOW_TOP_LAYOUTS)
+        layouts = list(layouts)
+        layouts.reverse()
+        for idx, layout in enumerate(layouts):
+            printLayoutData(layout, asciiArray, configSpecificData, placing=idx+1)
 
-        if SHOW_TOP_LAYOUTS != 0:
+    if TEST_CUSTOM_LAYOUTS is True:
+        print('#'*SCREEN_WIDTH)
+        print('#'*SCREEN_WIDTH)
+        print(' '*(int(SCREEN_WIDTH/2) - 8), "Custom layouts:")
+
+        for name, layout in customLayouts.items():
+            printLayoutData(layout, asciiArray, configSpecificData, name=name)
+
+    if SHOW_GENERAL_STATS is True:
+        writeableBigrams = getBigrams(''.join(sorted(layouts[0]))) # Get all bigrams that actually can be written using this layout.
+        writeableFrequencySum = sum(bigram.frequency for bigram in writeableBigrams) # Get the sum of those ^ frequencies.
+
+        if SHOW_TOP_LAYOUTS == 0:
             print('\n')
-            print('#'*SCREEN_WIDTH)
-            print('#'*SCREEN_WIDTH)
-            if SHOW_TOP_LAYOUTS == 1:
-                print(' '*(int(SCREEN_WIDTH/2) - 5), 'The King:')
-            else:
-                print(' '*(int(SCREEN_WIDTH/2) - 12), 'The top', SHOW_TOP_LAYOUTS, 'BEST layouts:')
-            
-            j=nrOfLayouts-1
-            while j > nrOfLayouts-SHOW_TOP_LAYOUTS-1:
-                layout = orderedLayouts[j]
-                placing = nrOfLayouts-j
-                
-                printLayoutData(layout, asciiArray, configSpecificData, placing=placing)
-                j-=1
-
-        if TEST_CUSTOM_LAYOUTS is True:
-            print('#'*SCREEN_WIDTH)
-            print('#'*SCREEN_WIDTH)
-            print(' '*(int(SCREEN_WIDTH/2) - 8), "Custom layouts:")
-
-            for name, layout in customLayouts.items():
-                printLayoutData(layout, asciiArray, configSpecificData, name=name)
-                
-        if SHOW_GENERAL_STATS is True:
-            writeableBigrams = getBigrams(''.join(sorted(layouts[0]))) # Get all bigrams that actually can be written using this layout.
-            writeableFrequencySum = sum(bigram.frequency for bigram in writeableBigrams) # Get the sum of those ^ frequencies.
-
-            if SHOW_TOP_LAYOUTS == 0:
-                print('\n')
-            print('#'*SCREEN_WIDTH)
-            print('#'*SCREEN_WIDTH)
-            print(' '*(int(SCREEN_WIDTH/2) - 7), 'General Stats:')
-            # print('Number of Layouts tested:', nrOfLayouts)
-            print('Time needed for the whole runthrough: %s seconds.' % round((time.time() - start_time), 2))
-            print('Amount of bigrams that can be written with the letters used in this layout:',
-                    '~%.2f' % float(100*writeableFrequencySum/sumOfALLbigrams), '%')
+        print('#'*SCREEN_WIDTH)
+        print('#'*SCREEN_WIDTH)
+        print(' '*(int(SCREEN_WIDTH/2) - 7), 'General Stats:')
+        # print('Number of Layouts tested:', nrOfLayouts)
+        print('Time needed for the whole runthrough: %s seconds.' % round((time.time() - start_time), 2))
+        print('Amount of bigrams that can be written with the letters used in this layout:',
+                '~%.2f' % float(100*writeableFrequencySum/sumOfALLbigrams), '%')
 
 def optStrToXmlStr(layout: str) -> str:
     """Turns the string-representation which is used internally into one that aligns with 8vim's XML-formatting."""
