@@ -11,7 +11,7 @@ import multiprocessing
 from functools import partial
 import platform
 
-from config import N_GRAM_LENGTH, BIGRAMS_PATH, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST
+from config import N_GRAM_LENGTH, BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST
 
 start_time = time.time()
 
@@ -32,7 +32,11 @@ def main():
 
     # Validate the main error-hotspots in settings
     if validateSettings(LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, staticLetters) is True:
-        print("Starting opitimzation with bigrams-file:", BIGRAMS_PATH)
+        print("Starting opitimzation with:")
+        for config in BIGRAMS_CONFIGS:
+            if config.weight > 0:
+                print("{}% {},".format(config.weight, config.name), " Path: {}".format(config.path))
+        print()
     else:
         # If something is wrong, stop execution
         return
@@ -237,10 +241,15 @@ def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters,
             print('"', char, '" was defined in staticLetters, but is not part of the first layer')
             return False
     # Check if bigram-file exists
-    if os.path.exists(BIGRAMS_PATH) is False:
-        print("The bigram-path you provided does not point to an existing file.")
-        print(BIGRAMS_PATH)
+    if len(BIGRAMS_CONFIGS) == 0:
+        print("No bigrams-config found.")
         return False
+    else:
+        for config in BIGRAMS_CONFIGS:
+            if os.path.exists(config.path) is False:
+                print("The bigram-path you provided does not point to an existing file.")
+                print("Language:", config.name, "\nPath:", config.path)
+                return False
     return True
 
 replacedWithAscii = dict()
@@ -332,7 +341,6 @@ def getBigrams(sortedLetters: str) -> tuple:
     try: return bigramCache[sortedLetters]
     except KeyError:
         fullBigramList = []
-        bigrams = []
         
         # Prepare the bigram-letters
         for bigram in itertools.permutations(sortedLetters, N_GRAM_LENGTH):
@@ -347,25 +355,64 @@ def getBigrams(sortedLetters: str) -> tuple:
         for i, bigram in enumerate(bigramList):
             bigramList[i] = deAsciify(bigram)
 
-        # Read the file for the frequencies of the bigrams.
-        for currentBigram in bigramList:
-            with open(BIGRAMS_PATH, 'r') as corpus:
+        normalizedCorpora = []
+        for config in BIGRAMS_CONFIGS:
+            if config.weight <= 0:
+                continue
+
+            # Sum up the corpus's frequencies. Used for later normalization.
+            frequencySum = 0
+            with open(config.path, 'r') as corpus:                
                 for line in corpus:
-                    line = line.lower()
-                    if currentBigram == line[0:N_GRAM_LENGTH]:
-                        bigrams.append( Bigram(currentBigram, float(line[line.find(' ')+1:])) )
-                        break
-        bigrams = tuple(bigrams)
+                    frequencySum += float(line[line.find(' ')+1:])
+            
+            # Read the file and normalize its contents.
+            normalizedCorpus = []
+            for currentBigram in bigramList:
+                with open(config.path, 'r') as corpus:
+                    for line in corpus:
+                        line = line.lower()
+                        if currentBigram == line[0:N_GRAM_LENGTH]:
+                            absFreq = float(line[line.find(' ')+1:])
+                            normalizedCorpus.append((
+                                currentBigram,
+                                absFreq * config.weight / frequencySum
+                            ))
+                            break
+            normalizedCorpora.append(normalizedCorpus)
+
+        bigramsDict = dict()
+        for corpus in normalizedCorpora:
+            for bigram, freq in corpus:
+                if bigram not in bigramsDict:
+                    bigramsDict[bigram] = freq
+                else:
+                    bigramsDict[bigram] += freq
+
+        bigrams = tuple(Bigram(characters, freq) for characters, freq in bigramsDict.items())
         bigramCache[sortedLetters] = bigrams
         return bigrams
 
-def getAbsoluteBigramCount() -> float:
+def getSumBigramCount() -> float:
     """This returns the total number of all bigram-frequencies, even of those with letters that don't exist in the calculated layers."""
-    
+
     frequencySum = 0.0
-    with open(BIGRAMS_PATH, 'r') as corpus:
-        for line in corpus:
-            frequencySum += float(line[line.find(' ')+1:]) # Add up the frequencies of ALL bigrams
+    for config in BIGRAMS_CONFIGS:
+        if config.weight <= 0:
+            continue
+
+        # Sum up the corpus's frequencies. Used for later normalization.
+        absoluteSum = 0
+        with open(config.path, 'r') as corpus:                
+            for line in corpus:
+                absoluteSum += float(line[line.find(' ')+1:])
+        
+        # Read the file and normalize its contents.
+        with open(config.path, 'r') as corpus:
+            for line in corpus:
+                absFreq = float(line[line.find(' ')+1:])
+                frequencySum += absFreq * config.weight / absoluteSum
+
     return frequencySum
 
 def filterBigrams(bigrams: tuple, requiredLetters=[]) -> tuple:
@@ -759,7 +806,7 @@ def showDataInTerminal(
 
     if SHOW_DATA is True:
         # Get the total number of all bigram-frequencies, even of those with letters that don't exist in the calculated layers.
-        sumOfALLbigrams = getAbsoluteBigramCount()
+        sumOfALLbigrams = getSumBigramCount()
 
         nrOfLayouts = len(layouts)
         # Order the layouts. [0] is the worst layout, [nrOfLayouts] is the best.
@@ -808,8 +855,8 @@ def showDataInTerminal(
                 print('─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+3) + '> Score:', customScores[j], '   ~%.2f' % float(100*customScores[j]/perfectLayoutScore), '%')
 
         if SHOW_GENERAL_STATS is True:
-            allWriteableBigrams = getBigrams(''.join(sorted(layouts[0]))) # Get all bigrams that actually can be written using this layout.
-            unweightedWriteableFrequency = sum(bigram.frequency for bigram in allWriteableBigrams) # Get the sum of those ^ frequencies.
+            writeableBigrams = getBigrams(''.join(sorted(layouts[0]))) # Get all bigrams that actually can be written using this layout.
+            writeableFrequencySum = sum(bigram.frequency for bigram in writeableBigrams) # Get the sum of those ^ frequencies.
 
             if SHOW_TOP_LAYOUTS == 0:
                 print('\n')
@@ -818,8 +865,8 @@ def showDataInTerminal(
             print('                                                    General Stats:')
             # print('Number of Layouts tested:', nrOfLayouts)
             print('Time needed for the whole runthrough: %s seconds.' % round((time.time() - start_time), 2))
-            print('Amount of bigrams that can be written with the letters used in this layout (without factoring in flow or layer-penalty):')
-            print(unweightedWriteableFrequency, 'out of', sumOfALLbigrams, ' (', '~%.2f' % float(100*unweightedWriteableFrequency/sumOfALLbigrams), '%)')
+            print('Amount of bigrams that can be written with the letters used in this layout:',
+                    '~%.2f' % float(100*writeableFrequencySum/sumOfALLbigrams), '%')
         print('#######################################################################################################################')
         print('########################################### 8vim Keyboard Layout Calculator ###########################################')
         print('#######################################################################################################################')

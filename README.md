@@ -11,7 +11,7 @@ git clone https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator.git
 ```
 2. Add a bigram-file inside the folder bigram_dictionaries
 3. Open `config.py` and edit the config-parameters to match your language. The most important ones are:
-    - BIGRAMS_PATH
+    - BIGRAMS_CONFIGS
     - LAYER_1_LETTERS
     - LAYER_2_LETTERS
     - LAYER_3_LETTERS
@@ -37,6 +37,3 @@ I'm sure there also are other amazing websites out there, but I'm quite happy wi
 
 ## Future to-do's (PRs are welcome)
 - [ ] If on Windows, don't show results in Terminal. Instead log them to a `results.txt` file. This might prevent crashes when optimizing for non-ascii alphabets.
-- [ ] Multiple languages:
-    - [ ] Add option to provide multiple bigram-files and use them for optimization. (If you want to implement this, please first open an issue)
-    - [ ] Add option to show how good a layout is for each language separately

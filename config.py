@@ -1,6 +1,24 @@
-# Define bigram-stuff
+from helper_classes import BigramsConfig
+
+# Keep this on 2
 N_GRAM_LENGTH = 2
-BIGRAMS_PATH = './bigram_dictionaries/english_bigrams.txt' # <- This is the main thing you want to change. Name it whatever your bigrams-corpus is called.
+
+# This is the main thing you want to change. Name it whatever your bigrams-corpus is called.
+BIGRAMS_CONFIGS = (
+    BigramsConfig(
+        name = "English",       weight = 90, # %
+        path = './bigram_dictionaries/english_bigrams.txt'
+    ),
+    BigramsConfig(
+        name = "German",        weight = 10, # %
+        path = './bigram_dictionaries/german_bigrams.txt'
+    ),
+    BigramsConfig(
+        # When using 0%, no optimization will be done using this language.
+        name = "French",        weight = 0, # %
+        path = './bigram_dictionaries/french_bigrams.txt'
+    )
+)
 
 # Define the letters you want to use
 LAYER_1_LETTERS = 'etaoinsr'.lower() # All letters for the first cycleNr of calculation, including 'e' (or whatever you put in >staticLetters<)
