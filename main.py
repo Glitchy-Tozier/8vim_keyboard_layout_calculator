@@ -246,16 +246,21 @@ def validateSettings(staticLetters) -> bool:
         if char not in LAYER_1_LETTERS:
             print('"', char, '" was defined in staticLetters, but is not part of the first layer')
             return False
-    # Check if bigram-file exists
+    # Check if bigram-settings are valid
     if len(BIGRAMS_CONFIGS) == 0:
         print("No bigrams-config found.")
         return False
     else:
+        weightSum = 0
         for config in BIGRAMS_CONFIGS:
             if os.path.exists(config.path) is False:
                 print("The bigram-path you provided does not point to an existing file.")
                 print("Language:", config.name, "\nPath:", config.path)
                 return False
+            weightSum += config.weight
+        if weightSum != 100:
+            print("The weights of BIGRAMS_CONFIGS did not add up to 100 (%).")
+            return False
     return True
 
 replacedWithAscii = dict()
