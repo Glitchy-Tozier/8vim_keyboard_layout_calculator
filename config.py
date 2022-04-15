@@ -29,8 +29,8 @@ LAYER_4_LETTERS = 'zq'.lower() # All letters for the fourth cycleNr of calculati
 # Define how which of the above letters are interchangeable (variable) between adjacent layers.
 # They have to be in the same order as they apear between layer1letters and layer2letters.
 # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-VAR_LETTERS_L1_L2 = 'nsrhld'.lower()
-#VAR_LETTERS_L1_L2 = ''.lower()
+#VAR_LETTERS_L1_L2 = 'nsrhld'.lower()
+VAR_LETTERS_L1_L2 = ''.lower()
 
 # For layer 1, define that a certain Letter ('e') doesn't change.
 # Just pick the most common one in your language.
@@ -46,10 +46,10 @@ STATIC_LETTERS = ('e', '', '', '', '', '', '', '') # the positions go clockwise.
 NR_OF_LAYERS = 4
 # Define how many of the best layer-versions should be used to generate the next layer's layouts.
 # This improves Layouts but has a HUGE impact on performance, so be careful.
-NR_OF_BEST_LAYOUTS = 500
+NR_OF_BEST_LAYOUTS = 5
 
 # Define whether to add a greedy optimization after layers 3 and 4 (recommended)
-PERFORM_GREEDY_OPTIMIZATION = True
+PERFORM_GREEDY_OPTIMIZATION = False
 
 # Define what information you want to recieve.
 SHOW_DATA = True

@@ -12,6 +12,7 @@ from functools import partial
 import platform
 
 from config import N_GRAM_LENGTH, BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST
+from helper_classes import BigramsConfig, ConfigSpecificResults
 
 start_time = time.time()
 
@@ -193,32 +194,45 @@ def main():
         finalScoresList = tempScoresList
         del tempLayoutList, tempScoresList
 
-
-    # Calculate what the perfect score would be
-    perfectLayoutScore = getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters)
-
     print("\n------------------------ %s seconds --- Done computing" % round((time.time() - start_time), 2))
 
-    if TEST_CUSTOM_LAYOUTS is True:
-        customScores = array("d", [])
-        for name, layout in customLayouts.items():
-            # Get the scores for the custom layouts.
-            partialLayout = layout[:NR_OF_LAYERS*LETTERS_PER_LAYER]
-            bigrams = getBigrams(''.join(sorted(partialLayout)))
-            customScore = testSingleLayout(partialLayout, asciiArray, bigrams)
-            customScores.append(customScore)
+    if SHOW_DATA is True:
+        if TEST_CUSTOM_LAYOUTS is True:
+            customScores = array("d", [])
+            for name, layout in customLayouts.items():
+                # Get the scores for the custom layouts.
+                partialLayout = layout[:NR_OF_LAYERS*LETTERS_PER_LAYER]
+                bigrams = getBigrams(''.join(sorted(partialLayout)))
+                customScore = testSingleLayout(partialLayout, asciiArray, bigrams)
+                customScores.append(customScore)
 
-            # If yout're only testing a certain nuber of layers, only use that amount of layers in the name of the custom layouts.
-            if len(layout) > (NR_OF_LAYERS*LETTERS_PER_LAYER):
-                layoutStr = layout[:NR_OF_LAYERS*LETTERS_PER_LAYER] + "... (+ more letters that weren't tested. Change nrOfLayers to the correct number to test all of them.)"
-                customLayouts[name] = layoutStr
+                # If yout're only testing a certain nuber of layers, only use that amount of layers in the name of the custom layouts.
+                if len(layout) > (NR_OF_LAYERS*LETTERS_PER_LAYER):
+                    layoutStr = layout[:NR_OF_LAYERS*LETTERS_PER_LAYER] + "... (+ more letters that weren't tested. Change nrOfLayers to the correct number to test all of them.)"
+                    customLayouts[name] = layoutStr
+
+        
+        # Calculate what the perfect score would be
+        configSpecificData = [ ConfigSpecificResults(
+            "All",
+            100,
+            getBigrams(layer1letters + layer2letters + layer3letters + layer4letters),
+            getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters),
+        ) ]
+        if len(BIGRAMS_CONFIGS) > 1:
+            for config in BIGRAMS_CONFIGS:
+                originalWeight = config.weight
+                fullWeightConfig = config.fullWeightClone()
+                
+                configSpecificData.append(ConfigSpecificResults(
+                    config.name,
+                    originalWeight,
+                    getBigrams(layer1letters + layer2letters + layer3letters + layer4letters, (fullWeightConfig, )),
+                    getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters, (fullWeightConfig, )),
+                ))
 
         # Display the data in the terminal.
-        showDataInTerminal(finalLayoutList, finalScoresList, perfectLayoutScore, customLayouts, customScores)
-
-    else:
-        # Display the data in the terminal.
-        showDataInTerminal(finalLayoutList, finalScoresList, perfectLayoutScore)
+        showDataInTerminal(finalLayoutList, finalScoresList, configSpecificData, asciiArray, customLayouts, customScores)
 
 
 def validateSettings(layer1letters, layer2letters, layer3letters, layer4letters, varLetters_L1_L2, staticLetters) -> bool:
@@ -336,10 +350,11 @@ def getVariableLetters(fullLayer: str, staticLetters: str) -> str:
     return varLetters
 
 bigramCache = dict()
-def getBigrams(sortedLetters: str) -> tuple:
+def getBigrams(sortedLetters: str, configs: tuple = BIGRAMS_CONFIGS) -> tuple:
     """This opens the bigram-list (the txt-file) and returns the letters and the frequencies of the required bigrams."""
-    try: return bigramCache[sortedLetters]
-    except KeyError:
+    if configs == BIGRAMS_CONFIGS and sortedLetters in bigramCache:
+        return bigramCache[sortedLetters]
+    else:
         fullBigramList = []
         
         # Prepare the bigram-letters
@@ -356,7 +371,7 @@ def getBigrams(sortedLetters: str) -> tuple:
             bigramList[i] = deAsciify(bigram)
 
         normalizedCorpora = []
-        for config in BIGRAMS_CONFIGS:
+        for config in configs:
             if config.weight <= 0:
                 continue
 
@@ -390,14 +405,15 @@ def getBigrams(sortedLetters: str) -> tuple:
                     bigramsDict[bigram] += freq
 
         bigrams = tuple(Bigram(characters, freq) for characters, freq in bigramsDict.items())
-        bigramCache[sortedLetters] = bigrams
+        if configs == BIGRAMS_CONFIGS:
+            bigramCache[sortedLetters] = bigrams
         return bigrams
 
-def getSumBigramCount() -> float:
+def getSumBigramCount(configs: tuple = BIGRAMS_CONFIGS) -> float:
     """This returns the total number of all bigram-frequencies, even of those with letters that don't exist in the calculated layers."""
 
     frequencySum = 0.0
-    for config in BIGRAMS_CONFIGS:
+    for config in configs:
         if config.weight <= 0:
             continue
 
@@ -652,7 +668,7 @@ def getLayoutScores_multiprocessing(*args):
     goodLayouts, goodScores = getTopScores(layouts, scores, 500)
     return goodLayouts, goodScores
 
-def getPerfectLayoutScore(layer1letters: str, layer2letters: str, layer3letters: str, layer4letters: str) -> float:
+def getPerfectLayoutScore(layer1letters: str, layer2letters: str, layer3letters: str, layer4letters: str, configs: tuple = BIGRAMS_CONFIGS) -> float:
     """Creates the score a perfect (impossible) layout would have, just for comparison's sake."""
 
     best_score_matrix = [] # A matrix that contains the best values for any combination of two layers
@@ -670,24 +686,24 @@ def getPerfectLayoutScore(layer1letters: str, layer2letters: str, layer3letters:
     for i in range(len(best_score_matrix)):
         best_score_matrix[i].insert(0, 0)
 
-    bigrams_L1_L1 = getBigrams(''.join(sorted(layer1letters)))
+    bigrams_L1_L1 = getBigrams(''.join(sorted(layer1letters)), configs)
     # print("bigramLetters_L1_L1", bigramLetters_L1_L1)
     perfectScore = sum(bigram.frequency for bigram in bigrams_L1_L1) * best_score_matrix[1][1]
     
     if NR_OF_LAYERS > 1:
-        bigrams_L2 = getBigrams(''.join(sorted(layer1letters+layer2letters)))
+        bigrams_L2 = getBigrams(''.join(sorted(layer1letters+layer2letters)), configs)
         bigrams_L1_L2 = filterBigrams(bigrams_L2, [layer1letters, layer2letters])
-        bigrams_L2_L2 = getBigrams(''.join(sorted(layer2letters)))
+        bigrams_L2_L2 = getBigrams(''.join(sorted(layer2letters)), configs)
         # print("bigramLetters_L1_L2", bigramLetters_L1_L2)
         # print("bigramLetters_L2_L2", bigramLetters_L2_L2)
         perfectScore += sum(bigram.frequency for bigram in bigrams_L1_L2) * best_score_matrix[1][2]
         perfectScore += sum(bigram.frequency for bigram in bigrams_L2_L2) * best_score_matrix[2][2]
         
         if NR_OF_LAYERS > 2:
-            bigrams_L3 = getBigrams(''.join(sorted(layer1letters+layer2letters+layer3letters)))
+            bigrams_L3 = getBigrams(''.join(sorted(layer1letters+layer2letters+layer3letters)), configs)
             bigrams_L1_L3 = filterBigrams(bigrams_L3, [layer1letters, layer3letters])
             bigrams_L2_L3 = filterBigrams(bigrams_L3, [layer2letters, layer3letters])
-            bigrams_L3_L3 = getBigrams(''.join(sorted(layer3letters)))
+            bigrams_L3_L3 = getBigrams(''.join(sorted(layer3letters)), configs)
             # print("bigramLetters_L1_L3", bigramLetters_L1_L3)
             # print("bigramLetters_L2_L3", bigramLetters_L2_L3)
             # print("bigramLetters_L3_L3", bigramLetters_L3_L3)
@@ -696,11 +712,11 @@ def getPerfectLayoutScore(layer1letters: str, layer2letters: str, layer3letters:
             perfectScore += sum(bigram.frequency for bigram in bigrams_L3_L3) * best_score_matrix[3][3]
 
             if NR_OF_LAYERS > 3:
-                bigrams_L4 = getBigrams(''.join(sorted(layer1letters+layer2letters+layer3letters+layer4letters)))
+                bigrams_L4 = getBigrams(''.join(sorted(layer1letters+layer2letters+layer3letters+layer4letters)), configs)
                 bigrams_L1_L4 = filterBigrams(bigrams_L4, [layer1letters, layer4letters])
                 bigrams_L2_L4 = filterBigrams(bigrams_L4, [layer2letters, layer4letters])
                 bigrams_L3_L4 = filterBigrams(bigrams_L4, [layer3letters, layer4letters])
-                bigrams_L4_L4 = getBigrams(''.join(sorted(layer4letters)))
+                bigrams_L4_L4 = getBigrams(''.join(sorted(layer4letters)), configs)
                 # print("bigramLetters_L1_L4", bigramLetters_L1_L4)
                 # print("bigramLetters_L2_L4", bigramLetters_L2_L4)
                 # print("bigramLetters_L3_L4", bigramLetters_L3_L4)
@@ -798,7 +814,8 @@ def performLetterSwaps(layout: str) -> set:
 def showDataInTerminal(
         layouts: tuple,
         scores: array,
-        perfectLayoutScore: float,
+        configSpecificData: list,
+        asciiArray: array,
         customLayouts = OrderedDict(),
         customScores = array("d"),
     ) -> None:
@@ -815,7 +832,6 @@ def showDataInTerminal(
         # Make the values more visually appealing.
         for j in range(len(orderedScores)):
             orderedScores[j] = round(orderedScores[j], 2)
-        perfectLayoutScore = round(perfectLayoutScore, 2)
         for j in range(len(customScores)):
             customScores[j] = round(customScores[j], 2)
 
@@ -841,7 +857,22 @@ def showDataInTerminal(
                 print(layoutVisualisation(layout))
                 print(optStrToXmlStr(layout))
                 print('─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+NR_OF_LAYERS+9) + '> Layout-placing:', nrOfLayouts-j)
-                print('─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+NR_OF_LAYERS+9) + '> Score:', layoutScore, '   ~%.2f' % float(100*layoutScore/perfectLayoutScore), '%')
+                for data in configSpecificData:
+                    cfgName = data.name
+                    weight = data.weight
+                    score = testSingleLayout(layout, asciiArray, data.bigrams)
+                    perfectScore = data.perfectScore
+                    if cfgName == "All":
+                        offset = 0
+                    else:
+                        offset = 12
+                    print(
+                        " "*offset + cfgName,
+                        "{}%".format(weight),
+                        '─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+NR_OF_LAYERS+8-len(cfgName + str(weight))-offset) + '> Score:',
+                        score,
+                        '   ~%.2f' % float(100*score/perfectScore), '%',
+                    )
                 j-=1
 
         if TEST_CUSTOM_LAYOUTS is True:
@@ -852,7 +883,23 @@ def showDataInTerminal(
             for j, (name, layout) in enumerate(customLayouts.items()):
                 print('\n{}:'.format(name))
                 print(optStrToXmlStr(layout))
-                print('─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+3) + '> Score:', customScores[j], '   ~%.2f' % float(100*customScores[j]/perfectLayoutScore), '%')
+                for data in configSpecificData:
+                    cfgName = data.name
+                    weight = data.weight
+                    score = testSingleLayout(layout, asciiArray, data.bigrams)
+                    perfectScore = data.perfectScore
+                    layoutScore = customScores[j]
+                    if cfgName == "All":
+                        offset = 0
+                    else:
+                        offset = 12
+                    print(
+                        " "*offset + cfgName,
+                        "{}%".format(weight),
+                        '─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+NR_OF_LAYERS+8-len(cfgName + str(weight))-offset) + '> Score:',
+                        score,
+                        '   ~%.2f' % float(100*score/perfectScore), '%',
+                    )
 
         if SHOW_GENERAL_STATS is True:
             writeableBigrams = getBigrams(''.join(sorted(layouts[0]))) # Get all bigrams that actually can be written using this layout.
@@ -884,7 +931,7 @@ def xmlStrToOptStr(layout: str) -> str:
     b = "{8}{9}{16}{17}{24}{25}{0}{1} {10}{11}{18}{19}{26}{27}{2}{3} {12}{13}{20}{21}{28}{29}{4}{5} {14}{15}{22}{23}{30}{31}{6}{7}"
     layout = layout.replace(' ', '') # Remove whitespaces
     layout = asciify(layout)
-    layout = b.format(*layout) + "\n" + b.format(*layout.upper())
+    layout = b.format(*layout)
     layout = layout.replace(' ', '') # Remove whitespaces
     return layout
 
