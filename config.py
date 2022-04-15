@@ -3,18 +3,22 @@ from helper_classes import BigramsConfig
 # Keep this on 2
 N_GRAM_LENGTH = 2
 
-# This is the main thing you want to change. Name it whatever your bigrams-corpus is called.
+# This is the main thing you want to change.
+# name:     What you call the language. Could be anything.
+# weight:   The percentage of how important this language is. Make sure all weights add up to exactly 100.
+# path:     The path to your bigrams-file.
 BIGRAMS_CONFIGS = (
     BigramsConfig(
-        name = "English",       weight = 90, # %
+        name = "English",       weight = 100, # %
         path = './bigram_dictionaries/english_bigrams.txt'
     ),
     BigramsConfig(
-        name = "German",        weight = 10, # %
+        name = "German",        weight = 0, # %
         path = './bigram_dictionaries/german_bigrams.txt'
     ),
     BigramsConfig(
         # When using 0%, no optimization will be done using this language.
+        # However, you well still be shown stats on how good this layout performs in this language.
         name = "French",        weight = 0, # %
         path = './bigram_dictionaries/french_bigrams.txt'
     )
@@ -46,10 +50,10 @@ STATIC_LETTERS = ('e', '', '', '', '', '', '', '') # the positions go clockwise.
 NR_OF_LAYERS = 4
 # Define how many of the best layer-versions should be used to generate the next layer's layouts.
 # This improves Layouts but has a HUGE impact on performance, so be careful.
-NR_OF_BEST_LAYOUTS = 5
+NR_OF_BEST_LAYOUTS = 500
 
 # Define whether to add a greedy optimization after layers 3 and 4 (recommended)
-PERFORM_GREEDY_OPTIMIZATION = False
+PERFORM_GREEDY_OPTIMIZATION = True
 
 # Define what information you want to recieve.
 SHOW_DATA = True
@@ -79,6 +83,9 @@ FILL_SYMBOL = '-'
 
 # 32 characters that aren't part of your bigram-corpus or your layout. They need to be within the first 256 slots of the ascii-table.
 ASCII_REPLACEMENT_CHARS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "[", "]", "{", "}", "(", ")", "<", ">", "/", "_", ",", "~", "¦", "±", "²", "³", "¶", "¹", "¼", "½", "¾", "¿"]
+
+# Ignore this option.
+SCREEN_WIDTH = 100
 
 # The rating-system you want to use. To use a different list of scores,
 # replace "KJOETOM_SCORE_LIST" by something else which can be found in

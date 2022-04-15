@@ -11,7 +11,7 @@ import multiprocessing
 from functools import partial
 import platform
 
-from config import N_GRAM_LENGTH, BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST
+from config import N_GRAM_LENGTH, BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST, SCREEN_WIDTH
 from helper_classes import BigramsConfig, ConfigSpecificResults
 
 start_time = time.time()
@@ -837,86 +837,42 @@ def showDataInTerminal(
 
         if SHOW_TOP_LAYOUTS != 0:
             print('\n')
-            print('#######################################################################################################################')
-            print('#######################################################################################################################')
+            print('#'*SCREEN_WIDTH)
+            print('#'*SCREEN_WIDTH)
             if SHOW_TOP_LAYOUTS == 1:
-                print('                                                       The King:')
+                print(' '*(int(SCREEN_WIDTH/2) - 5), 'The King:')
             else:
-                print('                                                The top', SHOW_TOP_LAYOUTS, 'BEST layouts:')
+                print(' '*(int(SCREEN_WIDTH/2) - 12), 'The top', SHOW_TOP_LAYOUTS, 'BEST layouts:')
             
             j=nrOfLayouts-1
             while j > nrOfLayouts-SHOW_TOP_LAYOUTS-1:
                 layout = orderedLayouts[j]
-                layoutScore = orderedScores[j]
-                firstLayerLetters =  layout[0:LETTERS_PER_LAYER]
-                secondLayerLetters = layout[LETTERS_PER_LAYER:LETTERS_PER_LAYER*2]
-                thirdLayerLetters =  layout[LETTERS_PER_LAYER*2:LETTERS_PER_LAYER*3]
-                fourthLayerLetters = layout[LETTERS_PER_LAYER*3:LETTERS_PER_LAYER*4]
+                placing = nrOfLayouts-j
                 
-                print('\n')
-                print(layoutVisualisation(layout))
-                print(optStrToXmlStr(layout))
-                print('─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+NR_OF_LAYERS+9) + '> Layout-placing:', nrOfLayouts-j)
-                for data in configSpecificData:
-                    cfgName = data.name
-                    weight = data.weight
-                    score = testSingleLayout(layout, asciiArray, data.bigrams)
-                    perfectScore = data.perfectScore
-                    if cfgName == "All":
-                        offset = 0
-                    else:
-                        offset = 12
-                    print(
-                        " "*offset + cfgName,
-                        "{}%".format(weight),
-                        '─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+NR_OF_LAYERS+8-len(cfgName + str(weight))-offset) + '> Score:',
-                        score,
-                        '   ~%.2f' % float(100*score/perfectScore), '%',
-                    )
+                printLayoutData(layout, asciiArray, configSpecificData, placing=placing)
                 j-=1
 
         if TEST_CUSTOM_LAYOUTS is True:
-            print('#######################################################################################################################')
-            print('#######################################################################################################################')
-            print('                                                    Custom layouts:')
+            print('#'*SCREEN_WIDTH)
+            print('#'*SCREEN_WIDTH)
+            print(' '*(int(SCREEN_WIDTH/2) - 8), "Custom layouts:")
 
-            for j, (name, layout) in enumerate(customLayouts.items()):
-                print('\n{}:'.format(name))
-                print(optStrToXmlStr(layout))
-                for data in configSpecificData:
-                    cfgName = data.name
-                    weight = data.weight
-                    score = testSingleLayout(layout, asciiArray, data.bigrams)
-                    perfectScore = data.perfectScore
-                    layoutScore = customScores[j]
-                    if cfgName == "All":
-                        offset = 0
-                    else:
-                        offset = 12
-                    print(
-                        " "*offset + cfgName,
-                        "{}%".format(weight),
-                        '─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+NR_OF_LAYERS+8-len(cfgName + str(weight))-offset) + '> Score:',
-                        score,
-                        '   ~%.2f' % float(100*score/perfectScore), '%',
-                    )
-
+            for name, layout in customLayouts.items():
+                printLayoutData(layout, asciiArray, configSpecificData, name=name)
+                
         if SHOW_GENERAL_STATS is True:
             writeableBigrams = getBigrams(''.join(sorted(layouts[0]))) # Get all bigrams that actually can be written using this layout.
             writeableFrequencySum = sum(bigram.frequency for bigram in writeableBigrams) # Get the sum of those ^ frequencies.
 
             if SHOW_TOP_LAYOUTS == 0:
                 print('\n')
-            print('#######################################################################################################################')
-            print('#######################################################################################################################')
-            print('                                                    General Stats:')
+            print('#'*SCREEN_WIDTH)
+            print('#'*SCREEN_WIDTH)
+            print(' '*(int(SCREEN_WIDTH/2) - 7), 'General Stats:')
             # print('Number of Layouts tested:', nrOfLayouts)
             print('Time needed for the whole runthrough: %s seconds.' % round((time.time() - start_time), 2))
             print('Amount of bigrams that can be written with the letters used in this layout:',
                     '~%.2f' % float(100*writeableFrequencySum/sumOfALLbigrams), '%')
-        print('#######################################################################################################################')
-        print('########################################### 8vim Keyboard Layout Calculator ###########################################')
-        print('#######################################################################################################################')
 
 def optStrToXmlStr(layout: str) -> str:
     """Turns the string-representation which is used internally into one that aligns with 8vim's XML-formatting."""
@@ -957,6 +913,67 @@ def layoutVisualisation(layout: str) -> str:
         blueprint = blueprint.replace('⟍', '\\')
         blueprint = blueprint.replace('⟋', '/')
     return blueprint.format(*layout)
+
+def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, placing: int = None, name: str = None):
+    """A function that positions and prints information
+    next to the layout-display-string for more compact visuals."""
+
+    print('-'*SCREEN_WIDTH)
+    visLayout = layoutVisualisation(layout)
+    visLayoutLines = visLayout.split('\n')
+
+    lineToPrint = 0
+    if placing is not None:
+        print(getExpandedLine(start=visLayoutLines[lineToPrint], end='Layout-placing: ' + str(placing)))
+        lineToPrint += 1
+    if name is not None:
+        print(getExpandedLine(start=visLayoutLines[lineToPrint], end=name))
+        lineToPrint += 1
+
+    xmlStr = optStrToXmlStr(layout)
+    xmlStrParts = xmlStr.split('\n')
+    for xmlStrPart in xmlStrParts:
+        print(getExpandedLine(start=visLayoutLines[lineToPrint], end=xmlStrPart))
+        lineToPrint += 1
+
+    print(visLayoutLines[lineToPrint])
+    lineToPrint += 1
+
+    for data in configSpecificData:
+        try:
+            visLine = visLayoutLines[lineToPrint]
+        except IndexError:
+            visLine = ""
+        
+        lineToPrint += 1
+        cfgName = data.name
+        weight = data.weight
+        score = round(testSingleLayout(layout, asciiArray, data.bigrams), 2)
+        perfectScore = data.perfectScore
+        if cfgName == "All":
+            visName = "All Languages "
+            offset = 0
+        else:
+            visName = cfgName + " {}% ".format(weight)
+            offset = 14
+        infoStr = " "*offset + visName
+        infoStr += '─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+NR_OF_LAYERS-len(visName)-offset) + '> Score: ' + str(score)
+        infoStr += '   ~%.2f' % float(100*score/perfectScore) + '%'
+        print(
+            getExpandedLine(
+                start=visLine,
+                end=infoStr,
+            )
+        )
+
+    if lineToPrint < len(visLayoutLines):
+        for visLine in visLayoutLines[lineToPrint:]:
+            print(visLine)
+
+def getExpandedLine(start="", end=""):
+    """Spaces two strings as far apart as possible."""
+    remainingSpace = SCREEN_WIDTH - len(start+end)
+    return start + " "*remainingSpace + end
 
 class Bigram:
     def __init__(self, bigramCharacters: str, frequency: float):
