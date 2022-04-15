@@ -200,7 +200,7 @@ def main():
         for name, layout in customLayouts.items():
             # Get the scores for the custom layouts.
             partialLayout = layout[:NR_OF_LAYERS*LETTERS_PER_LAYER]
-            bigrams = getBigramList(''.join(sorted(partialLayout)))
+            bigrams = getBigrams(''.join(sorted(partialLayout)))
             customScore = testSingleLayout(partialLayout, asciiArray, bigrams)
             customScores.append(customScore)
 
@@ -327,7 +327,7 @@ def getVariableLetters(fullLayer: str, staticLetters: str) -> str:
     return varLetters
 
 bigramCache = dict()
-def getBigramList(sortedLetters: str) -> tuple:
+def getBigrams(sortedLetters: str) -> tuple:
     """This opens the bigram-list (the txt-file) and returns the letters and the frequencies of the required bigrams."""
     try: return bigramCache[sortedLetters]
     except KeyError:
@@ -475,7 +475,7 @@ def testLayouts(layouts: tuple, asciiArray: array, prevScores=None):
         print(lastLayerLetters)
 
     # Get the bigrams for the input letters 
-    bigrams = getBigramList(''.join(sorted(layoutLetters)))
+    bigrams = getBigrams(''.join(sorted(layoutLetters)))
 
     if len(layoutLetters) > LETTERS_PER_LAYER: # Filter out the previous bigrams if there are any that need filtering.
         bigrams = filterBigrams(bigrams, [lastLayerLetters])
@@ -623,24 +623,24 @@ def getPerfectLayoutScore(layer1letters: str, layer2letters: str, layer3letters:
     for i in range(len(best_score_matrix)):
         best_score_matrix[i].insert(0, 0)
 
-    bigrams_L1_L1 = getBigramList(''.join(sorted(layer1letters)))
+    bigrams_L1_L1 = getBigrams(''.join(sorted(layer1letters)))
     # print("bigramLetters_L1_L1", bigramLetters_L1_L1)
     perfectScore = sum(bigram.frequency for bigram in bigrams_L1_L1) * best_score_matrix[1][1]
     
     if NR_OF_LAYERS > 1:
-        bigrams_L2 = getBigramList(''.join(sorted(layer1letters+layer2letters)))
+        bigrams_L2 = getBigrams(''.join(sorted(layer1letters+layer2letters)))
         bigrams_L1_L2 = filterBigrams(bigrams_L2, [layer1letters, layer2letters])
-        bigrams_L2_L2 = getBigramList(''.join(sorted(layer2letters)))
+        bigrams_L2_L2 = getBigrams(''.join(sorted(layer2letters)))
         # print("bigramLetters_L1_L2", bigramLetters_L1_L2)
         # print("bigramLetters_L2_L2", bigramLetters_L2_L2)
         perfectScore += sum(bigram.frequency for bigram in bigrams_L1_L2) * best_score_matrix[1][2]
         perfectScore += sum(bigram.frequency for bigram in bigrams_L2_L2) * best_score_matrix[2][2]
         
         if NR_OF_LAYERS > 2:
-            bigrams_L3 = getBigramList(''.join(sorted(layer1letters+layer2letters+layer3letters)))
+            bigrams_L3 = getBigrams(''.join(sorted(layer1letters+layer2letters+layer3letters)))
             bigrams_L1_L3 = filterBigrams(bigrams_L3, [layer1letters, layer3letters])
             bigrams_L2_L3 = filterBigrams(bigrams_L3, [layer2letters, layer3letters])
-            bigrams_L3_L3 = getBigramList(''.join(sorted(layer3letters)))
+            bigrams_L3_L3 = getBigrams(''.join(sorted(layer3letters)))
             # print("bigramLetters_L1_L3", bigramLetters_L1_L3)
             # print("bigramLetters_L2_L3", bigramLetters_L2_L3)
             # print("bigramLetters_L3_L3", bigramLetters_L3_L3)
@@ -649,11 +649,11 @@ def getPerfectLayoutScore(layer1letters: str, layer2letters: str, layer3letters:
             perfectScore += sum(bigram.frequency for bigram in bigrams_L3_L3) * best_score_matrix[3][3]
 
             if NR_OF_LAYERS > 3:
-                bigrams_L4 = getBigramList(''.join(sorted(layer1letters+layer2letters+layer3letters+layer4letters)))
+                bigrams_L4 = getBigrams(''.join(sorted(layer1letters+layer2letters+layer3letters+layer4letters)))
                 bigrams_L1_L4 = filterBigrams(bigrams_L4, [layer1letters, layer4letters])
                 bigrams_L2_L4 = filterBigrams(bigrams_L4, [layer2letters, layer4letters])
                 bigrams_L3_L4 = filterBigrams(bigrams_L4, [layer3letters, layer4letters])
-                bigrams_L4_L4 = getBigramList(''.join(sorted(layer4letters)))
+                bigrams_L4_L4 = getBigrams(''.join(sorted(layer4letters)))
                 # print("bigramLetters_L1_L4", bigramLetters_L1_L4)
                 # print("bigramLetters_L2_L4", bigramLetters_L2_L4)
                 # print("bigramLetters_L3_L4", bigramLetters_L3_L4)
@@ -713,7 +713,7 @@ def greedyOptimization(layouts: tuple, scores: array, asciiArray: array):
     """Randomly switches letters in each of the layouts to see whether the layouts can be improved this way."""
 
     optimizedLayouts = dict(zip(layouts, scores))
-    bigrams = getBigramList(''.join(sorted(layouts[0])))
+    bigrams = getBigrams(''.join(sorted(layouts[0])))
     print("Starting greedy optimization.")
     print("Number of layouts to optimize:", len(layouts))
     for layout, score in zip(layouts, deepcopy(scores)):
@@ -808,7 +808,7 @@ def showDataInTerminal(
                 print('─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+3) + '> Score:', customScores[j], '   ~%.2f' % float(100*customScores[j]/perfectLayoutScore), '%')
 
         if SHOW_GENERAL_STATS is True:
-            allWriteableBigrams = getBigramList(''.join(sorted(layouts[0]))) # Get all bigrams that actually can be written using this layout.
+            allWriteableBigrams = getBigrams(''.join(sorted(layouts[0]))) # Get all bigrams that actually can be written using this layout.
             unweightedWriteableFrequency = sum(bigram.frequency for bigram in allWriteableBigrams) # Get the sum of those ^ frequencies.
 
             if SHOW_TOP_LAYOUTS == 0:
