@@ -59,11 +59,8 @@ PERFORM_GREEDY_OPTIMIZATION = True
 SHOW_DATA = True
 SHOW_GENERAL_STATS = True
 SHOW_TOP_LAYOUTS = 5
-
-# You can use this section to test your custom-made layouts.
 TEST_CUSTOM_LAYOUTS = True
-# The layout-strings use a different formatting than the XML.
-# They are defined, starting fromm the bottom left, going clockwise. Layer per layer, from innermost to outermost.
+
 CUSTOM_LAYOUTS = (
     ('Old / original 8VIM layout', 'nomufv-w eilhkj-- tscdzg-- yabrpxq-'.lower()),
     #('Example Layout', 'ghopwx-- abijqryz cdklst-- efmnuv--'.lower()),
@@ -75,10 +72,10 @@ LETTERS_PER_LAYER = 8
 # Ignore this variable:
 DEBUG_MODE = False
 
-# Use Multiprocessing (disable this when using `pypy3 8vim_keyboard_layout_calculator.py`)
+# Use Multiprocessing (disable this when using `pypy3 main.py`)
 USE_MULTIPROCESSING = False
 
-# Symbol used for filling up layer 4. If your alphabet or your bigram-list for some reason contains "-", change - to something else.
+# Symbol used for filling up layer 4. If your alphabet or your bigram-list for some reason contains "-", change "-"" to something else.
 FILL_SYMBOL = '-'
 
 # 32 characters that aren't part of your bigram-corpus or your layout. They need to be within the first 256 slots of the ascii-table.
