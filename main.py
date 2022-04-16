@@ -763,7 +763,7 @@ def showDataInTerminal(
     nrOfLayouts = len(layouts)
     # Order the layouts. [0] is the worst layout, [nrOfLayouts] is the best.
 
-    if SHOW_TOP_LAYOUTS != 0:
+    if SHOW_TOP_LAYOUTS > 0:
         print('\n')
         print('#'*SCREEN_WIDTH)
         print('#'*SCREEN_WIDTH)
