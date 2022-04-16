@@ -209,7 +209,6 @@ def main():
             "All",
             100,
             getBigrams(layer1letters + layer2letters + layer3letters + layer4letters),
-            getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters),
         ) ]
         if len(BIGRAMS_CONFIGS) > 1:
             for config in BIGRAMS_CONFIGS:
@@ -220,7 +219,6 @@ def main():
                     config.name,
                     originalWeight,
                     getBigrams(layer1letters + layer2letters + layer3letters + layer4letters, (fullWeightConfig, )),
-                    getPerfectLayoutScore(layer1letters, layer2letters, layer3letters, layer4letters, (fullWeightConfig, )),
                 ))
 
         # Display the data in the terminal.
@@ -667,66 +665,6 @@ def getLayoutScores_multiprocessing(*args):
     goodLayouts, goodScores = getTopScores(layouts, scores, 500)
     return goodLayouts, goodScores
 
-def getPerfectLayoutScore(layer1letters: str, layer2letters: str, layer3letters: str, layer4letters: str, configs: tuple = BIGRAMS_CONFIGS) -> float:
-    """Creates the score a perfect (impossible) layout would have, just for comparison's sake."""
-
-    best_score_matrix = [] # A matrix that contains the best values for any combination of two layers
-    for _ in range(NR_OF_LAYERS):
-        best_score_matrix.append([0.0]*NR_OF_LAYERS)
-
-    for letter1_idx, scores in enumerate(SCORE_LIST):
-        layer1_idx = math.trunc(letter1_idx/LETTERS_PER_LAYER)
-        for layer2_idx in range(layer1_idx, NR_OF_LAYERS):
-            scores_for_Lj_Lk = scores[LETTERS_PER_LAYER*layer2_idx : LETTERS_PER_LAYER*layer2_idx+LETTERS_PER_LAYER]
-            if max(scores_for_Lj_Lk) > best_score_matrix[layer1_idx][layer2_idx]:
-                best_score_matrix[layer1_idx][layer2_idx] = max(scores_for_Lj_Lk)
-
-    best_score_matrix.insert(0, [0.0]*NR_OF_LAYERS) # Add empty rows so that we can access the values with the layer-numbers instead of the layer-indices
-    for i in range(len(best_score_matrix)):
-        best_score_matrix[i].insert(0, 0)
-
-    bigrams_L1_L1 = getBigrams(''.join(sorted(layer1letters)), configs)
-    # print("bigramLetters_L1_L1", bigramLetters_L1_L1)
-    perfectScore = sum(bigram.frequency for bigram in bigrams_L1_L1) * best_score_matrix[1][1]
-    
-    if NR_OF_LAYERS > 1:
-        bigrams_L2 = getBigrams(''.join(sorted(layer1letters+layer2letters)), configs)
-        bigrams_L1_L2 = filterBigrams(bigrams_L2, [layer1letters, layer2letters])
-        bigrams_L2_L2 = getBigrams(''.join(sorted(layer2letters)), configs)
-        # print("bigramLetters_L1_L2", bigramLetters_L1_L2)
-        # print("bigramLetters_L2_L2", bigramLetters_L2_L2)
-        perfectScore += sum(bigram.frequency for bigram in bigrams_L1_L2) * best_score_matrix[1][2]
-        perfectScore += sum(bigram.frequency for bigram in bigrams_L2_L2) * best_score_matrix[2][2]
-        
-        if NR_OF_LAYERS > 2:
-            bigrams_L3 = getBigrams(''.join(sorted(layer1letters+layer2letters+layer3letters)), configs)
-            bigrams_L1_L3 = filterBigrams(bigrams_L3, [layer1letters, layer3letters])
-            bigrams_L2_L3 = filterBigrams(bigrams_L3, [layer2letters, layer3letters])
-            bigrams_L3_L3 = getBigrams(''.join(sorted(layer3letters)), configs)
-            # print("bigramLetters_L1_L3", bigramLetters_L1_L3)
-            # print("bigramLetters_L2_L3", bigramLetters_L2_L3)
-            # print("bigramLetters_L3_L3", bigramLetters_L3_L3)
-            perfectScore += sum(bigram.frequency for bigram in bigrams_L1_L3) * best_score_matrix[1][3]
-            perfectScore += sum(bigram.frequency for bigram in bigrams_L2_L3) * best_score_matrix[2][3]
-            perfectScore += sum(bigram.frequency for bigram in bigrams_L3_L3) * best_score_matrix[3][3]
-
-            if NR_OF_LAYERS > 3:
-                bigrams_L4 = getBigrams(''.join(sorted(layer1letters+layer2letters+layer3letters+layer4letters)), configs)
-                bigrams_L1_L4 = filterBigrams(bigrams_L4, [layer1letters, layer4letters])
-                bigrams_L2_L4 = filterBigrams(bigrams_L4, [layer2letters, layer4letters])
-                bigrams_L3_L4 = filterBigrams(bigrams_L4, [layer3letters, layer4letters])
-                bigrams_L4_L4 = getBigrams(''.join(sorted(layer4letters)), configs)
-                # print("bigramLetters_L1_L4", bigramLetters_L1_L4)
-                # print("bigramLetters_L2_L4", bigramLetters_L2_L4)
-                # print("bigramLetters_L3_L4", bigramLetters_L3_L4)
-                # print("bigramLetters_L4_L4", bigramLetters_L4_L4)
-                perfectScore += sum(bigram.frequency for bigram in bigrams_L1_L4) * best_score_matrix[1][4]
-                perfectScore += sum(bigram.frequency for bigram in bigrams_L2_L4) * best_score_matrix[2][4]
-                perfectScore += sum(bigram.frequency for bigram in bigrams_L3_L4) * best_score_matrix[3][4]
-                perfectScore += sum(bigram.frequency for bigram in bigrams_L4_L4) * best_score_matrix[4][4]
-
-    return perfectScore
-
 def getTopScores(layouts: tuple, scores: array, nrOfBest=NR_OF_BEST_LAYOUTS):
     """Returns the best [whatever you set "nrOfBestPermutations" to] layouts with their scores.
     The LAST items of those lists should be the best ones."""
@@ -920,7 +858,7 @@ def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, pl
 
     print(visLayoutLines[lineToPrint])
     lineToPrint += 1
-    
+
     xmlStr = optStrToXmlStr(layout)
     xmlStrParts = xmlStr.split('\n')
     for xmlStrPart in xmlStrParts:
@@ -940,7 +878,6 @@ def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, pl
         cfgName = data.name
         weight = data.weight
         score = testSingleLayout(layout, asciiArray, data.bigrams)
-        perfectScore = data.perfectScore
         if cfgName == "All":
             visName = "All Languages "
             offset = 0
@@ -949,8 +886,7 @@ def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, pl
             offset = 14
         infoStr = " "*offset + visName
         infoStr += '─'*(LETTERS_PER_LAYER*NR_OF_LAYERS+NR_OF_LAYERS-len(visName)-offset)
-        infoStr += '> Score: ' + str(score)[:7]
-        infoStr += '   ~%.2f' % float(100*score/perfectScore) + '%'
+        infoStr += f'> Score: {score:.4f}'
         print(
             getExpandedLine(
                 start=visLine,

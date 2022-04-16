@@ -12,8 +12,8 @@ class BigramsConfig:
         return copy
 
 class ConfigSpecificResults:
-    def __init__(self, name: str, weight: float, bigrams: tuple, perfectScore: float):
+    """The data for one or multiple [`BigramConfg`]s"""
+    def __init__(self, name: str, weight: float, bigrams: tuple):
         self.name = name
         self.weight = weight
         self.bigrams = bigrams
-        self.perfectScore = perfectScore
