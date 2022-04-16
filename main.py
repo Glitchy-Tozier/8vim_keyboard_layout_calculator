@@ -352,9 +352,8 @@ def getBigrams(sortedLetters: str, configs: tuple = BIGRAMS_CONFIGS) -> tuple:
     if configs == BIGRAMS_CONFIGS and sortedLetters in bigramCache:
         return bigramCache[sortedLetters]
     else:
-        fullBigramList = []
-        
         # Prepare the bigram-letters
+        fullBigramList = []
         for bigram in itertools.permutations(sortedLetters, N_GRAM_LENGTH):
             fullBigramList.append(''.join(bigram))
         for letter in sortedLetters:
@@ -362,10 +361,11 @@ def getBigrams(sortedLetters: str, configs: tuple = BIGRAMS_CONFIGS) -> tuple:
         
         # Filter out the bigrams that contain the predefined filler-symbol.
         bigramList = [ b for b in fullBigramList if FILL_SYMBOL not in b ]
-        
         # Make sure we also will get the replaced letters from the dictionary.
         for i, bigram in enumerate(bigramList):
             bigramList[i] = deAsciify(bigram)
+        # Create a set for faster lookups
+        bigramsSet = set(bigramList)
 
         normalizedCorpora = []
         for config in configs:
@@ -376,21 +376,21 @@ def getBigrams(sortedLetters: str, configs: tuple = BIGRAMS_CONFIGS) -> tuple:
             frequencySum = 0
             with open(config.path, 'r') as corpus:                
                 for line in corpus:
-                    frequencySum += float(line[line.find(' ')+1:])
+                    frequency = float(line[line.find(' ')+1:])
+                    frequencySum += frequency
             
             # Read the file and normalize its contents.
             normalizedCorpus = []
-            for currentBigram in bigramList:
-                with open(config.path, 'r') as corpus:
-                    for line in corpus:
-                        line = line.lower()
-                        if currentBigram == line[0:N_GRAM_LENGTH]:
-                            absFreq = float(line[line.find(' ')+1:])
-                            normalizedCorpus.append((
-                                currentBigram,
-                                absFreq * config.weight / frequencySum
-                            ))
-                            break
+            with open(config.path, 'r') as corpus:
+                for line in corpus:
+                    line = line.lower()
+                    bigram = line[0:N_GRAM_LENGTH]
+                    if bigram in bigramsSet:
+                        frequency = float(line[line.find(' ')+1:])
+                        normalizedCorpus.append((
+                            bigram,
+                            frequency * config.weight / frequencySum # Normalize frequency
+                        ))
             normalizedCorpora.append(normalizedCorpus)
 
         bigramsDict = dict()
@@ -415,16 +415,17 @@ def getSumBigramCount(configs: tuple = BIGRAMS_CONFIGS) -> float:
             continue
 
         # Sum up the corpus's frequencies. Used for later normalization.
-        absoluteSum = 0
+        absoluteFreqSum = 0
         with open(config.path, 'r') as corpus:                
             for line in corpus:
-                absoluteSum += float(line[line.find(' ')+1:])
+                absFreq = float(line[line.find(' ')+1:])
+                absoluteFreqSum += absFreq
         
         # Read the file and normalize its contents.
         with open(config.path, 'r') as corpus:
             for line in corpus:
                 absFreq = float(line[line.find(' ')+1:])
-                frequencySum += absFreq * config.weight / absoluteSum
+                frequencySum += absFreq * config.weight / absoluteFreqSum
 
     return frequencySum
 
