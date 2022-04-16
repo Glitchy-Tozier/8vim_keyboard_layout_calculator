@@ -356,6 +356,7 @@ def getBigrams(sortedLetters: str, configs: tuple = BIGRAMS_CONFIGS) -> tuple:
         fullBigramList = []
         for bigram in itertools.permutations(sortedLetters, N_GRAM_LENGTH):
             fullBigramList.append(''.join(bigram))
+        # Add duplicate letter bigrams. ("aa", "ee", "nn", "rr", ...)
         for letter in sortedLetters:
             fullBigramList.append(letter+letter)
         
@@ -917,6 +918,9 @@ def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, pl
         print(getExpandedLine(start=visLayoutLines[lineToPrint], end=name))
         lineToPrint += 1
 
+    print(visLayoutLines[lineToPrint])
+    lineToPrint += 1
+    
     xmlStr = optStrToXmlStr(layout)
     xmlStrParts = xmlStr.split('\n')
     for xmlStrPart in xmlStrParts:
