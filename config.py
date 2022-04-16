@@ -21,7 +21,7 @@ BIGRAMS_CONFIGS = (
         # However, you well still be shown stats on how good this layout performs in this language.
         name = "French",        weight = 0, # %
         path = './bigram_dictionaries/french_bigrams.txt'
-    )
+    ),
 )
 
 # Define the letters you want to use
@@ -33,8 +33,8 @@ LAYER_4_LETTERS = 'zq'.lower() # All letters for the fourth cycleNr of calculati
 # Define how which of the above letters are interchangeable (variable) between adjacent layers.
 # They have to be in the same order as they apear between layer1letters and layer2letters.
 # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
-#VAR_LETTERS_L1_L2 = 'nsrhld'.lower()
-VAR_LETTERS_L1_L2 = ''.lower()
+VAR_LETTERS_L1_L2 = 'nsrhld'.lower()
+#VAR_LETTERS_L1_L2 = ''.lower()
 
 # For layer 1, define that a certain Letter ('e') doesn't change.
 # Just pick the most common one in your language.
