@@ -76,21 +76,21 @@ def main():
         if cycleNr == 1:
             print('\nEstimated time needed for all cycles:', round(nrOfCycles*(time.time() - start_time), 2), 'seconds')
             print("Those only are the cycles for layer 1 and 2 though. Don't worry however; Layer 3 (and 4) should be calculated quicker.")
-        print("\n------------------------ %s seconds --- Started with layouts for layer 1" % round((time.time() - start_time), 2))
+        print("\n------------------------ %s seconds --- Started with layouts for layer 1" % elapsedTime())
 
 
         # get the letters in layer 1 that can actually move.
         varLetters = getVariableLetters(letters_L1, staticLetters)
 
         # Get all layouts for each Layer with the current layer-letters.
-        layouts_L1, layouts_L2, layouts_L3, layouts_L4 = getLayouts(varLetters, staticLetters, letters_L2, layer3letters, layer4letters)
+        layouts_L1, layouts_L2, layouts_L3, layouts_L4 = getLayerPermutations(varLetters, staticLetters, letters_L2, layer3letters, layer4letters)
 
         # Test the layer 1 - layouts
         goodLayouts_L1, goodScores_L1 = testLayouts(layouts_L1, asciiArray)
         del layouts_L1
 
 
-        print("------------------------ %s seconds --- Got best layouts for layer 1" % round((time.time() - start_time), 2))
+        print("------------------------ %s seconds --- Got best layouts for layer 1" % elapsedTime())
 
 
         # If the user says so, calculate the second layer.
@@ -98,7 +98,7 @@ def main():
             ####################################################################################################################
             ################################  Calculate the second Layer
 
-            print("\n------------------------ %s seconds --- Started with layouts for layer 2" % round((time.time() - start_time), 2))
+            print("\n------------------------ %s seconds --- Started with layouts for layer 2" % elapsedTime())
 
             # Sort the best layer-1 layouts and only return the best ones
             bestLayouts_L1, bestScores_L1 = getTopScores(goodLayouts_L1, goodScores_L1)
@@ -112,7 +112,7 @@ def main():
             goodLayouts_L1_L2, goodScores_L1_L2 = testLayouts(layouts_L1_L2, asciiArray, bestScores_L1)
             del layouts_L1_L2, bestScores_L1
 
-            print("------------------------ %s seconds --- Got best layouts for layer 2" % round((time.time() - start_time), 2))
+            print("------------------------ %s seconds --- Got best layouts for layer 2" % elapsedTime())
 
             # Add the found layouts to the list (which will later be displayed)
             tempLayoutList.extend(goodLayouts_L1_L2)
@@ -128,7 +128,7 @@ def main():
         ####################################################################################################################
         ################################  Calculate the third Layer
 
-        print("\n------------------------ %s seconds --- Started with layouts for layer 3" % round((time.time() - start_time), 2))
+        print("\n------------------------ %s seconds --- Started with layouts for layer 3" % elapsedTime())
 
         nrOfBestPermutations = NR_OF_BEST_LAYOUTS * 2
 
@@ -151,13 +151,13 @@ def main():
             goodLayouts_L1_L2_L3, goodScores_L1_L2_L3 = initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3
         del initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3
 
-        print("------------------------ %s seconds --- Got best layouts for layer 3" % round((time.time() - start_time), 2))
+        print("------------------------ %s seconds --- Got best layouts for layer 3" % elapsedTime())
 
         if NR_OF_LAYERS >= 4:
             ####################################################################################################################
             ################################  Calculate the fourth Layer
 
-            print("\n------------------------ %s seconds --- Started with layouts for layer 4" % round((time.time() - start_time), 2))
+            print("\n------------------------ %s seconds --- Started with layouts for layer 4" % elapsedTime())
 
             nrOfBestPermutations = nrOfBestPermutations * 5
 
@@ -181,7 +181,7 @@ def main():
                 finalLayoutList, finalScoresList = goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4
             del goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4
 
-            print("------------------------ %s seconds --- Got best layouts for layer 4" % round((time.time() - start_time), 2))
+            print("------------------------ %s seconds --- Got best layouts for layer 4" % elapsedTime())
 
         else:
             # Do an additional hillclimbing-optimization, then
@@ -194,7 +194,7 @@ def main():
         finalScoresList = tempScoresList
         del tempLayoutList, tempScoresList
 
-    print("\n------------------------ %s seconds --- Done computing" % round((time.time() - start_time), 2))
+    print("\n------------------------ %s seconds --- Done computing" % elapsedTime())
 
     if SHOW_DATA is True:
         if TEST_CUSTOM_LAYOUTS is True:
@@ -286,7 +286,7 @@ def deAsciify(string: str) -> str:
                 result[idx] = replacedChar
     return ''.join(result)
 
-def getLayerCombinations(layer1letters: str, layer2letters: str, varLetters_L1_L2: str):
+def getLayerCombinations(layer1letters: str, layer2letters: str, varLetters_L1_L2: str) -> tuple:
     """Creates all possible layer-combinations with the letters you specified.
     This includes "varLetters_L1_L2" and "varLetters_L2_L3"
     It always returns two List (of strings)."""
@@ -437,7 +437,7 @@ def lowerStaticLetters(staticLetters: tuple) -> tuple:
         lst[j] = element.lower()
     return tuple(lst)
 
-def getLayouts(varLetters: str, staticLetters: list, layer2letters: str, layer3letters: str, layer4letters: str):
+def getLayerPermutations(varLetters: str, staticLetters: list, layer2letters: str, layer3letters: str, layer4letters: str) -> tuple:
     """Creates and returns a list of layouts."""
 
     layer1layouts = getPermutations(varLetters, staticLetters)
@@ -501,7 +501,7 @@ def fillAndPermuteLayout(letters: str) -> tuple:
 
     return tuple(layouts)
 
-def testLayouts(layouts: tuple, asciiArray: array, prevScores=None):
+def testLayouts(layouts: tuple, asciiArray: array, prevScores=None) -> tuple:
     """Calculates the best layouts and returns them (and their scores)."""
 
     # Combine the Letters for the layer 1 and layer 2
@@ -575,7 +575,7 @@ def testSingleLayout(layout: str, asciiArray: array, bigrams: tuple) -> float:
     #         scores[k] += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
     return score
 
-def getLayoutScores(layouts: tuple, asciiArray: array, bigrams: tuple, prevScores=None):
+def getLayoutScores(layouts: tuple, asciiArray: array, bigrams: tuple, prevScores=None) -> tuple:
     """Tests the layouts and return their scores. It's only used when single-threading."""
 
     nrLayouts = len(layouts)
@@ -606,7 +606,7 @@ def getLayoutScores(layouts: tuple, asciiArray: array, bigrams: tuple, prevScore
     goodLayouts, goodScores = getTopScores(layouts, scores, 500)
     return goodLayouts, goodScores
 
-def getLayoutScores_multiprocessing(*args):
+def getLayoutScores_multiprocessing(*args) -> tuple:
     """This function tests the layouts and return their scores.
     Only use this function when using multiprocessing. Otherwise, use [getLayoutScores]"""
 
@@ -643,7 +643,7 @@ def getLayoutScores_multiprocessing(*args):
     goodLayouts, goodScores = getTopScores(layouts, scores, 500)
     return goodLayouts, goodScores
 
-def getTopScores(layouts: tuple, scores: array, nrOfBest=NR_OF_BEST_LAYOUTS):
+def getTopScores(layouts: tuple, scores: array, nrOfBest=NR_OF_BEST_LAYOUTS) -> tuple:
     """Returns the best [whatever you set "nrOfBestPermutations" to] layouts with their scores.
     The LAST items of those lists should be the best ones."""
 
@@ -687,7 +687,7 @@ def combinePermutations(list1: tuple, list2: tuple) -> tuple:
 
     return tuple(listOfStrings)
 
-def greedyOptimization(layouts: tuple, scores: array, asciiArray: array):
+def greedyOptimization(layouts: tuple, scores: array, asciiArray: array) -> tuple:
     """Randomly switches letters in each of the layouts to see whether the layouts can be improved this way."""
 
     optimizedLayouts = dict(zip(layouts, scores))
@@ -735,9 +735,6 @@ def showDataInTerminal(
     ) -> None:
     """Displays the results; The best layouts, maybe (if i decide to keep this in here) the worst, and some general data."""
 
-    nrOfLayouts = len(layouts)
-    # Order the layouts. [0] is the worst layout, [nrOfLayouts] is the best.
-
     if SHOW_TOP_LAYOUTS > 0:
         print('\n')
         print('#'*SCREEN_WIDTH)
@@ -748,6 +745,7 @@ def showDataInTerminal(
             print(' '*(int(SCREEN_WIDTH/2) - 12), 'The top', SHOW_TOP_LAYOUTS, 'BEST layouts:')
         
         layouts, _ = getTopScores(layouts, scores, SHOW_TOP_LAYOUTS)
+        del scores
         layouts = list(layouts)
         layouts.reverse()
         for idx, layout in enumerate(layouts):
@@ -770,8 +768,7 @@ def showDataInTerminal(
         print('#'*SCREEN_WIDTH)
         print('#'*SCREEN_WIDTH)
         print(' '*(int(SCREEN_WIDTH/2) - 7), 'General Stats:')
-        # print('Number of Layouts tested:', nrOfLayouts)
-        print('Time needed for the whole runthrough: %s seconds.' % round((time.time() - start_time), 2))
+        print('Time needed for the whole runthrough: %s seconds.' % elapsedTime())
         print('Amount of bigrams that can be written with the letters used in this layout:',
                 '~%.2f' % writeableFrequencySum, '%')
 
@@ -815,7 +812,7 @@ def layoutVisualisation(layout: str) -> str:
         blueprint = blueprint.replace('⟋', '/')
     return blueprint.format(*layout)
 
-def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, placing: int = None, name: str = None):
+def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, placing: int = None, name: str = None) -> None:
     """A function that positions and prints information
     next to the layout-display-string for more compact visuals."""
 
@@ -873,15 +870,21 @@ def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, pl
         for visLine in visLayoutLines[lineToPrint:]:
             print(visLine)
 
-def getExpandedLine(start="", end=""):
+def getExpandedLine(start="", end="") -> str:
     """Spaces two strings as far apart as possible."""
     remainingSpace = SCREEN_WIDTH - len(start+end)
     return start + " "*remainingSpace + end
+
+def elapsedTime() -> float:
+    """A function that aids with readability.
+    Returns the elapsed time since the script was started."""
+    return round((time.time() - start_time), 2)
 
 class Bigram:
     def __init__(self, bigramCharacters: str, frequency: float):
         # Make sure the bigrams we're actually using only consist of ascii-characters.
         bigramCharacters = asciify(bigramCharacters)
+        # Turn the characters into integers, representing their ascii-code.
         self.letter1AsciiCode = ord(bigramCharacters[0])
         self.letter2AsciiCode = ord(bigramCharacters[1])
         self.frequency = frequency

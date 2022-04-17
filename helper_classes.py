@@ -7,6 +7,7 @@ class BigramsConfig:
         self.path = path
     
     def fullWeightClone(self):
+        """Copies [`self`] and sets its weight to 100"""
         copy = deepcopy(self)
         copy.weight = 100
         return copy
