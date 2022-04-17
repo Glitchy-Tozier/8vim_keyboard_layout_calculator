@@ -11,7 +11,7 @@ import multiprocessing
 from functools import partial
 import platform
 
-from config import N_GRAM_LENGTH, BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST, SCREEN_WIDTH
+from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST, SCREEN_WIDTH
 from helper_classes import BigramsConfig, ConfigSpecificResults
 
 start_time = time.time()
@@ -352,7 +352,7 @@ def getBigrams(sortedLetters: str, configs: tuple = BIGRAMS_CONFIGS) -> tuple:
     else:
         # Prepare the bigram-letters
         fullBigramList = []
-        for bigram in itertools.permutations(sortedLetters, N_GRAM_LENGTH):
+        for bigram in itertools.permutations(sortedLetters, 2):
             fullBigramList.append(''.join(bigram))
         # Add duplicate letter bigrams. ("aa", "ee", "nn", "rr", ...)
         for letter in sortedLetters:
@@ -383,12 +383,13 @@ def getBigrams(sortedLetters: str, configs: tuple = BIGRAMS_CONFIGS) -> tuple:
             with open(config.path, 'r') as corpus:
                 for line in corpus:
                     line = line.lower()
-                    bigram = line[0:N_GRAM_LENGTH]
+                    bigram = line[:2]
                     if bigram in bigramsSet:
                         frequency = float(line[line.find(' ')+1:])
+                        normalizedFrequency = frequency * config.weight / frequencySum
                         normalizedCorpus.append((
                             bigram,
-                            frequency * config.weight / frequencySum # Normalize frequency
+                            normalizedFrequency,
                         ))
             normalizedCorpora.append(normalizedCorpus)
 
@@ -404,29 +405,6 @@ def getBigrams(sortedLetters: str, configs: tuple = BIGRAMS_CONFIGS) -> tuple:
         if configs == BIGRAMS_CONFIGS:
             bigramCache[sortedLetters] = bigrams
         return bigrams
-
-def getSumBigramCount(configs: tuple = BIGRAMS_CONFIGS) -> float:
-    """This returns the total number of all bigram-frequencies, even of those with letters that don't exist in the calculated layers."""
-
-    frequencySum = 0.0
-    for config in configs:
-        if config.weight <= 0:
-            continue
-
-        # Sum up the corpus's frequencies. Used for later normalization.
-        absoluteFreqSum = 0
-        with open(config.path, 'r') as corpus:                
-            for line in corpus:
-                absFreq = float(line[line.find(' ')+1:])
-                absoluteFreqSum += absFreq
-        
-        # Read the file and normalize its contents.
-        with open(config.path, 'r') as corpus:
-            for line in corpus:
-                absFreq = float(line[line.find(' ')+1:])
-                frequencySum += absFreq * config.weight / absoluteFreqSum
-
-    return frequencySum
 
 def filterBigrams(bigrams: tuple, requiredLetters=[]) -> tuple:
     """Trims the bigram-list to make getPermutations() MUCH faster.
@@ -757,9 +735,6 @@ def showDataInTerminal(
     ) -> None:
     """Displays the results; The best layouts, maybe (if i decide to keep this in here) the worst, and some general data."""
 
-    # Get the total number of all bigram-frequencies, even of those with letters that don't exist in the calculated layers.
-    sumOfALLbigrams = getSumBigramCount()
-
     nrOfLayouts = len(layouts)
     # Order the layouts. [0] is the worst layout, [nrOfLayouts] is the best.
 
@@ -798,7 +773,7 @@ def showDataInTerminal(
         # print('Number of Layouts tested:', nrOfLayouts)
         print('Time needed for the whole runthrough: %s seconds.' % round((time.time() - start_time), 2))
         print('Amount of bigrams that can be written with the letters used in this layout:',
-                '~%.2f' % float(100*writeableFrequencySum/sumOfALLbigrams), '%')
+                '~%.2f' % writeableFrequencySum, '%')
 
 def optStrToXmlStr(layout: str) -> str:
     """Turns the string-representation which is used internally into one that aligns with 8vim's XML-formatting."""

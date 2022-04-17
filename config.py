@@ -1,8 +1,5 @@
 from helper_classes import BigramsConfig
 
-# Keep this on 2
-N_GRAM_LENGTH = 2
-
 # This is the main thing you want to change.
 # name:     What you call the language. Could be anything.
 # weight:   The percentage of how important this language is. Make sure all weights add up to exactly 100.
