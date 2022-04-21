@@ -32,7 +32,7 @@ python3 main.py
 ```
 
 ### Bigrams
-Due to the fear of being sued, I won't add bigram-files to this repository. Please add them yourself. A great resource is [this website](http://practicalcryptography.com/cryptanalysis/letter-frequencies-various-languages/).
+Due to copyrigiht-reasons, I won't add bigram-files to this repository. Please add them yourself. A great resource is [this website](http://practicalcryptography.com/cryptanalysis/letter-frequencies-various-languages/).
 I'm sure there also are other amazing websites out there, but I'm quite happy with it. You should be able to use most of their bigram-files with **8vim_keyboard_layout_calculator**.
 
 ## Future to-do's (PRs are welcome)
