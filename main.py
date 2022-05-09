@@ -625,13 +625,13 @@ def testSingleLayout(layout: str, asciiArray: array, bigrams: tuple) -> float:
     # Get the bigrams that contain [orderedLetters]
     for j, letter in enumerate(layout):
         asciiArray[ord(letter)] = j  # Fill up asciiArray
-    score = sum([bigram.frequency * SCORE_LIST[asciiArray[bigram.letter1AsciiCode]]
-                [asciiArray[bigram.letter2AsciiCode]] for bigram in bigrams])
-    # The monstrous line above ^ has the same function as the following block of code:
-    # for bigram in bigrams: # Go through every bigram and see how well it flows.
-    #         firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
-    #         secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
-    #         scores[k] += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
+
+    score = 0.0
+    for bigram in bigrams: # Go through every bigram and see how well it flows.
+        firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
+        secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
+        score += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
+
     return score
 
 
@@ -646,14 +646,11 @@ def getLayoutScores(layouts: tuple, asciiArray: array, bigrams: tuple, prevScore
     for k, layout in enumerate(layouts):
         for j, letter in enumerate(layout):
             asciiArray[ord(letter)] = j  # Fill up asciiArray
-        scores[k] = sum([bigram.frequency * SCORE_LIST[asciiArray[bigram.letter1AsciiCode]]
-                        [asciiArray[bigram.letter2AsciiCode]] for bigram in bigrams])
-
-    # The monstrous line above ^ has the same function as the following block of code:
-    # for bigram in bigrams: # Go through every bigram and see how well it flows.
-    #         firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
-    #         secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
-    #         scores[k] += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
+    
+        for bigram in bigrams: # Go through every bigram and see how well it flows.
+            firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
+            secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
+            scores[k] += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
 
     if prevScores:
         # Add the previous layouts' scores. (which weren't tested here. It would be redundant.)
@@ -688,21 +685,17 @@ def getLayoutScores_multiprocessing(*args) -> tuple:
     bigrams = staticArgs[2]
 
     prevScore = staticArgs[3][int(groupBeginning/groupSize)]
-    scores = array("d", [0.0]*groupSize)
+    scores = array("d", [prevScore]*groupSize)
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
         for j, letter in enumerate(layout):
             asciiArray[ord(letter)] = j  # Fill up asciiArray
-        scores[k] = prevScore + sum([bigram.frequency * SCORE_LIST[asciiArray[bigram.letter1AsciiCode]]
-                                    [asciiArray[bigram.letter2AsciiCode]] for bigram in bigrams])
-
-    # The monstrous line above ^ has the same function as the following block of code:
-    # scores[k] += prevScore
-    # for bigram in bigrams: # Go through every bigram and see how well it flows.
-    #         firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
-    #         secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
-    #         scores[k] += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
+        
+        for bigram in bigrams: # Go through every bigram and see how well it flows.
+            firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
+            secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
+            scores[k] += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
 
     # Only use the best scores (and layouts) for performance-reasons
     goodLayouts, goodScores = getTopScores(layouts, scores, 500)
