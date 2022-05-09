@@ -9,20 +9,20 @@ The discussion regarding this program can be found here: https://github.com/flid
 ```sh
 git clone https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator.git
 ```
-2. Add a bigram-file inside the folder bigram_dictionaries
+2. Add a [bigram-file](#bigrams) inside the folder [`bigram_dictionaries`](https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator/tree/main/bigram_dictionaries)
 3. Open `config.py` and edit the config-parameters to match your language. The most important ones are:
-    - BIGRAMS_CONFIGS
-    - LAYER_1_LETTERS
-    - LAYER_2_LETTERS
-    - LAYER_3_LETTERS
-    - LAYER_4_LETTERS
-    - VAR_LETTERS_L1_L2
-    - NR_OF_BEST_LAYOUTS (has a big impact on speed)
+    - `BIGRAMS_CONFIGS`
+    - `LAYER_1_LETTERS`
+    - `LAYER_2_LETTERS`
+    - `LAYER_3_LETTERS`
+    - `LAYER_4_LETTERS`
+    - `VAR_LETTERS_L1_L2`
+    - `NR_OF_BEST_LAYOUTS` (has a big impact on speed)
 4. Start the script:
     - _(Install a recent version of [Python](https://www.python.org/))_
     - Navigate to this project's root directory and run the script.  
 
-Recommended: Use [pypy](https://www.pypy.org/) (needs to be installed)
+Recommended: Use [`pypy`](https://www.pypy.org/) (needs to be installed)
 ```sh
 pypy3 main.py
 ```
@@ -32,8 +32,8 @@ python3 main.py
 ```
 
 ### Bigrams
-Due to the fear of being sued, I won't add bigram-files to this repository. Please add them yourself. A great resource is [this website](http://practicalcryptography.com/cryptanalysis/letter-frequencies-various-languages/).
-I'm sure there also are other amazing websites out there, but I'm quite happy with it. You should be able to use most of their bigram-files with **8vim_keyboard_layout_calculator**.
+Due to copyrigiht-reasons, I won't add bigram-files to this repository. Please add them yourself. A great resource is [this website](http://practicalcryptography.com/cryptanalysis/letter-frequencies-various-languages/).
+Read [this](https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator/blob/main/bigram_dictionaries/readme.txt) for more information.
 
 ## Future to-do's (PRs are welcome)
 - [ ] If on Windows, don't show results in Terminal. Instead log them to a `results.txt` file. This might prevent crashes when optimizing for non-ascii alphabets.
