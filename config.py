@@ -59,7 +59,14 @@ SHOW_TOP_LAYOUTS = 5
 TEST_CUSTOM_LAYOUTS = True
 
 CUSTOM_LAYOUTS = (
+    ('Old / original 8VIM layout (flipped/rotated)', 'ayrbxp-q stdcgz-- iehljk-- onumvfw-'.lower()),
+    ('Glitchys original best layout (flipped/rotated)', 'rsbojv-- ntmlfy-- aecdpk-q iuhgzw-x'.lower()),
+    ('kjoetoms layout 1', 'rsgujb-- ntkmvy-- oecdpz-q iahlwf-x'.lower()),
+    ('kjoetoms layout 2', 'dslfjg-- nhucvy-- oemtpz-- iawrkbqx'.lower()),
+    ('kjoetoms layout 3', 'tcimjb-- nhuoky-- aepdfv-- rslgzwqx'.lower()),
+ # primary rotated version
     ('Old / original 8VIM layout', 'nomufv-w eilhkj-- tscdzg-- yabrpxq-'.lower()),
+    ('Glitchys original best layout', 'uighwzx- eadckpq- tnlmyf-- srobvj--'.lower()),
     #('Example Layout', 'ghopwx-- abijqryz cdklst-- efmnuv--'.lower()),
 )
 
@@ -84,4 +91,4 @@ SCREEN_WIDTH = 100
 # The rating-system you want to use. To use a different list of scores,
 # replace "KJOETOM_SCORE_LIST" by something else which can be found in
 # the `score_list.py`-file.
-from score_lists import KJOETOM_SCORE_LIST as SCORE_LIST
+from score_lists import ORIGINAL_SCORE_LIST as SCORE_LIST
