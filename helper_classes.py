@@ -2,10 +2,11 @@ from copy import deepcopy
 
 
 class BigramsConfig:
-    def __init__(self, name: str, weight: float, path: str):
+    def __init__(self, name: str, weight: float, path: str, mono: str = ''):
         self.name = name
         self.weight = weight
         self.path = path
+        self.mono = mono
 
     def fullWeightClone(self):
         """Copies [`self`] and sets its weight to 100"""

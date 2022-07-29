@@ -1,5 +1,8 @@
 __pycache__
 8penresearch.pdf
 bigram_dictionaries/*
+!bigram_dictionaries/readme.txt
+monogram_dictionaries/*
+!monogram_dictionaries/readme.txt
 run.bat
 Old Stuff

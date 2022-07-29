@@ -11,7 +11,7 @@ import multiprocessing
 from functools import partial
 import platform
 
-from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST, SCREEN_WIDTH
+from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, AUTO_LAYER_LETTERS, AUTO_LAYER_SWAP_COUNT, AUTO_LAYER_EMPTY_COUNT, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST, SCREEN_WIDTH
 from helper_classes import BigramsConfig, ConfigSpecificResults
 
 start_time = time.time()
@@ -44,12 +44,32 @@ def main():
         # If something is wrong, stop execution
         return
 
-    # Asciify all necessary strings
-    layer1letters = asciify(LAYER_1_LETTERS)
-    layer2letters = asciify(LAYER_2_LETTERS)
-    layer3letters = asciify(LAYER_3_LETTERS)
-    layer4letters = asciify(LAYER_4_LETTERS)
-    varLetters_L1_L2 = asciify(VAR_LETTERS_L1_L2)
+    # Calculate layer letters
+    if AUTO_LAYER_LETTERS:
+        letters = orderLetters();
+
+        # Asciify all necessary strings
+        layer1letters = asciify(letters[:8])
+        layer2letters = asciify(letters[8:16])
+        layer3letters = asciify(letters[16:24])
+        layer4letters = asciify(letters[24:32 - AUTO_LAYER_EMPTY_COUNT])
+        varLetters_L1_L2 = asciify(letters[8 - AUTO_LAYER_SWAP_COUNT:8 + AUTO_LAYER_SWAP_COUNT])
+
+        print('Auto generated layer letters:')
+        print(f' Layer 1:  \'{letters[:8]}\'')
+        print(f' Layer 2:  \'{letters[8:16]}\'')
+        print(f' Layer 3:  \'{letters[16:24]}\'')
+        print(f' Layer 4:  \'{letters[24:32 - AUTO_LAYER_EMPTY_COUNT]}\'')
+        print(f' Variable: \'{letters[8 - AUTO_LAYER_SWAP_COUNT:8 + AUTO_LAYER_SWAP_COUNT]}\'')
+    else:
+
+        # Asciify all necessary strings
+        layer1letters = asciify(LAYER_1_LETTERS)
+        layer2letters = asciify(LAYER_2_LETTERS)
+        layer3letters = asciify(LAYER_3_LETTERS)
+        layer4letters = asciify(LAYER_4_LETTERS)
+        varLetters_L1_L2 = asciify(VAR_LETTERS_L1_L2)
+
     staticLetters = tuple(asciify(l) for l in staticLetters)
 
     # Create the asciiArray
@@ -249,25 +269,42 @@ def main():
 def validateSettings(staticLetters) -> bool:
     """Checks the user's input for common errors. If everything is correct, returns `True`"""
 
-    layout = LAYER_1_LETTERS + LAYER_2_LETTERS + LAYER_3_LETTERS + LAYER_4_LETTERS
-    # Check for duplicate letters
-    for char in layout:
-        if (char != FILL_SYMBOL) and (layout.count(char) > 1):
-            print("Duplicate letters found:", char,
-                  "\nCheck LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, and LAYER_4_LETTERS")
+    if AUTO_LAYER_LETTERS:
+        if AUTO_LAYER_SWAP_COUNT < 0 or AUTO_LAYER_SWAP_COUNT > 8:
+            print("AUTO_LAYER_SWAP_COUNT must be between 0 and 8")
             return False
-    # Check whether VAR_LETTERS_L1_L2's letters are contained in the layers 1 & 2
-    for char in VAR_LETTERS_L1_L2:
-        if char not in LAYER_1_LETTERS + LAYER_2_LETTERS:
-            print(
-                '"', char, '" was defined in VAR_LETTERS_L1_L2, but is not part of layer 1 or 2')
+        if AUTO_LAYER_EMPTY_COUNT < 0 or AUTO_LAYER_EMPTY_COUNT > 32:
+            print("AUTO_LAYER_EMPTY_COUNT must be between 0 and 32")
             return False
-    # Check whether fixed_letters's letters are contained in the ferst layers
-    for char in staticLetters:
-        if char not in LAYER_1_LETTERS:
-            print(
-                '"', char, '" was defined in staticLetters, but is not part of the first layer')
-            return False
+        for config in BIGRAMS_CONFIGS:
+            if config.weight:
+                if not config.mono:
+                    print(f"{config.name} must have a 'mono' attribute")
+                    return False
+                if os.path.exists(config.mono) is False:
+                    print("The monograph-path you provided does not point to an existing file.")
+                    print("Language:", config.name, "\nPath:", config.mono)
+                    return False
+    else:
+        layout = LAYER_1_LETTERS + LAYER_2_LETTERS + LAYER_3_LETTERS + LAYER_4_LETTERS
+        # Check for duplicate letters
+        for char in layout:
+            if (char != FILL_SYMBOL) and (layout.count(char) > 1):
+                print("Duplicate letters found:", char,
+                      "\nCheck LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, and LAYER_4_LETTERS")
+                return False
+        # Check whether VAR_LETTERS_L1_L2's letters are contained in the layers 1 & 2
+        for char in VAR_LETTERS_L1_L2:
+            if char not in LAYER_1_LETTERS + LAYER_2_LETTERS:
+                print(
+                    '"', char, '" was defined in VAR_LETTERS_L1_L2, but is not part of layer 1 or 2')
+                return False
+        # Check whether fixed_letters's letters are contained in the ferst layers
+        for char in staticLetters:
+            if char not in LAYER_1_LETTERS:
+                print(
+                    '"', char, '" was defined in staticLetters, but is not part of the first layer')
+                return False
     # Check if bigram-settings are valid
     if len(BIGRAMS_CONFIGS) == 0:
         print("No bigrams-config found.")
@@ -284,6 +321,32 @@ def validateSettings(staticLetters) -> bool:
             print("The weights of BIGRAMS_CONFIGS did not add up to 100 (%).")
             return False
     return True
+
+
+def normalize(withCount):
+    total = sum(withCount[char] for char in withCount)
+    return {char: withCount[char]/total for char in withCount}
+
+
+def orderLetters(configs: tuple = BIGRAMS_CONFIGS) -> str:
+    toCombine = []
+    for config in configs:
+        if config.weight <= 0:
+            continue
+        with open(config.mono, 'r') as corpus:
+            sett = normalize({i[0]: int(i[i.find(' ')+1:]) for i in corpus})
+            toCombine.append((sett, config.weight/100))
+
+    combined = {}
+    for sett, weight in toCombine:
+        for char in sett:
+            if char in combined:
+                combined[char] += weight*sett[char]
+            else:
+                combined[char] = weight*sett[char]
+    combinedTotal = sum(combined[char] for char in combined)
+    ordered = sorted(((combined[char], char) for char in combined), reverse=True)
+    return ''.join(i[1] for i in ordered).lower()
 
 
 # Used in combination with the `asciify` and `deAsciify` functions

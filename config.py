@@ -4,10 +4,12 @@ from helper_classes import BigramsConfig
 # name:     What you call the language. Could be anything.
 # weight:   The percentage of how important this language is. Make sure all weights add up to exactly 100.
 # path:     The path to your bigrams-file.
+# mono:     The path to your monograms-file.
 BIGRAMS_CONFIGS = (
     BigramsConfig(
         name = "English",       weight = 100, # %
-        path = './bigram_dictionaries/english_bigrams.txt'
+        path = './bigram_dictionaries/english_bigrams.txt',
+        mono = './monogram_dictionaries/english_monograms.txt'
     ),
     BigramsConfig(
         name = "German",        weight = 0, # %
@@ -32,6 +34,12 @@ LAYER_4_LETTERS = 'zq'.lower() # All letters for the fourth cycleNr of calculati
 # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
 VAR_LETTERS_L1_L2 = 'nsrhld'.lower()
 #VAR_LETTERS_L1_L2 = ''.lower()
+
+# Alternativelly you can get the layer letters to be generated automatically based on the monograms of the languages and their weights
+# This option overrides the previous options
+AUTO_LAYER_LETTERS = True
+AUTO_LAYER_SWAP_COUNT = 3
+AUTO_LAYER_EMPTY_COUNT = 4
 
 # For layer 1, define that a certain Letter ('e') doesn't change.
 # Just pick the most common one in your language.
