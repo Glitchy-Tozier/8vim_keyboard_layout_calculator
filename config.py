@@ -18,7 +18,7 @@ BIGRAMS_CONFIGS = (
         # However, you well still be shown stats on how good this layout performs in this language.
         name = "French",        weight = 0, # %
         path = './bigram_dictionaries/french_bigrams.txt'
-    ),
+    )
 )
 
 # This option calculates which letters should be on each layer based on the bigrams and their weight.
