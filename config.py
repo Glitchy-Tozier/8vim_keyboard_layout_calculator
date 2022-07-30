@@ -4,12 +4,10 @@ from helper_classes import BigramsConfig
 # name:     What you call the language. Could be anything.
 # weight:   The percentage of how important this language is. Make sure all weights add up to exactly 100.
 # path:     The path to your bigrams-file.
-# mono:     The path to your monograms-file.
 BIGRAMS_CONFIGS = (
     BigramsConfig(
         name = "English",       weight = 100, # %
-        path = './bigram_dictionaries/english_bigrams.txt',
-        mono = './monogram_dictionaries/english_monograms.txt'
+        path = './bigram_dictionaries/english_bigrams.txt'
     ),
     BigramsConfig(
         name = "German",        weight = 0, # %
@@ -23,7 +21,26 @@ BIGRAMS_CONFIGS = (
     ),
 )
 
-# Define the letters you want to use
+# This option calculates which letters should be on each layer based on the bigrams and their weight.
+# You can disable this option and then set the letters manually in the next opitons.
+AUTO_LAYER_LETTERS = True
+
+# The number of letters from the 1st and 2nd layers that are interchangable
+# /!\ BIG PERFORMANCE IMPACT /!\
+# (0 - fastest, 8 - slowest)
+AUTO_LAYER_SWAP_COUNT = 3
+
+# The number of slots that will be kept empty
+AUTO_LAYER_EMPTY_COUNT = 4
+
+# Characters that should be ignored
+# Sane defaults
+AUTO_LAYER_IGNORE = ' !"#$%&\'()*+,-./0123456789:;<=>?@[\\]^_`{|}~'
+# Symbols available in the default 8VIM layout
+#AUTO_LAYER_IGNORE = ' !"#$%&\'()*+,-./0123456789:;<=>?@[\\]^_`{|}~¡¢£¦§©¬®°¶¿÷€₹™⨯'
+
+# Manually define the letters you want to use
+# (Overriden by the AUTO_LAYER_LETTERS option)
 LAYER_1_LETTERS = 'etaoinsr'.lower() # All letters for the first cycleNr of calculation, including 'e' (or whatever you put in >staticLetters<)
 LAYER_2_LETTERS = 'hldcumfg'.lower() # All letters for the second cycleNr of calculation
 LAYER_3_LETTERS = 'pwybvkjx'.lower() # All letters for the third cycleNr of calculation
@@ -34,12 +51,6 @@ LAYER_4_LETTERS = 'zq'.lower() # All letters for the fourth cycleNr of calculati
 # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
 VAR_LETTERS_L1_L2 = 'nsrhld'.lower()
 #VAR_LETTERS_L1_L2 = ''.lower()
-
-# Alternativelly you can get the layer letters to be generated automatically based on the monograms of the languages and their weights
-# This option overrides the previous options
-AUTO_LAYER_LETTERS = True
-AUTO_LAYER_SWAP_COUNT = 3
-AUTO_LAYER_EMPTY_COUNT = 4
 
 # For layer 1, define that a certain Letter ('e') doesn't change.
 # Just pick the most common one in your language.

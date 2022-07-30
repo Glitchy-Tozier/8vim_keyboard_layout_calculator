@@ -11,7 +11,7 @@ import multiprocessing
 from functools import partial
 import platform
 
-from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, AUTO_LAYER_LETTERS, AUTO_LAYER_SWAP_COUNT, AUTO_LAYER_EMPTY_COUNT, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST, SCREEN_WIDTH
+from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, AUTO_LAYER_LETTERS, AUTO_LAYER_SWAP_COUNT, AUTO_LAYER_EMPTY_COUNT, AUTO_LAYER_IGNORE, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST, SCREEN_WIDTH
 from helper_classes import BigramsConfig, ConfigSpecificResults
 
 start_time = time.time()
@@ -47,20 +47,22 @@ def main():
     # Calculate layer letters
     if AUTO_LAYER_LETTERS:
         letters = orderLetters();
+        cutoff = 32 - AUTO_LAYER_EMPTY_COUNT
 
         # Asciify all necessary strings
-        layer1letters = asciify(letters[:8])
-        layer2letters = asciify(letters[8:16])
-        layer3letters = asciify(letters[16:24])
-        layer4letters = asciify(letters[24:32 - AUTO_LAYER_EMPTY_COUNT])
+        layer1letters = asciify(letters[:min(8, cutoff)])
+        layer2letters = asciify(letters[8:min(16, cutoff)])
+        layer3letters = asciify(letters[16:min(24, cutoff)])
+        layer4letters = asciify(letters[24:cutoff])
         varLetters_L1_L2 = asciify(letters[8 - AUTO_LAYER_SWAP_COUNT:8 + AUTO_LAYER_SWAP_COUNT])
 
         print('Auto generated layer letters:')
-        print(f' Layer 1:  \'{letters[:8]}\'')
-        print(f' Layer 2:  \'{letters[8:16]}\'')
-        print(f' Layer 3:  \'{letters[16:24]}\'')
-        print(f' Layer 4:  \'{letters[24:32 - AUTO_LAYER_EMPTY_COUNT]}\'')
+        print(f' Layer 1:  \'{letters[:min(8, cutoff)]}\'')
+        print(f' Layer 1:  \'{letters[8:min(16, cutoff)]}\'')
+        print(f' Layer 1:  \'{letters[16:min(24, cutoff)]}\'')
+        print(f' Layer 1:  \'{letters[24:cutoff]}\'')
         print(f' Variable: \'{letters[8 - AUTO_LAYER_SWAP_COUNT:8 + AUTO_LAYER_SWAP_COUNT]}\'')
+        print(f' Unused:   \'{letters[32 - AUTO_LAYER_EMPTY_COUNT:]}\'')
     else:
 
         # Asciify all necessary strings
@@ -270,21 +272,15 @@ def validateSettings(staticLetters) -> bool:
     """Checks the user's input for common errors. If everything is correct, returns `True`"""
 
     if AUTO_LAYER_LETTERS:
-        if AUTO_LAYER_SWAP_COUNT < 0 or AUTO_LAYER_SWAP_COUNT > 8:
-            print("AUTO_LAYER_SWAP_COUNT must be between 0 and 8")
+        if not 0 <= AUTO_LAYER_SWAP_COUNT <= 8:
+            print('AUTO_LAYER_SWAP_COUNT must be between 0 and 8 (inclusive)')
             return False
-        if AUTO_LAYER_EMPTY_COUNT < 0 or AUTO_LAYER_EMPTY_COUNT > 32:
-            print("AUTO_LAYER_EMPTY_COUNT must be between 0 and 32")
+        if not 0 <= AUTO_LAYER_EMPTY_COUNT <= 24:
+            print('AUTO_LAYER_EMPTY_COUNT must be between 0 and 24 (inclusive)')
             return False
-        for config in BIGRAMS_CONFIGS:
-            if config.weight:
-                if not config.mono:
-                    print(f"{config.name} must have a 'mono' attribute")
-                    return False
-                if os.path.exists(config.mono) is False:
-                    print("The monograph-path you provided does not point to an existing file.")
-                    print("Language:", config.name, "\nPath:", config.mono)
-                    return False
+        if AUTO_LAYER_SWAP_COUNT + AUTO_LAYER_EMPTY_COUNT > 24:
+            print(f'AUTO_LAYER_SWAP_COUNT cannot be greater than {24 - AUTO_LAYER_EMPTY_COUNT} with AUTO_LAYER_EMPTY_COUNT = {AUTO_LAYER_EMPTY_COUNT}')
+            return False
     else:
         layout = LAYER_1_LETTERS + LAYER_2_LETTERS + LAYER_3_LETTERS + LAYER_4_LETTERS
         # Check for duplicate letters
@@ -323,30 +319,42 @@ def validateSettings(staticLetters) -> bool:
     return True
 
 
-def normalize(withCount):
-    total = sum(withCount[char] for char in withCount)
-    return {char: withCount[char]/total for char in withCount}
+def normalized(sett: dict) -> list:
+    total = sum(sett[i] for i in sett)
+    return [(sett[i]/total, i) for i in sett]
 
 
 def orderLetters(configs: tuple = BIGRAMS_CONFIGS) -> str:
-    toCombine = []
+
+    # Generate monograph sets for each language
+    monoSets = []
     for config in configs:
         if config.weight <= 0:
             continue
-        with open(config.mono, 'r') as corpus:
-            sett = normalize({i[0]: int(i[i.find(' ')+1:]) for i in corpus})
-            toCombine.append((sett, config.weight/100))
+        with open(config.path, 'r') as biFile:
+            bis = {line[:2]: float(line[3:]) for line in biFile}
+        notNorm = {}
+        for bi in bis:
+            for char in bi:
+                if char in AUTO_LAYER_IGNORE:
+                    continue
+                if char in notNorm:
+                    notNorm[char] += bis[bi]*config.weight
+                else:
+                    notNorm[char] = bis[bi]*config.weight
+        monoSets.append(normalized(notNorm))
 
-    combined = {}
-    for sett, weight in toCombine:
-        for char in sett:
-            if char in combined:
-                combined[char] += weight*sett[char]
+    # Combine the monograph sets into one
+    combinedSet = {}
+    for monos in monoSets:
+        for freq, char in monos:
+            if char in combinedSet:
+                combinedSet[char] += freq
             else:
-                combined[char] = weight*sett[char]
-    combinedTotal = sum(combined[char] for char in combined)
-    ordered = sorted(((combined[char], char) for char in combined), reverse=True)
-    return ''.join(i[1] for i in ordered).lower()
+                combinedSet[char] = freq
+
+    # Sort the combined monograph set
+    return ''.join(sorted(combinedSet, key=lambda i: combinedSet[i], reverse=True)).lower()
 
 
 # Used in combination with the `asciify` and `deAsciify` functions
@@ -709,7 +717,7 @@ def getLayoutScores(layouts: tuple, asciiArray: array, bigrams: tuple, prevScore
     for k, layout in enumerate(layouts):
         for j, letter in enumerate(layout):
             asciiArray[ord(letter)] = j  # Fill up asciiArray
-    
+
         for bigram in bigrams: # Go through every bigram and see how well it flows.
             firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
             secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
@@ -754,7 +762,7 @@ def getLayoutScores_multiprocessing(*args) -> tuple:
     for k, layout in enumerate(layouts):
         for j, letter in enumerate(layout):
             asciiArray[ord(letter)] = j  # Fill up asciiArray
-        
+
         for bigram in bigrams: # Go through every bigram and see how well it flows.
             firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
             secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
