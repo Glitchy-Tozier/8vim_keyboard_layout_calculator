@@ -34,6 +34,7 @@ AUTO_LAYER_EMPTY_COUNT = 6
 AUTO_LAYER_IGNORE = ' !"#$%&\'()*+,-./0123456789:;<=>?@[\\]^_`{|}~¡¢£¦§©¬®°¶¿÷€₹™⨯'
 
 # Manually define the letters you want to use
+# This removes all AUTO_LAYER functionality
 MANUALLY_DEFINE_LAYERS = False
 LAYER_1_LETTERS = 'etaoinsr'.lower() # All letters for the first cycleNr of calculation, including 'e' (or whatever you put in >staticLetters<)
 LAYER_2_LETTERS = 'hldcumfg'.lower() # All letters for the second cycleNr of calculation
