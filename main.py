@@ -335,7 +335,7 @@ def generateMonogramsFromBigramFiles(configs: tuple = BIGRAMS_CONFIGS) -> dict:
     for config in configs:
         if config.weight <= 0:
             continue
-        with open(config.path, 'r') as corpus:
+        with open(config.path, 'r', encoding='utf-8') as corpus:
             bigrams = {line[:2].lower(): float(line[3:]) for line in corpus}
         monograms = dict()
         for bigram in bigrams:
@@ -489,14 +489,14 @@ def getBigrams(sortedLetters: str, configs: tuple = BIGRAMS_CONFIGS) -> tuple:
 
             # Sum up the corpus's frequencies. Used for later normalization.
             frequencySum = 0
-            with open(config.path, 'r') as corpus:
+            with open(config.path, 'r', encoding='utf-8') as corpus:
                 for line in corpus:
                     frequency = float(line[line.find(' ')+1:])
                     frequencySum += frequency
 
             # Read the file and normalize its contents.
             normalizedCorpus = []
-            with open(config.path, 'r') as corpus:
+            with open(config.path, 'r', encoding='utf-8') as corpus:
                 for line in corpus:
                     line = line.lower()
                     bigram = line[:2]

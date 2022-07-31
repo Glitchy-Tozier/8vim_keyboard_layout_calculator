@@ -28,7 +28,7 @@ BIGRAMS_CONFIGS = (
 AUTO_LAYER_SWAP_COUNT = 3
 # The number of slots that will be kept empty
 # Can be used to reserve room for special symbols such as period, comma, ect.
-AUTO_LAYER_EMPTY_COUNT = 4
+AUTO_LAYER_EMPTY_COUNT = 6
 # Characters that will be ignored when generating layers from bigram-files
 # Symbols available in the default 8VIM layout
 AUTO_LAYER_IGNORE = ' !"#$%&\'()*+,-./0123456789:;<=>?@[\\]^_`{|}~¡¢£¦§©¬®°¶¿÷€₹™⨯'
