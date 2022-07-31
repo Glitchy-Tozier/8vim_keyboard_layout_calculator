@@ -473,7 +473,7 @@ def filterBigrams(bigrams: tuple, requiredLetters=[]) -> tuple:
 
 
 def lowerStaticLetters(staticLetters: tuple) -> tuple:
-    """Takes any Iterable and turns its uppercase letters into lowercase ones."""
+    """Takes any tuple and turns its uppercase letters into lowercase ones."""
     lst = list(staticLetters)
     for j, element in enumerate(staticLetters):
         lst[j] = element.lower()
