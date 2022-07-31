@@ -2,7 +2,7 @@ from helper_classes import BigramsConfig
 
 # This is the main thing you want to change.
 # name:     What you call the language. Could be anything.
-# weight:   The percentage of how important this language is. Make sure all weights add up to exactly 100.
+# weight:   The percentage of how important this language is. Make sure all weights add up to exactly 100(%).
 # path:     The path to your bigrams-file.
 BIGRAMS_CONFIGS = (
     BigramsConfig(
