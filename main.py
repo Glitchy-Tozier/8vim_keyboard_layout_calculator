@@ -11,7 +11,7 @@ import multiprocessing
 from functools import partial
 import platform
 
-from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, AUTO_LAYER_LETTERS, AUTO_LAYER_SWAP_COUNT, AUTO_LAYER_EMPTY_COUNT, AUTO_LAYER_IGNORE, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST, SCREEN_WIDTH
+from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, MANUALLY_DEFINE_LAYERS, AUTO_LAYER_SWAP_COUNT, AUTO_LAYER_EMPTY_COUNT, AUTO_LAYER_IGNORE, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST, SCREEN_WIDTH
 from helper_classes import BigramsConfig, ConfigSpecificResults
 
 start_time = time.time()
@@ -45,24 +45,25 @@ def main():
         return
 
     # Calculate layer letters
-    if AUTO_LAYER_LETTERS:
-        letters = orderLetters();
-        cutoff = 32 - AUTO_LAYER_EMPTY_COUNT
+    if MANUALLY_DEFINE_LAYERS is False:
+        monograms = generateMonogramsFromBigramFiles()
+        letters = ''.join(sorted(monograms, key=lambda i: monograms[i], reverse=True))
+        cutoff = LETTERS_PER_LAYER*4 - AUTO_LAYER_EMPTY_COUNT
 
         # Asciify all necessary strings
-        layer1letters = asciify(letters[:min(8, cutoff)])
-        layer2letters = asciify(letters[8:min(16, cutoff)])
-        layer3letters = asciify(letters[16:min(24, cutoff)])
-        layer4letters = asciify(letters[24:cutoff])
-        varLetters_L1_L2 = asciify(letters[8 - AUTO_LAYER_SWAP_COUNT:8 + AUTO_LAYER_SWAP_COUNT])
+        layer1letters = asciify(letters[:min(LETTERS_PER_LAYER, cutoff)])
+        layer2letters = asciify(letters[LETTERS_PER_LAYER:min(LETTERS_PER_LAYER*2, cutoff)])
+        layer3letters = asciify(letters[LETTERS_PER_LAYER*2:min(LETTERS_PER_LAYER*3, cutoff)])
+        layer4letters = asciify(letters[LETTERS_PER_LAYER*3:cutoff])
+        varLetters_L1_L2 = asciify(letters[LETTERS_PER_LAYER - AUTO_LAYER_SWAP_COUNT:LETTERS_PER_LAYER + AUTO_LAYER_SWAP_COUNT])
 
         print('Auto generated layer letters:')
-        print(f' Layer 1:  \'{letters[:min(8, cutoff)]}\'')
-        print(f' Layer 1:  \'{letters[8:min(16, cutoff)]}\'')
-        print(f' Layer 1:  \'{letters[16:min(24, cutoff)]}\'')
-        print(f' Layer 1:  \'{letters[24:cutoff]}\'')
-        print(f' Variable: \'{letters[8 - AUTO_LAYER_SWAP_COUNT:8 + AUTO_LAYER_SWAP_COUNT]}\'')
-        print(f' Unused:   \'{letters[32 - AUTO_LAYER_EMPTY_COUNT:]}\'')
+        print(f' Layer 1:  \'{letters[:min(LETTERS_PER_LAYER, cutoff)]}\'')
+        print(f' Layer 2:  \'{letters[LETTERS_PER_LAYER:min(LETTERS_PER_LAYER*2, cutoff)]}\'')
+        print(f' Layer 3:  \'{letters[LETTERS_PER_LAYER*2:min(LETTERS_PER_LAYER*3, cutoff)]}\'')
+        print(f' Layer 4:  \'{letters[LETTERS_PER_LAYER*3:cutoff]}\'')
+        print(f' Variable: \'{letters[LETTERS_PER_LAYER - AUTO_LAYER_SWAP_COUNT:LETTERS_PER_LAYER + AUTO_LAYER_SWAP_COUNT]}\'')
+        print(f' Unused:   \'{letters[cutoff:]}\'')
     else:
 
         # Asciify all necessary strings
@@ -271,15 +272,15 @@ def main():
 def validateSettings(staticLetters) -> bool:
     """Checks the user's input for common errors. If everything is correct, returns `True`"""
 
-    if AUTO_LAYER_LETTERS:
-        if not 0 <= AUTO_LAYER_SWAP_COUNT <= 8:
-            print('AUTO_LAYER_SWAP_COUNT must be between 0 and 8 (inclusive)')
+    if MANUALLY_DEFINE_LAYERS is False:
+        if not 0 <= AUTO_LAYER_SWAP_COUNT <= LETTERS_PER_LAYER:
+            print(f'AUTO_LAYER_SWAP_COUNT must be between 0 and {LETTERS_PER_LAYER} (inclusive)')
             return False
-        if not 0 <= AUTO_LAYER_EMPTY_COUNT <= 24:
-            print('AUTO_LAYER_EMPTY_COUNT must be between 0 and 24 (inclusive)')
+        if not 0 <= AUTO_LAYER_EMPTY_COUNT <= LETTERS_PER_LAYER*3:
+            print(f'AUTO_LAYER_EMPTY_COUNT must be between 0 and {LETTERS_PER_LAYER*3} (inclusive)')
             return False
-        if AUTO_LAYER_SWAP_COUNT + AUTO_LAYER_EMPTY_COUNT > 24:
-            print(f'AUTO_LAYER_SWAP_COUNT cannot be greater than {24 - AUTO_LAYER_EMPTY_COUNT} with AUTO_LAYER_EMPTY_COUNT = {AUTO_LAYER_EMPTY_COUNT}')
+        if AUTO_LAYER_SWAP_COUNT + AUTO_LAYER_EMPTY_COUNT > LETTERS_PER_LAYER*3:
+            print(f'AUTO_LAYER_SWAP_COUNT cannot be greater than {LETTERS_PER_LAYER*3 - AUTO_LAYER_EMPTY_COUNT} with AUTO_LAYER_EMPTY_COUNT = {AUTO_LAYER_EMPTY_COUNT}')
             return False
     else:
         layout = LAYER_1_LETTERS + LAYER_2_LETTERS + LAYER_3_LETTERS + LAYER_4_LETTERS
@@ -319,42 +320,47 @@ def validateSettings(staticLetters) -> bool:
     return True
 
 
-def normalized(sett: dict) -> list:
-    total = sum(sett[i] for i in sett)
-    return [(sett[i]/total, i) for i in sett]
+def normalizeDict(dictionary: dict) -> dict:
+    """Normalize a dictionary of frequencies"""
+    total = sum(dictionary.values())
+    return {key: dictionary[key]/total for key in dictionary}
 
 
-def orderLetters(configs: tuple = BIGRAMS_CONFIGS) -> str:
+def generateMonogramsFromBigramFiles(configs: tuple = BIGRAMS_CONFIGS) -> dict:
+    """Uses the bigrams to generate a monogram dict"""
 
-    # Generate monograph sets for each language
-    monoSets = []
+    # Generate monogram dicts for each language
+    # Store them with their weigths
+    normalizedMonogramLists = []
     for config in configs:
         if config.weight <= 0:
             continue
-        with open(config.path, 'r') as biFile:
-            bis = {line[:2]: float(line[3:]) for line in biFile}
-        notNorm = {}
-        for bi in bis:
-            for char in bi:
+        with open(config.path, 'r') as corpus:
+            bigrams = {line[:2].lower(): float(line[3:]) for line in corpus}
+        monograms = dict()
+        for bigram in bigrams:
+            for char in bigram:
                 if char in AUTO_LAYER_IGNORE:
                     continue
-                if char in notNorm:
-                    notNorm[char] += bis[bi]*config.weight
+                if char in monograms:
+                    monograms[char] += bigrams[bigram]
                 else:
-                    notNorm[char] = bis[bi]*config.weight
-        monoSets.append(normalized(notNorm))
+                    monograms[char] = bigrams[bigram]
+        normalizedMonogramLists.append((normalizeDict(monograms), config.weight))
 
-    # Combine the monograph sets into one
-    combinedSet = {}
-    for monos in monoSets:
-        for freq, char in monos:
-            if char in combinedSet:
-                combinedSet[char] += freq
+    # Combine the monogram dicts into one dict by using their weights
+    combinedMonograms = dict()
+    for monograms, weight in normalizedMonogramLists:
+        for char in monograms:
+            if char in combinedMonograms:
+                combinedMonograms[char] += monograms[char]*weight
             else:
-                combinedSet[char] = freq
+                combinedMonograms[char] = monograms[char]*weight
 
-    # Sort the combined monograph set
-    return ''.join(sorted(combinedSet, key=lambda i: combinedSet[i], reverse=True)).lower()
+    # Not needed for now, but will make the frequencies sum to 1.0
+    #combinedMonograms = normalizeDict(combinedMonograms)
+
+    return combinedMonograms
 
 
 # Used in combination with the `asciify` and `deAsciify` functions
