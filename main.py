@@ -421,8 +421,7 @@ def getBigrams(sortedLetters: str, configs: tuple = BIGRAMS_CONFIGS) -> tuple:
             normalizedCorpus = []
             with open(config.path, 'r') as corpus:
                 for line in corpus:
-                    line = line.lower()
-                    bigram = line[:2]
+                    bigram = line[:2].lower()
                     if bigram in bigramsSet:
                         frequency = float(line[line.find(' ')+1:])
                         normalizedFrequency = frequency * config.weight / frequencySum
