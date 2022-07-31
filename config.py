@@ -15,7 +15,7 @@ BIGRAMS_CONFIGS = (
     ),
     BigramsConfig(
         # When using 0%, no optimization will be done using this language.
-        # However, you well still be shown stats on how good this layout performs in this language.
+        # However, you will still be shown stats on how good this layout performs in this language.
         name = "French",        weight = 0, # %
         path = './bigram_dictionaries/french_bigrams.txt'
     ),
