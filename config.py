@@ -21,7 +21,21 @@ BIGRAMS_CONFIGS = (
     ),
 )
 
-# Define the letters you want to use
+# The number of letters from the 1st and 2nd layers that are interchangable
+# This only affects the (n) least frequent letters of layer 1 and the (n) most frequent letters of layer 2
+# /!\ BIG PERFORMANCE IMPACT /!\
+# (0 - fastest, 8 - slowest)
+AUTO_LAYER_SWAP_COUNT = 3
+# The number of slots that will be kept empty
+# Can be used to reserve room for special symbols such as period, comma, ect.
+AUTO_LAYER_EMPTY_COUNT = 6
+# Characters that will be ignored when generating layers from bigram-files
+# Symbols available in the default 8VIM layout
+AUTO_LAYER_IGNORE = ' !"#$%&\'()*+,-./0123456789:;<=>?@[\\]^_`{|}~¡¢£¦§©¬®°¶¿÷€₹™⨯'
+
+# Manually define the letters you want to use
+# This removes all AUTO_LAYER functionality
+MANUALLY_DEFINE_LAYERS = False
 LAYER_1_LETTERS = 'etaoinsr'.lower() # All letters for the first cycleNr of calculation, including 'e' (or whatever you put in >staticLetters<)
 LAYER_2_LETTERS = 'hldcumfg'.lower() # All letters for the second cycleNr of calculation
 LAYER_3_LETTERS = 'pwybvkjx'.lower() # All letters for the third cycleNr of calculation
