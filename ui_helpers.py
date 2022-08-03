@@ -30,8 +30,8 @@ class Cursor:
         write('\x1b[?25h')
 
 
-def formatTime(seconds: float) -> str:
-    """Formats a float of seconds into a readable format"""
+def getFormatedTime(seconds: float) -> str:
+    """Formats a float representing seconds into a readable format and returns it as a string"""
     if seconds < 0:
         return 'N/A'
     minutes = int(seconds//60)
@@ -41,20 +41,26 @@ def formatTime(seconds: float) -> str:
     return f'{str(hours) + "h " if hours else ""}{str(minutes) + "m " if minutes else ""}{seconds:.2f}s'
 
 
-def padding(text: str, width: int, left: bool = False) -> str:
-    """Adds spaces to the start or end of a string to match a particular length"""
+def getPaddedText(text: str, width: int, left: bool = False) -> str:
+    """Adds spaces to the start or end of a string to match a particular length and return it"""
     pad = ' '*(width - len(text))
     if left:
         return pad + text
     return text + pad
 
-def separator(width: int = SCREEN_WIDTH, char: str = '-' if DISABLE_UNICODE else '─'):
+
+def getExpandedLine(width: int = SCREEN_WIDTH, left: str = '', right: str = '') -> str:
+    """Spaces two strings as far apart as possible."""
+    return getPaddedText(left, width - len(right)) + right
+
+
+def displaySeparator(width: int = SCREEN_WIDTH, char: str = '-' if DISABLE_UNICODE else '─'):
     """Displays a horizontal line"""
     write(f'{char*width}\n')
     flush()
 
 
-def title(title: str, width: int = SCREEN_WIDTH, char: str = '=' if DISABLE_UNICODE else '━'):
+def displayTitle(title: str, width: int = SCREEN_WIDTH, char: str = '=' if DISABLE_UNICODE else '━'):
     """Displays a thick horizontal line with centered text"""
     spaceLeft = width - len(title) - 2
     line = char*(spaceLeft//2)
@@ -65,9 +71,9 @@ def title(title: str, width: int = SCREEN_WIDTH, char: str = '=' if DISABLE_UNIC
     flush()
 
 
-def subtitle(subtitle: str, width: int = SCREEN_WIDTH):
+def displaySubtitle(subtitle: str, width: int = SCREEN_WIDTH):
     """Displays a horizontal line with centered text"""
-    title(subtitle, width, '-' if DISABLE_UNICODE else '─')
+    displayTitle(subtitle, width, '-' if DISABLE_UNICODE else '─')
 
 
 class Progress:
@@ -112,9 +118,9 @@ class Progress:
             write(f'{msg}{chars[0]}{chars[1]*barLen}{" "*(width - barLen)}{chars[2]}')
         Cursor.left(self.width)
         if self.time_taken:
-            progMsg = f'Time taken: {formatTime(self.estim_total())}'
+            progMsg = f'Time taken: {getFormatedTime(self.estim_total())}'
         else:
-            progMsg = f'Estimated total time: {formatTime(self.estim_total())}'
+            progMsg = f'Estimated total time: {getFormatedTime(self.estim_total())}'
         Cursor.up()
         self.info.set_msg(progMsg)
         self.info.set_status(self.status)
@@ -169,7 +175,7 @@ class InfoWithTime(Info):
         super().display()
         if self.time_taken:
             Cursor.up()
-            progMsg = f'Time taken: {formatTime(self.time_taken)}'
+            progMsg = f'Time taken: {getFormatedTime(self.time_taken)}'
             write(progMsg)
             Cursor.left(len(progMsg))
             Cursor.down()
@@ -185,8 +191,8 @@ if __name__ == '__main__':
 
         # Title and subtitle
         write('\n')
-        title('Demos of UI helpers')
-        subtitle('Progress bar demo')
+        displayTitle('Demos of UI helpers')
+        displayTubtitle('Progress bar demo')
 
         # Progress bar
         p = Progress(12)
@@ -196,7 +202,7 @@ if __name__ == '__main__':
         write('\n\n')
 
         # Info box
-        subtitle('Other demo')
+        displaySubtitle('Other demo')
         i = InfoWithTime('Info box demo', 'Starting')
         sleep(0.5)
         i.set_status('Finalizing')

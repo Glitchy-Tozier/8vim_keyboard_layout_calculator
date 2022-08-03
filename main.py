@@ -37,14 +37,14 @@ def main():
 
         # Display configuration
         write('\n')
-        title('Configurations')
-        subtitle('Bigrams')
+        displayTitle('Configurations')
+        displaySubtitle('Bigrams')
         maxNameLen = max(len(config.name) for config in BIGRAMS_CONFIGS if config.weight)
         for config in BIGRAMS_CONFIGS:
             if config.weight:
                 Info(
-                    padding(config.name, maxNameLen + 1) +
-                    padding(f'{config.weight}%', 4, left=True) +
+                    getPaddedText(config.name, maxNameLen + 1) +
+                    getPaddedText(f'{config.weight}%', 4, left=True) +
                     f',    Path: {config.path}'
                 )
                 write('\n')
@@ -58,9 +58,9 @@ def main():
 
     # Display layer letters
     if MANUALLY_DEFINE_LAYERS is False:
-        subtitle('Layer letters (Generated)')
+        displaySubtitle('Layer letters (Generated)')
     else:
-        subtitle('Layer letters (Manual)')
+        displaySubtitle('Layer letters (Manual)')
     for i in range(4):
         Info(f'Layer {i + 1} letters:  {layerLetters[i]}')
         write('\n')
@@ -70,8 +70,8 @@ def main():
 
     if DEBUG_MODE:
         write('\n')
-    title('Optimization')
-    subtitle('Cycles for variable letters (Layers 1 and 2)')
+    displayTitle('Optimization')
+    displaySubtitle('Cycles for variable letters (Layers 1 and 2)')
 
     # Asciify the layer letters
     layer1letters = asciify(layerLetters[0])
@@ -164,12 +164,12 @@ def main():
 
         if DEBUG_MODE:
             write('\n')
-            subtitle('Optimizing remaining layers')
+            displaySubtitle('Optimizing remaining layers')
             print('Layer 3')
             l3info = None
         else:
             write('\n\n')
-            subtitle('Optimizing remaining layers')
+            displaySubtitle('Optimizing remaining layers')
             l3info = InfoWithTime('Layer 3')
 
         nrOfBestPermutations = NR_OF_BEST_LAYOUTS * 2
@@ -252,7 +252,7 @@ def main():
         finalScoresList = tempScoresList
         del tempLayoutList, tempScoresList
 
-    subtitle('Finished optimization')
+    displaySubtitle('Finished optimization')
 
     if SHOW_DATA is True:
         if TEST_CUSTOM_LAYOUTS is True:
@@ -287,7 +287,7 @@ def main():
 
 
 def getLayerLetters() -> tuple:
-    """Gets the letters to be used on each layer"""
+    """Gets the letters to be used on each layer and returns them as a tuple of strings"""
 
     if MANUALLY_DEFINE_LAYERS is False:
 
@@ -363,13 +363,13 @@ def validateSettings(staticLetters) -> bool:
 
 
 def normalizeDict(dictionary: dict) -> dict:
-    """Normalize a dictionary of frequencies"""
+    """Returns a normalized version of a dictionary of frequencier"""
     total = sum(dictionary.values())
     return {key: dictionary[key]/total for key in dictionary}
 
 
 def generateMonogramsFromBigramFiles(configs: tuple = BIGRAMS_CONFIGS) -> dict:
-    """Uses the bigrams to generate a monogram dict"""
+    """Uses the bigram-files to generate and return a monogram dictionary"""
 
     # Generate monogram dicts for each language
     # Store them with their weigths
@@ -920,9 +920,9 @@ def showDataInTerminal\
 
     if SHOW_TOP_LAYOUTS > 0:
         if SHOW_TOP_LAYOUTS == 1:
-            title('The King')
+            displayTitle('The King')
         else:
-            title(f'The {SHOW_TOP_LAYOUTS} best layouts')
+            displayTitle(f'The {SHOW_TOP_LAYOUTS} best layouts')
 
         layouts, _ = getTopScores(layouts, scores, SHOW_TOP_LAYOUTS)
         del scores
@@ -931,15 +931,15 @@ def showDataInTerminal\
         for idx, layout in enumerate(layouts):
             printLayoutData(layout, asciiArray,
                             configSpecificData, placing=idx+1)
-        separator()
+        displaySeparator()
 
     if TEST_CUSTOM_LAYOUTS is True:
         write('\n')
-        title(f'Custom layouts')
+        displayTitle(f'Custom layouts')
 
         for name, layout in customLayouts.items():
             printLayoutData(layout, asciiArray, configSpecificData, name=name)
-        separator()
+        displaySeparator()
 
     if SHOW_GENERAL_STATS is True:
         # Get all bigrams that actually can be written using this layout.
@@ -951,8 +951,8 @@ def showDataInTerminal\
         if SHOW_TOP_LAYOUTS == 0:
             print('\n')
         write('\n')
-        title('General stats')
-        Info(f'Total execution time: {formatTime(time() - start_time)}')
+        displayTitle('General stats')
+        Info(f'Total execution time: {getFormatedTime(time() - start_time)}')
         write('\n')
         Info(f'Amount of bigrams that can be written with the letters used in this layout: {writeableFrequencySum:.2f}%')
         write('\n\n')
@@ -1014,17 +1014,16 @@ def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, pl
     """A function that positions and prints information
     next to the layout-display-string for more compact visuals."""
 
-    separator()
+    displaySeparator()
     visLayout = layoutVisualisation(layout)
     visLayoutLines = visLayout.split('\n')
 
     lineToPrint = 0
     if placing is not None:
-        print(getExpandedLine(
-            start=visLayoutLines[lineToPrint], end='Layout-placing: ' + str(placing)))
+        print(getExpandedLine(left=visLayoutLines[lineToPrint], right=f'Layout-placing: {placing}'))
         lineToPrint += 1
     if name is not None:
-        print(getExpandedLine(start=visLayoutLines[lineToPrint], end=name))
+        print(getExpandedLine(left=visLayoutLines[lineToPrint], right=name))
         lineToPrint += 1
 
     print(visLayoutLines[lineToPrint])
@@ -1033,8 +1032,7 @@ def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, pl
     xmlStr = optStrToXmlStr(layout)
     xmlStrParts = xmlStr.split('\n')
     for xmlStrPart in xmlStrParts:
-        print(getExpandedLine(
-            start=visLayoutLines[lineToPrint], end=xmlStrPart))
+        print(getExpandedLine(left=visLayoutLines[lineToPrint], right=xmlStrPart))
         lineToPrint += 1
 
     print(visLayoutLines[lineToPrint])
@@ -1056,28 +1054,17 @@ def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, pl
             offset = 0
         else:
             #visName = cfgName + " {}% ".format(weight)
-            visName = padding(cfgName, maxVisNameLen + 1) + padding(f'{weight}% ', 5, left=True)
+            visName = getPaddedText(cfgName, maxVisNameLen + 1) + getPaddedText(f'{weight}% ', 5, left=True)
             offset = 14
         infoStr = " "*offset + visName
         infoStr += ('-' if DISABLE_UNICODE else '─')*(LETTERS_PER_LAYER*NR_OF_LAYERS +
                         NR_OF_LAYERS-len(visName)-offset)
         infoStr += f'> Score: {score:.4f}'
-        print(
-            getExpandedLine(
-                start=visLine,
-                end=infoStr,
-            )
-        )
+        print(getExpandedLine(left=visLine, right=infoStr))
 
     if lineToPrint < len(visLayoutLines):
         for visLine in visLayoutLines[lineToPrint:]:
             print(visLine)
-
-
-def getExpandedLine(start="", end="") -> str:
-    """Spaces two strings as far apart as possible."""
-    remainingSpace = SCREEN_WIDTH - len(start+end)
-    return start + " "*remainingSpace + end
 
 
 class Bigram:
