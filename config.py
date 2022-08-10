@@ -33,7 +33,7 @@ AUTO_LAYER_EMPTY_COUNT = 6
 # Symbols available in the default 8VIM layout
 AUTO_LAYER_IGNORE = ' !"#$%&\'()*+,-./0123456789:;<=>?@[\\]^_`{|}~¡¢£¦§©¬®°¶¿÷€₹™⨯'
 # Whether the most common character should be fixed at the bottom-right of all layouts.
-# This option fills up the first slot of `STATIC_LETTERS`, creating less redundant results.
+# If `True, this option fills up the first slot of `FIXATED_LETTERS`, creating less redundant results.
 # Set to `False` if your scoring-system cares about layouts's orientation.
 FIXATE_MOST_COMMON_LETTER = True
 
@@ -58,8 +58,8 @@ VAR_LETTERS_L1_L2 = 'nsrhld'.lower()
 # ---
 # If your rating-system cares about which way layouts are rotated,
 # remove 'e' and use {LETTERS_PER_LAYER} empty strings.
-STATIC_LETTERS = ('e', '', '', '', '', '', '', '') # the positions go clockwise. 'e' is on the bottom left.
-#STATIC_LETTERS = ('', '', '', '', '', '', '', '')
+FIXATED_LETTERS = ('e', '', '', '', '', '', '', '') # the positions go clockwise. 'e' is on the bottom left.
+#FIXATED_LETTERS = ('', '', '', '', '', '', '', '')
 
 # Define how many layers the layouts you recieve should contain.
 NR_OF_LAYERS = 4
