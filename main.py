@@ -252,28 +252,8 @@ def main():
                     customLayouts[name] = layout[:NR_OF_LAYERS *
                                                  LETTERS_PER_LAYER]
 
-        # Calculate what the perfect score would be
-        configSpecificData = [ConfigSpecificResults(
-            "All",
-            100,
-            getBigrams(layer1letters + layer2letters +
-                       layer3letters + layer4letters),
-        )]
-        if len(BIGRAMS_CONFIGS) > 1:
-            for config in BIGRAMS_CONFIGS:
-                originalWeight = config.weight
-                fullWeightConfig = config.fullWeightClone()
-
-                configSpecificData.append(ConfigSpecificResults(
-                    config.name,
-                    originalWeight,
-                    getBigrams(layer1letters + layer2letters +
-                               layer3letters + layer4letters, (fullWeightConfig, )),
-                ))
-
         # Display the data in the terminal.
-        showDataInTerminal(finalLayoutList, finalScoresList,
-                           configSpecificData, asciiArray, customLayouts)
+        showDataInTerminal(finalLayoutList, finalScoresList, asciiArray, customLayouts)
 
 
 def validateSettings(staticLetters) -> bool:
@@ -878,7 +858,6 @@ def performLetterSwaps(layout: str) -> set:
 def showDataInTerminal(
     layouts: tuple,
     scores: array,
-    configSpecificData: list,
     asciiArray: array,
     customLayouts=OrderedDict(),
 ) -> None:
@@ -899,8 +878,7 @@ def showDataInTerminal(
         layouts = list(layouts)
         layouts.reverse()
         for idx, layout in enumerate(layouts):
-            printLayoutData(layout, asciiArray,
-                            configSpecificData, placing=idx+1)
+            printLayoutData(layout, asciiArray, placing=idx+1)
 
     if TEST_CUSTOM_LAYOUTS is True:
         print('#'*SCREEN_WIDTH)
@@ -908,7 +886,7 @@ def showDataInTerminal(
         print(' '*(int(SCREEN_WIDTH/2) - 8), "Custom layouts:")
 
         for name, layout in customLayouts.items():
-            printLayoutData(layout, asciiArray, configSpecificData, name=name)
+            printLayoutData(layout, asciiArray, name=name)
 
     if SHOW_GENERAL_STATS is True:
         # Get all bigrams that actually can be written using this layout.
@@ -972,7 +950,28 @@ def layoutVisualisation(layout: str) -> str:
     return blueprint.format(*layout)
 
 
-def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, placing: int = None, name: str = None) -> None:
+def getConfigSpecificData(layout: str) -> list:
+    """Get all necessary `ConfigSpecificResults`s, according to the provided layout & config."""
+
+    layout = ''.join(letter for letter in layout if letter != FILL_SYMBOL)
+    configSpecificData = [ConfigSpecificResults(
+        "All",
+        100,
+        getBigrams(layout),
+    )]
+    if len(BIGRAMS_CONFIGS) > 1:
+        for config in BIGRAMS_CONFIGS:
+            originalWeight = config.weight
+            fullWeightConfig = config.fullWeightClone()
+
+            configSpecificData.append(ConfigSpecificResults(
+                config.name,
+                originalWeight,
+                getBigrams(layout, (fullWeightConfig, )),
+            ))
+    return configSpecificData
+
+def printLayoutData(layout: str, asciiArray: array, placing: int = None, name: str = None) -> None:
     """A function that positions and prints information
     next to the layout-display-string for more compact visuals."""
 
@@ -1002,6 +1001,7 @@ def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, pl
     print(visLayoutLines[lineToPrint])
     lineToPrint += 1
 
+    configSpecificData = getConfigSpecificData(layout)
     for data in configSpecificData:
         try:
             visLine = visLayoutLines[lineToPrint]
