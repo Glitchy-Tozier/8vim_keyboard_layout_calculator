@@ -32,6 +32,10 @@ AUTO_LAYER_EMPTY_COUNT = 6
 # Characters that will be ignored when generating layers from bigram-files
 # Symbols available in the default 8VIM layout
 AUTO_LAYER_IGNORE = ' !"#$%&\'()*+,-./0123456789:;<=>?@[\\]^_`{|}~¡¢£¦§©¬®°¶¿÷€₹™⨯'
+# Whether the most common character should be fixed at the bottom-right of all layouts.
+# This option fills up the first slot of `STATIC_LETTERS`, creating less redundant results.
+# Set to `False` if your scoring-system cares about layouts's orientation.
+FIXATE_MOST_COMMON_LETTER = True
 
 # Manually define the letters you want to use
 # This removes all AUTO_LAYER functionality

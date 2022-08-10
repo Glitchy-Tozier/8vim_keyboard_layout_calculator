@@ -11,7 +11,7 @@ import multiprocessing
 from functools import partial
 import platform
 
-from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, MANUALLY_DEFINE_LAYERS, AUTO_LAYER_SWAP_COUNT, AUTO_LAYER_EMPTY_COUNT, AUTO_LAYER_IGNORE, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST, SCREEN_WIDTH
+from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, MANUALLY_DEFINE_LAYERS, AUTO_LAYER_SWAP_COUNT, AUTO_LAYER_EMPTY_COUNT, AUTO_LAYER_IGNORE, FIXATE_MOST_COMMON_LETTER, STATIC_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, ASCII_REPLACEMENT_CHARS, SCORE_LIST, SCREEN_WIDTH
 from helper_classes import BigramsConfig, ConfigSpecificResults
 
 start_time = time.time()
@@ -56,6 +56,11 @@ def main():
         layer3letters = asciify(letters[LETTERS_PER_LAYER*2:min(LETTERS_PER_LAYER*3, cutoff)])
         layer4letters = asciify(letters[LETTERS_PER_LAYER*3:cutoff])
         varLetters_L1_L2 = asciify(letters[LETTERS_PER_LAYER - AUTO_LAYER_SWAP_COUNT:LETTERS_PER_LAYER + AUTO_LAYER_SWAP_COUNT])
+        if FIXATE_MOST_COMMON_LETTER:
+            # Assigns a tuple to `staticLetters` where the first index is the most common letter.
+            staticLetters = tuple(letters[0] if i is 0 else "" for i in range(LETTERS_PER_LAYER))
+        else:
+            staticLetters = tuple("" * LETTERS_PER_LAYER)
 
         print('Auto generated layer letters:')
         print(f' Layer 1:  \'{letters[:min(LETTERS_PER_LAYER, cutoff)]}\'')
@@ -64,6 +69,8 @@ def main():
         print(f' Layer 4:  \'{letters[LETTERS_PER_LAYER*3:cutoff]}\'')
         print(f' Variable: \'{letters[LETTERS_PER_LAYER - AUTO_LAYER_SWAP_COUNT:LETTERS_PER_LAYER + AUTO_LAYER_SWAP_COUNT]}\'')
         print(f' Unused:   \'{letters[cutoff:]}\'')
+        if FIXATE_MOST_COMMON_LETTER:
+            print(f' Fixated \'{staticLetters[0]}\' on the bottom-right')
     else:
 
         # Asciify all necessary strings
