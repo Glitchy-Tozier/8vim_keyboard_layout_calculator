@@ -97,11 +97,8 @@ DEBUG_MODE = False
 # Use Multiprocessing (disable this when using `pypy3 main.py`)
 USE_MULTIPROCESSING = False
 
-# Symbol used for filling up layer 4. If your alphabet or your bigram-list for some reason contains "-", change "-"" to something else.
+# Symbol used for filling up layer 4. If your alphabet or your bigram-list for some reason contains "-", change "-" to something else.
 FILL_SYMBOL = '-'
-
-# 32 characters that aren't part of your bigram-corpus or your layout. They need to be within the first 256 slots of the ascii-table.
-ASCII_REPLACEMENT_CHARS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "[", "]", "{", "}", "(", ")", "<", ">", "/", "_", ",", "~", "¦", "±", "²", "³", "¶", "¹", "¼", "½", "¾", "¿"]
 
 # Ignore this option.
 SCREEN_WIDTH = 100
