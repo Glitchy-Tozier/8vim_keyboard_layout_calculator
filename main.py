@@ -90,9 +90,6 @@ def main():
 
     staticLetters = tuple(asciify(l) for l in staticLetters)
 
-    # Create the asciiArray
-    asciiArray = array("B", [0]*256)
-
     # Get the letters for the layers possible with the letters you specified.
     firstLayers, secondLayers = getLayerCombinations(
         layer1letters, layer2letters, varLetters_L1_L2)
@@ -130,7 +127,7 @@ def main():
             varLetters, staticLetters, letters_L2, layer3letters, layer4letters)
 
         # Test the layer 1 - layouts
-        goodLayouts_L1, goodScores_L1 = testLayouts(layouts_L1, asciiArray)
+        goodLayouts_L1, goodScores_L1 = testLayouts(layouts_L1)
         del layouts_L1
 
         # If the user says so, calculate the second layer.
@@ -148,7 +145,7 @@ def main():
 
             # Test the the combined layouts of layer 1 and layer2
             goodLayouts_L1_L2, goodScores_L1_L2 = testLayouts(
-                layouts_L1_L2, asciiArray, bestScores_L1)
+                layouts_L1_L2, bestScores_L1)
             del layouts_L1_L2, bestScores_L1
 
             # Add the found layouts to the list (which will later be displayed)
@@ -193,13 +190,13 @@ def main():
 
         # Test the the combined layouts of layers 1&2 and layer 3
         initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3 = testLayouts(
-            layouts_L1_L2_L3, asciiArray, bestScores_L1_L2)
+            layouts_L1_L2_L3, bestScores_L1_L2)
         del layouts_L1_L2_L3, bestScores_L1_L2
 
         if PERFORM_GREEDY_OPTIMIZATION:
             # Do an additional hillclimbing-optimization
             goodLayouts_L1_L2_L3, goodScores_L1_L2_L3 = greedyOptimization(
-                initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3, asciiArray, l3info)
+                initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3, l3info)
         else:
             goodLayouts_L1_L2_L3, goodScores_L1_L2_L3 = initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3
         del initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3
@@ -232,14 +229,14 @@ def main():
 
             # Test the the combined layouts of layers 1&2 and layer 3
             goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4 = testLayouts(
-                layouts_L1_L2_L3_L4, asciiArray, bestScores_L1_L2_L3)
+                layouts_L1_L2_L3_L4, bestScores_L1_L2_L3)
             layouts_L1_L2_L3_L4, bestScores_L1_L2_L3
 
             if PERFORM_GREEDY_OPTIMIZATION:
                 # Do an additional hillclimbing-optimization, then
                 # add the found layouts to the list (which will later be displayed)
                 finalLayoutList, finalScoresList = greedyOptimization(
-                    goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4, asciiArray, l4info)
+                    goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4, l4info)
             else:
                 finalLayoutList, finalScoresList = goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4
             del goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4
@@ -271,7 +268,7 @@ def main():
                                                  LETTERS_PER_LAYER]
 
         # Display the data in the terminal.
-        showDataInTerminal(finalLayoutList, finalScoresList, asciiArray, customLayouts)
+        showDataInTerminal(finalLayoutList, finalScoresList, customLayouts)
 
 
 def getLayerLetters() -> tuple:
@@ -657,7 +654,7 @@ def fillAndPermuteLayout(letters: str) -> tuple:
     return tuple(layouts)
 
 
-def testLayouts(layouts: tuple, asciiArray: array, prevScores=None) -> tuple:
+def testLayouts(layouts: tuple, prevScores=None) -> tuple:
     """Calculates the best layouts and returns them (and their scores)."""
 
     # Combine the Letters for the layer 1 and layer 2
@@ -690,7 +687,7 @@ def testLayouts(layouts: tuple, asciiArray: array, prevScores=None) -> tuple:
 
                 # Prepare the layout-testing-function and its "static parameters"
                 testingFunction = partial(getLayoutScores_multiprocessing, [
-                                          layouts, asciiArray[:], bigrams, prevScores, groupSize])
+                                          layouts, bigrams, prevScores, groupSize])
 
                 # Using multithreading, test the layouts for their flow. Only test <= 20 at once.
                 maxNrProcesses = 15  # Max number of simuntaneous processes
@@ -713,15 +710,15 @@ def testLayouts(layouts: tuple, asciiArray: array, prevScores=None) -> tuple:
             else:
                 # Test the layouts for their flow
                 goodLayouts, goodScores = getLayoutScores(
-                    layouts, asciiArray, bigrams, prevScores)
+                    layouts, bigrams, prevScores)
         else:
             # Test the layouts for their flow
             goodLayouts, goodScores = getLayoutScores(
-                layouts, asciiArray, bigrams, prevScores)
+                layouts, bigrams, prevScores)
     else:
         # Test the layouts for their flow
         goodLayouts, goodScores = getLayoutScores(
-            layouts, asciiArray, bigrams, prevScores)
+            layouts, bigrams, prevScores)
 
     return goodLayouts, goodScores
 
@@ -742,12 +739,19 @@ def testSingleLayout(layout: str, asciiArray: array, bigrams: tuple) -> float:
     return score
 
 
-def getLayoutScores(layouts: tuple, asciiArray: array, bigrams: tuple, prevScores=None) -> tuple:
+def getAsciiArray() -> array:
+    """An array that for the ord()-number of a letter can hold that letter's position-number on the keyboard.
+    Used when testing layouts.
+    This function is a shortcut to make sure all `asciiArray`s are exactly the same, without using a global variable."""
+    return array("B", [0]*256)
+
+
+def getLayoutScores(layouts: tuple, bigrams: tuple, prevScores=None) -> tuple:
     """Tests the layouts and return their scores. It's only used when single-threading."""
 
+    asciiArray = getAsciiArray()
     nrLayouts = len(layouts)
-    # Create the empty scoring-list
-    scores = array("d", [0.0]*nrLayouts)
+    scores = array("d", [0.0]*nrLayouts) # Create the empty scoring-list
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
@@ -781,17 +785,17 @@ def getLayoutScores_multiprocessing(*args) -> tuple:
     staticArgs = args[0]
     mapArgs = args[1]
 
-    groupSize = staticArgs[4]
+    groupSize = staticArgs[3]
 
     groupBeginning = mapArgs
     groupEnding = groupBeginning + groupSize
     allLayouts = staticArgs[0]
 
-    asciiArray = staticArgs[1]
     layouts = allLayouts[groupBeginning: groupEnding]
-    bigrams = staticArgs[2]
+    bigrams = staticArgs[1]
 
-    prevScore = staticArgs[3][int(groupBeginning/groupSize)]
+    asciiArray = getAsciiArray()
+    prevScore = staticArgs[2][int(groupBeginning/groupSize)]
     scores = array("d", [prevScore]*groupSize)
 
     # Test the flow of all the layouts.
@@ -855,10 +859,11 @@ def combinePermutations(list1: tuple, list2: tuple) -> tuple:
     return tuple(listOfStrings)
 
 
-def greedyOptimization(layouts: tuple, scores: array, asciiArray: array, info: InfoWithTime = None) -> tuple:
+def greedyOptimization(layouts: tuple, scores: array, info: InfoWithTime = None) -> tuple:
     """Randomly switches letters in each of the layouts to see whether the layouts can be improved this way."""
 
     optimizedLayouts = dict(zip(layouts, scores))
+    asciiArray = getAsciiArray()
     bigrams = getBigrams(''.join(sorted(layouts[0])))
     if DEBUG_MODE:
         print(f'DEBUG: Greedy optimization with {len(layouts)} layouts')
@@ -902,7 +907,6 @@ def performLetterSwaps(layout: str) -> set:
 def showDataInTerminal(
     layouts: tuple,
     scores: array,
-    asciiArray: array,
     customLayouts=OrderedDict(),
 ) -> None:
     """Displays the results; The best layouts, maybe (if i decide to keep this in here) the worst, and some general data."""
@@ -918,7 +922,7 @@ def showDataInTerminal(
         layouts = list(layouts)
         layouts.reverse()
         for idx, layout in enumerate(layouts):
-            printLayoutData(layout, asciiArray, placing=idx+1)
+            printLayoutData(layout, placing=idx+1)
         displaySeparator()
 
     if TEST_CUSTOM_LAYOUTS is True:
@@ -926,7 +930,7 @@ def showDataInTerminal(
         displayTitle(f'Custom layouts')
 
         for name, layout in customLayouts.items():
-            printLayoutData(layout, asciiArray, name=name)
+            printLayoutData(layout, name=name)
 
     if SHOW_GENERAL_STATS is True:
         # Get all bigrams that actually can be written using this layout.
@@ -1018,7 +1022,7 @@ def getConfigSpecificData(layout: str) -> list:
             ))
     return configSpecificData
 
-def printLayoutData(layout: str, asciiArray: array, placing: int = None, name: str = None) -> None:
+def printLayoutData(layout: str, placing: int = None, name: str = None) -> None:
     """A function that positions and prints information
     next to the layout-display-string for more compact visuals."""
 
@@ -1048,6 +1052,7 @@ def printLayoutData(layout: str, asciiArray: array, placing: int = None, name: s
 
     configSpecificData = getConfigSpecificData(layout)
     maxVisNameLen = max(len(i.name) for i in configSpecificData if i.name != 'All')
+    asciiArray = getAsciiArray()
     for data in configSpecificData:
         try:
             visLine = visLayoutLines[lineToPrint]
