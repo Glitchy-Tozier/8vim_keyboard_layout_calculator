@@ -60,7 +60,7 @@ def main():
     if MANUALLY_DEFINE_LAYERS is False:
         if FIXATE_MOST_COMMON_LETTER:
             # Assigns a tuple to `staticLetters` where the first index is the most common letter.
-            staticLetters = tuple(layerLetters[0] if i is 0 else "" for i in range(LETTERS_PER_LAYER))
+            staticLetters = tuple(layerLetters[0][0] if i is 0 else "" for i in range(LETTERS_PER_LAYER))
         else:
             staticLetters = tuple("" * LETTERS_PER_LAYER)
             
@@ -72,8 +72,8 @@ def main():
         write('\n')
     half = len(layerLetters[4])//2
     Info(f'Variable letters: {layerLetters[4][:half]} {"<->" if DISABLE_UNICODE else "⇄"} {layerLetters[4][half:]}')
-    if MANUALLY_DEFINE_LAYERS and FIXATE_MOST_COMMON_LETTER:
-        Info(f' Fixated: \'{staticLetters[0]}\' on the bottom-right')
+    if MANUALLY_DEFINE_LAYERS is False and FIXATE_MOST_COMMON_LETTER:
+        Info(f'Fixated: \'{staticLetters[0]}\' on the bottom-right')
     write('\n\n')
 
     if DEBUG_MODE:
