@@ -1,5 +1,5 @@
-Put your bigram-list here.
-Make sure it's properly formated. Like this:
+Put your bigram-lists in this directory.
+Make sure they are properly formated, like this:
 
 EN 3879437
 EG 2349839
