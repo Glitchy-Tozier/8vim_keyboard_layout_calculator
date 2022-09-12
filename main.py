@@ -6,15 +6,15 @@ from copy import deepcopy
 import math
 import random
 import statistics
-import time
 import multiprocessing
 from functools import partial
 import platform
 
-from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, MANUALLY_DEFINE_LAYERS, AUTO_LAYER_SWAP_COUNT, AUTO_LAYER_EMPTY_COUNT, AUTO_LAYER_IGNORE, FIXATE_MOST_COMMON_LETTER, FIXATED_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, SCORE_LIST, SCREEN_WIDTH
+from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, MANUALLY_DEFINE_LAYERS, AUTO_LAYER_SWAP_COUNT, AUTO_LAYER_EMPTY_COUNT, AUTO_LAYER_IGNORE, FIXATE_MOST_COMMON_LETTER, FIXATED_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DISABLE_UNICODE, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, SCORE_LIST, SCREEN_WIDTH
 from helper_classes import BigramsConfig, ConfigSpecificResults
+from ui_helpers import *
 
-start_time = time.time()
+start_time = time()
 
 
 def main():
@@ -34,51 +34,59 @@ def main():
 
     # Validate the main error-hotspots in settings
     if validateSettings(staticLetters) is True:
-        print("Starting opitimzation with:")
+
+        # Display configuration
+        write('\n')
+        displayTitle('Configurations')
+        displaySubtitle('Bigrams')
+        maxNameLen = max(len(config.name) for config in BIGRAMS_CONFIGS if config.weight)
         for config in BIGRAMS_CONFIGS:
-            if config.weight > 0:
-                print("{}% {},".format(config.weight, config.name),
-                      " Path: {}".format(config.path))
-        print()
+            if config.weight:
+                Info(
+                    getPaddedText(config.name, maxNameLen + 1) +
+                    getPaddedText(f'{config.weight}%', 4, left=True) +
+                    f',    Path: {config.path}'
+                )
+                write('\n')
+        write('\n')
     else:
         # If something is wrong, stop execution
         return
 
     # Calculate layer letters
-    if MANUALLY_DEFINE_LAYERS is False:
-        monograms = generateMonogramsFromBigramFiles()
-        letters = ''.join(sorted(monograms, key=lambda i: monograms[i], reverse=True))
-        cutoff = LETTERS_PER_LAYER*4 - AUTO_LAYER_EMPTY_COUNT
+    layerLetters = getLayerLetters()
 
-        # Asciify all necessary strings
-        layer1letters = asciify(letters[:min(LETTERS_PER_LAYER, cutoff)])
-        layer2letters = asciify(letters[LETTERS_PER_LAYER:min(LETTERS_PER_LAYER*2, cutoff)])
-        layer3letters = asciify(letters[LETTERS_PER_LAYER*2:min(LETTERS_PER_LAYER*3, cutoff)])
-        layer4letters = asciify(letters[LETTERS_PER_LAYER*3:cutoff])
-        varLetters_L1_L2 = asciify(letters[LETTERS_PER_LAYER - AUTO_LAYER_SWAP_COUNT:LETTERS_PER_LAYER + AUTO_LAYER_SWAP_COUNT])
+    # Display layer letters
+    if MANUALLY_DEFINE_LAYERS is False:
         if FIXATE_MOST_COMMON_LETTER:
             # Assigns a tuple to `staticLetters` where the first index is the most common letter.
             staticLetters = tuple(letters[0] if i is 0 else "" for i in range(LETTERS_PER_LAYER))
         else:
             staticLetters = tuple("" * LETTERS_PER_LAYER)
-
-        print('Auto generated layer letters:')
-        print(f' Layer 1:  \'{letters[:min(LETTERS_PER_LAYER, cutoff)]}\'')
-        print(f' Layer 2:  \'{letters[LETTERS_PER_LAYER:min(LETTERS_PER_LAYER*2, cutoff)]}\'')
-        print(f' Layer 3:  \'{letters[LETTERS_PER_LAYER*2:min(LETTERS_PER_LAYER*3, cutoff)]}\'')
-        print(f' Layer 4:  \'{letters[LETTERS_PER_LAYER*3:cutoff]}\'')
-        print(f' Variable: \'{letters[LETTERS_PER_LAYER - AUTO_LAYER_SWAP_COUNT:LETTERS_PER_LAYER + AUTO_LAYER_SWAP_COUNT]}\'')
-        print(f' Unused:   \'{letters[cutoff:]}\'')
-        if FIXATE_MOST_COMMON_LETTER:
-            print(f' Fixated: \'{staticLetters[0]}\' on the bottom-right')
+            
+        displaySubtitle('Layer letters (Generated)')
     else:
+        displaySubtitle('Layer letters (Manual)')
+    for i in range(4):
+        Info(f'Layer {i + 1} letters:  {layerLetters[i]}')
+        write('\n')
+    half = len(layerLetters[4])//2
+    Info(f'Variable letters: {layerLetters[4][:half]} {"<->" if DISABLE_UNICODE else "⇄"} {layerLetters[4][half:]}')
+    if MANUALLY_DEFINE_LAYERS and FIXATE_MOST_COMMON_LETTER:
+        Info(f' Fixated: \'{staticLetters[0]}\' on the bottom-right')
+    write('\n\n')
 
-        # Asciify all necessary strings
-        layer1letters = asciify(LAYER_1_LETTERS)
-        layer2letters = asciify(LAYER_2_LETTERS)
-        layer3letters = asciify(LAYER_3_LETTERS)
-        layer4letters = asciify(LAYER_4_LETTERS)
-        varLetters_L1_L2 = asciify(VAR_LETTERS_L1_L2)
+    if DEBUG_MODE:
+        write('\n')
+    displayTitle('Optimization')
+    displaySubtitle('Cycles for variable letters (Layers 1 and 2)')
+
+    # Asciify the layer letters
+    layer1letters = asciify(layerLetters[0])
+    layer2letters = asciify(layerLetters[1])
+    layer3letters = asciify(layerLetters[2])
+    layer4letters = asciify(layerLetters[3])
+    varLetters_L1_L2 = asciify(layerLetters[4])
 
     staticLetters = tuple(asciify(l) for l in staticLetters)
 
@@ -98,19 +106,21 @@ def main():
     finalLayoutList = []
     finalScoresList = []
 
+    if not DEBUG_MODE:
+        # Create the cycles progress bar
+        cyclesProgress = Progress(nrOfCycles)
+
     # Start the actual testing process
     for cycleNr, letters_L1 in enumerate(firstLayers):
         letters_L2 = secondLayers[cycleNr]
         ####################################################################################################################
         # Calculate the first Layer
 
-        if nrOfCycles > 0:
-            print('\n======> ', cycleNr+1, 'out of', nrOfCycles, 'cycles')
-        if cycleNr == 1:
-            print('\nEstimated time needed for all cycles:', round(
-                nrOfCycles*(time.time() - start_time), 2), 'seconds')
-            print("Those only are the cycles for layer 1 and 2 though. Don't worry however; Layer 3 (and 4) should be calculated quicker.")
-        print("\n------------------------ %s seconds --- Started with layouts for layer 1" % elapsedTime())
+        if DEBUG_MODE:
+            print(f'\nCycle {cycleNr + 1} of {nrOfCycles}')
+        else:
+            cyclesProgress.set_status(f'Current cycle: {cycleNr + 1}')
+            cyclesProgress.set_prog(cycleNr)
 
         # get the letters in layer 1 that can actually move.
         varLetters = getVariableLetters(letters_L1, staticLetters)
@@ -123,17 +133,10 @@ def main():
         goodLayouts_L1, goodScores_L1 = testLayouts(layouts_L1, asciiArray)
         del layouts_L1
 
-        print("------------------------ %s seconds --- Got best layouts for layer 1" %
-              elapsedTime())
-
         # If the user says so, calculate the second layer.
         if NR_OF_LAYERS >= 2:
             ####################################################################################################################
             # Calculate the second Layer
-
-            print(
-                "\n------------------------ %s seconds --- Started with layouts for layer 2" % elapsedTime())
-
             # Sort the best layer-1 layouts and only return the best ones
             bestLayouts_L1, bestScores_L1 = getTopScores(
                 goodLayouts_L1, goodScores_L1)
@@ -148,9 +151,6 @@ def main():
                 layouts_L1_L2, asciiArray, bestScores_L1)
             del layouts_L1_L2, bestScores_L1
 
-            print(
-                "------------------------ %s seconds --- Got best layouts for layer 2" % elapsedTime())
-
             # Add the found layouts to the list (which will later be displayed)
             tempLayoutList.extend(goodLayouts_L1_L2)
             tempScoresList.extend(goodScores_L1_L2)
@@ -161,11 +161,24 @@ def main():
             tempScoresList.extend(goodScores_L1)
             del goodLayouts_L1, goodScores_L1
 
+    # Cycles completed
+    if not DEBUG_MODE:
+        cyclesProgress.set_status(f'Done')
+        cyclesProgress.set_prog(nrOfCycles)
+
     if NR_OF_LAYERS >= 3:
         ####################################################################################################################
         # Calculate the third Layer
 
-        print("\n------------------------ %s seconds --- Started with layouts for layer 3" % elapsedTime())
+        if DEBUG_MODE:
+            write('\n')
+            displaySubtitle('Optimizing remaining layers')
+            print('Layer 3')
+            l3info = None
+        else:
+            write('\n\n')
+            displaySubtitle('Optimizing remaining layers')
+            l3info = InfoWithTime('Layer 3')
 
         nrOfBestPermutations = NR_OF_BEST_LAYOUTS * 2
 
@@ -186,20 +199,24 @@ def main():
         if PERFORM_GREEDY_OPTIMIZATION:
             # Do an additional hillclimbing-optimization
             goodLayouts_L1_L2_L3, goodScores_L1_L2_L3 = greedyOptimization(
-                initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3, asciiArray)
+                initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3, asciiArray, l3info)
         else:
             goodLayouts_L1_L2_L3, goodScores_L1_L2_L3 = initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3
         del initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3
 
-        print("------------------------ %s seconds --- Got best layouts for layer 3" %
-              elapsedTime())
+        if not DEBUG_MODE:
+            l3info.set_done()
+        write('\n')
 
         if NR_OF_LAYERS >= 4:
             ####################################################################################################################
             # Calculate the fourth Layer
 
-            print(
-                "\n------------------------ %s seconds --- Started with layouts for layer 4" % elapsedTime())
+            if DEBUG_MODE:
+                print('Layer 4')
+                l4info = None
+            else:
+                l4info = InfoWithTime('Layer 4')
 
             nrOfBestPermutations = nrOfBestPermutations * 5
 
@@ -222,13 +239,15 @@ def main():
                 # Do an additional hillclimbing-optimization, then
                 # add the found layouts to the list (which will later be displayed)
                 finalLayoutList, finalScoresList = greedyOptimization(
-                    goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4, asciiArray)
+                    goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4, asciiArray, l4info)
             else:
                 finalLayoutList, finalScoresList = goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4
             del goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4
 
-            print(
-                "------------------------ %s seconds --- Got best layouts for layer 4" % elapsedTime())
+            if not DEBUG_MODE:
+                l4info.set_done()
+                write('\n')
+            write('\n')
 
         else:
             # Do an additional hillclimbing-optimization, then
@@ -241,8 +260,7 @@ def main():
         finalScoresList = tempScoresList
         del tempLayoutList, tempScoresList
 
-    print("\n------------------------ %s seconds --- Done computing" %
-          elapsedTime())
+    displaySubtitle('Finished optimization')
 
     if SHOW_DATA is True:
         if TEST_CUSTOM_LAYOUTS is True:
@@ -254,6 +272,31 @@ def main():
 
         # Display the data in the terminal.
         showDataInTerminal(finalLayoutList, finalScoresList, asciiArray, customLayouts)
+
+
+def getLayerLetters() -> tuple:
+    """Gets the letters to be used on each layer and returns them as a tuple of strings"""
+
+    if MANUALLY_DEFINE_LAYERS is False:
+
+        # Calculate layer letters
+        monograms = generateMonogramsFromBigramFiles()
+        letters = ''.join(sorted(monograms, key=lambda i: monograms[i], reverse=True))
+        cutoff = LETTERS_PER_LAYER*4 - AUTO_LAYER_EMPTY_COUNT
+        return \
+         (letters[:min(LETTERS_PER_LAYER, cutoff)],
+          letters[LETTERS_PER_LAYER:min(LETTERS_PER_LAYER*2, cutoff)],
+          letters[LETTERS_PER_LAYER*2:min(LETTERS_PER_LAYER*3, cutoff)],
+          letters[LETTERS_PER_LAYER*3:cutoff],
+          letters[LETTERS_PER_LAYER - AUTO_LAYER_SWAP_COUNT:LETTERS_PER_LAYER + AUTO_LAYER_SWAP_COUNT])
+
+    # Use manual layer letters
+    return \
+     (LAYER_1_LETTERS,
+      LAYER_2_LETTERS,
+      LAYER_3_LETTERS,
+      LAYER_4_LETTERS,
+      VAR_LETTERS_L1_L2)
 
 
 def validateSettings(staticLetters) -> bool:
@@ -308,13 +351,13 @@ def validateSettings(staticLetters) -> bool:
 
 
 def normalizeDict(dictionary: dict) -> dict:
-    """Normalize a dictionary of frequencies"""
+    """Returns a normalized version of a dictionary of frequencier"""
     total = sum(dictionary.values())
     return {key: dictionary[key]/total for key in dictionary}
 
 
 def generateMonogramsFromBigramFiles(configs: tuple = BIGRAMS_CONFIGS) -> dict:
-    """Uses the bigrams to generate a monogram dict"""
+    """Uses the bigram-files to generate and return a monogram dictionary"""
 
     # Generate monogram dicts for each language
     # Store them with their weigths
@@ -355,7 +398,6 @@ replacedWithAscii = dict()
 monograms = generateMonogramsFromBigramFiles()
 mostFreqLetters = sorted(monograms, key=lambda i: monograms[i], reverse=True)[:256-LETTERS_PER_LAYER*NR_OF_LAYERS]
 asciiReplacementChars = [chr(i) for i in range(256) if chr(i) not in mostFreqLetters and chr(i) != FILL_SYMBOL]
-
 
 def asciify(string: str) -> str:
     """Take a string and replace all non-ascii-chars with ascii-versions of them"""
@@ -424,7 +466,7 @@ def getLayerCombinations(layer1letters: str, layer2letters: str, varLetters_L1_L
                 L2_Layers.append(L2_LayerLetters)
 
                 if DEBUG_MODE is True:
-                    print(L1_Layers[j], L2_Layers[j])
+                    print(f'DEBUG: {L1_Layers[j]} {L2_Layers[j]}')
 
                 j += 1
         return L1_Layers, L2_Layers
@@ -624,7 +666,7 @@ def testLayouts(layouts: tuple, asciiArray: array, prevScores=None) -> tuple:
     lastLayerLetters = layoutLetters[-LETTERS_PER_LAYER:]
 
     if DEBUG_MODE is True:
-        print(lastLayerLetters)
+        print(f'DEBUG: {lastLayerLetters}')
 
     # Get the bigrams for the input letters
     bigrams = getBigrams(''.join(sorted(layoutLetters)))
@@ -813,13 +855,15 @@ def combinePermutations(list1: tuple, list2: tuple) -> tuple:
     return tuple(listOfStrings)
 
 
-def greedyOptimization(layouts: tuple, scores: array, asciiArray: array) -> tuple:
+def greedyOptimization(layouts: tuple, scores: array, asciiArray: array, info: InfoWithTime = None) -> tuple:
     """Randomly switches letters in each of the layouts to see whether the layouts can be improved this way."""
 
     optimizedLayouts = dict(zip(layouts, scores))
     bigrams = getBigrams(''.join(sorted(layouts[0])))
-    print("Starting greedy optimization.")
-    print("Number of layouts to optimize:", len(layouts))
+    if DEBUG_MODE:
+        print(f'DEBUG: Greedy optimization with {len(layouts)} layouts')
+    else:
+        info.set_status(f'{len(layouts)} layous] [Greedy optimization')
     for layout, score in zip(layouts, deepcopy(scores)):
         optimizing = True
         while optimizing is True:
@@ -835,8 +879,8 @@ def greedyOptimization(layouts: tuple, scores: array, asciiArray: array) -> tupl
                     optimizing = False
         if layout not in optimizedLayouts:
             optimizedLayouts[layout] = score
-    print("Number of layouts, afterwards:", len(optimizedLayouts))
-    print("Finished greedy optimization.")
+    if DEBUG_MODE:
+        print(f'DEBUG: Finished with {len(optimizedLayouts)} layouts')
 
     return tuple(optimizedLayouts.keys()), array("d", optimizedLayouts.values())
 
@@ -864,14 +908,10 @@ def showDataInTerminal(
     """Displays the results; The best layouts, maybe (if i decide to keep this in here) the worst, and some general data."""
 
     if SHOW_TOP_LAYOUTS > 0:
-        print('\n')
-        print('#'*SCREEN_WIDTH)
-        print('#'*SCREEN_WIDTH)
         if SHOW_TOP_LAYOUTS == 1:
-            print(' '*(int(SCREEN_WIDTH/2) - 5), 'The King:')
+            displayTitle('The King')
         else:
-            print(' '*(int(SCREEN_WIDTH/2) - 12), 'The top',
-                  SHOW_TOP_LAYOUTS, 'BEST layouts:')
+            displayTitle(f'The {SHOW_TOP_LAYOUTS} best layouts')
 
         layouts, _ = getTopScores(layouts, scores, SHOW_TOP_LAYOUTS)
         del scores
@@ -879,11 +919,11 @@ def showDataInTerminal(
         layouts.reverse()
         for idx, layout in enumerate(layouts):
             printLayoutData(layout, asciiArray, placing=idx+1)
+        displaySeparator()
 
     if TEST_CUSTOM_LAYOUTS is True:
-        print('#'*SCREEN_WIDTH)
-        print('#'*SCREEN_WIDTH)
-        print(' '*(int(SCREEN_WIDTH/2) - 8), "Custom layouts:")
+        write('\n')
+        displayTitle(f'Custom layouts')
 
         for name, layout in customLayouts.items():
             printLayoutData(layout, asciiArray, name=name)
@@ -897,12 +937,12 @@ def showDataInTerminal(
 
         if SHOW_TOP_LAYOUTS == 0:
             print('\n')
-        print('#'*SCREEN_WIDTH)
-        print('#'*SCREEN_WIDTH)
-        print(' '*(int(SCREEN_WIDTH/2) - 7), 'General Stats:')
-        print('Time needed for the whole runthrough: %s seconds.' % elapsedTime())
-        print('Amount of bigrams that can be written with the letters used in this layout:',
-              '~%.2f' % writeableFrequencySum, '%')
+        write('\n')
+        displayTitle('General stats')
+        Info(f'Total execution time: {getFormatedTime(time() - start_time)}')
+        write('\n')
+        Info(f'Amount of bigrams that can be written with the letters used in this layout: {writeableFrequencySum:.2f}%')
+        write('\n\n')
 
 
 def optStrToXmlStr(layout: str) -> str:
@@ -927,26 +967,33 @@ def xmlStrToOptStr(layout: str) -> str:
 def layoutVisualisation(layout: str) -> str:
     """Takes the layout-letters and gives a visual representation of them.
     Currently only supports layouts with 4-sections."""
-    blueprint = """      ⟍  {27}                {28} ⟋
-      {26} ⟍  {19}            {20} ⟋  {29}
-        {18} ⟍  {11}        {12} ⟋  {21}
-          {10} ⟍  {3}    {4} ⟋  {13}
-            {2} ⟍     ⟋  {5}
-                ⟍ ⟋
-                ⟋ ⟍
-            {1} ⟋     ⟍  {6}
-          {9} ⟋  {0}    {7} ⟍  {14}
-        {17} ⟋  {8}        {15} ⟍  {22}
-      {25} ⟋  {16}            {23} ⟍  {30}
-      ⟋  {24}                {31} ⟍"""
+    blueprint = """   \  {27}         {28}  /
+ {26}  \  {19}       {20}  /  {29}
+  {18}  \  {11}     {12}  /  {21}
+   {10}  \  {3}   {4}  /  {13}
+    {2}  \ _____ /  {5}
+        |     |
+        |_____|
+    {1}  /       \  {6}
+   {9}  /  {0}   {7}  \  {14}
+  {17}  /  {8}     {15}  \  {22}
+ {25}  /  {16}       {23}  \  {30}
+   /  {24}         {31}  \ """ if DISABLE_UNICODE else """ ⟍  {27}                {28} ⟋
+ {26} ⟍  {19}            {20} ⟋  {29}
+   {18} ⟍  {11}        {12} ⟋  {21}
+     {10} ⟍  {3}    {4} ⟋  {13}
+       {2} ⟍     ⟋  {5}
+           ⟍ ⟋
+           ⟋ ⟍
+       {1} ⟋     ⟍  {6}
+     {9} ⟋  {0}    {7} ⟍  {14}
+   {17} ⟋  {8}        {15} ⟍  {22}
+ {25} ⟋  {16}            {23} ⟍  {30}
+ ⟋  {24}                {31} ⟍"""
     layout = deAsciify(layout)
     while len(layout) < 32:
         layout += " "
-    layout = layout.replace(FILL_SYMBOL, '▓')
-    # Windows-console needs special treatment.
-    if platform.system() == 'Windows':
-        blueprint = blueprint.replace('⟍', '\\')
-        blueprint = blueprint.replace('⟋', '/')
+    layout = layout.replace(FILL_SYMBOL, '-' if DISABLE_UNICODE else '░')
     return blueprint.format(*layout)
 
 
@@ -975,17 +1022,16 @@ def printLayoutData(layout: str, asciiArray: array, placing: int = None, name: s
     """A function that positions and prints information
     next to the layout-display-string for more compact visuals."""
 
-    print('-'*SCREEN_WIDTH)
+    displaySeparator()
     visLayout = layoutVisualisation(layout)
     visLayoutLines = visLayout.split('\n')
 
     lineToPrint = 0
     if placing is not None:
-        print(getExpandedLine(
-            start=visLayoutLines[lineToPrint], end='Layout-placing: ' + str(placing)))
+        print(getExpandedLine(left=visLayoutLines[lineToPrint], right=f'Layout-placing: {placing}'))
         lineToPrint += 1
     if name is not None:
-        print(getExpandedLine(start=visLayoutLines[lineToPrint], end=name))
+        print(getExpandedLine(left=visLayoutLines[lineToPrint], right=name))
         lineToPrint += 1
 
     print(visLayoutLines[lineToPrint])
@@ -994,14 +1040,14 @@ def printLayoutData(layout: str, asciiArray: array, placing: int = None, name: s
     xmlStr = optStrToXmlStr(layout)
     xmlStrParts = xmlStr.split('\n')
     for xmlStrPart in xmlStrParts:
-        print(getExpandedLine(
-            start=visLayoutLines[lineToPrint], end=xmlStrPart))
+        print(getExpandedLine(left=visLayoutLines[lineToPrint], right=xmlStrPart))
         lineToPrint += 1
 
     print(visLayoutLines[lineToPrint])
     lineToPrint += 1
 
     configSpecificData = getConfigSpecificData(layout)
+    maxVisNameLen = max(len(i.name) for i in configSpecificData if i.name != 'All')
     for data in configSpecificData:
         try:
             visLine = visLayoutLines[lineToPrint]
@@ -1016,34 +1062,18 @@ def printLayoutData(layout: str, asciiArray: array, placing: int = None, name: s
             visName = "All Languages "
             offset = 0
         else:
-            visName = cfgName + " {}% ".format(weight)
+            #visName = cfgName + " {}% ".format(weight)
+            visName = getPaddedText(cfgName, maxVisNameLen + 1) + getPaddedText(f'{weight}% ', 5, left=True)
             offset = 14
         infoStr = " "*offset + visName
-        infoStr += '─'*(LETTERS_PER_LAYER*NR_OF_LAYERS +
+        infoStr += ('-' if DISABLE_UNICODE else '─')*(LETTERS_PER_LAYER*NR_OF_LAYERS +
                         NR_OF_LAYERS-len(visName)-offset)
         infoStr += f'> Score: {score:.4f}'
-        print(
-            getExpandedLine(
-                start=visLine,
-                end=infoStr,
-            )
-        )
+        print(getExpandedLine(left=visLine, right=infoStr))
 
     if lineToPrint < len(visLayoutLines):
         for visLine in visLayoutLines[lineToPrint:]:
             print(visLine)
-
-
-def getExpandedLine(start="", end="") -> str:
-    """Spaces two strings as far apart as possible."""
-    remainingSpace = SCREEN_WIDTH - len(start+end)
-    return start + " "*remainingSpace + end
-
-
-def elapsedTime() -> float:
-    """A function that aids with readability.
-    Returns the elapsed time since the script was started."""
-    return round((time.time() - start_time), 2)
 
 
 class Bigram:
@@ -1063,4 +1093,8 @@ class Bigram:
 
 
 if __name__ == '__main__':
-    main()
+    Cursor.hide()
+    try:
+        main()
+    finally:
+        Cursor.show()

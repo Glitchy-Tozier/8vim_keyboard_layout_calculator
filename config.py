@@ -91,6 +91,9 @@ CUSTOM_LAYOUTS = (
 # Unless you're trying out a super funky layout with more (or less) than 4 sectors, this should be 8.
 LETTERS_PER_LAYER = 8
 
+# If for some reason your terminal does not support Unicode you can set this to True
+DISABLE_UNICODE = False
+
 # Ignore this variable:
 DEBUG_MODE = False
 
