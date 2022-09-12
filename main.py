@@ -230,7 +230,7 @@ def main():
             # Test the the combined layouts of layers 1&2 and layer 3
             goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4 = testLayouts(
                 layouts_L1_L2_L3_L4, bestScores_L1_L2_L3)
-            layouts_L1_L2_L3_L4, bestScores_L1_L2_L3
+            del layouts_L1_L2_L3_L4, bestScores_L1_L2_L3
 
             if PERFORM_GREEDY_OPTIMIZATION:
                 # Do an additional hillclimbing-optimization, then
