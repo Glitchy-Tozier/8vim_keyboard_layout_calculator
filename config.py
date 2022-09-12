@@ -32,6 +32,10 @@ AUTO_LAYER_EMPTY_COUNT = 6
 # Characters that will be ignored when generating layers from bigram-files
 # Symbols available in the default 8VIM layout
 AUTO_LAYER_IGNORE = ' !"#$%&\'()*+,-./0123456789:;<=>?@[\\]^_`{|}~¡¢£¦§©¬®°¶¿÷€₹™⨯'
+# Whether the most common character should be fixed at the bottom-right of all layouts.
+# If `True, this option fills up the first slot of `FIXATED_LETTERS`, creating less redundant results.
+# Set to `False` if your scoring-system cares about layouts's orientation.
+FIXATE_MOST_COMMON_LETTER = True
 
 # Manually define the letters you want to use
 # This removes all AUTO_LAYER functionality
@@ -54,8 +58,8 @@ VAR_LETTERS_L1_L2 = 'nsrhld'.lower()
 # ---
 # If your rating-system cares about which way layouts are rotated,
 # remove 'e' and use {LETTERS_PER_LAYER} empty strings.
-STATIC_LETTERS = ('e', '', '', '', '', '', '', '') # the positions go clockwise. 'e' is on the bottom left.
-#STATIC_LETTERS = ('', '', '', '', '', '', '', '')
+FIXATED_LETTERS = ('e', '', '', '', '', '', '', '') # the positions go clockwise. 'e' is on the bottom left.
+#FIXATED_LETTERS = ('', '', '', '', '', '', '', '')
 
 # Define how many layers the layouts you recieve should contain.
 NR_OF_LAYERS = 4
@@ -96,11 +100,8 @@ DEBUG_MODE = False
 # Use Multiprocessing (disable this when using `pypy3 main.py`)
 USE_MULTIPROCESSING = False
 
-# Symbol used for filling up layer 4. If your alphabet or your bigram-list for some reason contains "-", change "-"" to something else.
+# Symbol used for filling up layer 4. If your alphabet or your bigram-list for some reason contains "-", change "-" to something else.
 FILL_SYMBOL = '-'
-
-# 32 characters that aren't part of your bigram-corpus or your layout. They need to be within the first 256 slots of the ascii-table.
-ASCII_REPLACEMENT_CHARS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "[", "]", "{", "}", "(", ")", "<", ">", "/", "_", ",", "~", "¦", "±", "²", "³", "¶", "¹", "¼", "½", "¾", "¿"]
 
 # Ignore this option.
 SCREEN_WIDTH = 100

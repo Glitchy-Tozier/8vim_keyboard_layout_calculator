@@ -10,7 +10,7 @@ import multiprocessing
 from functools import partial
 import platform
 
-from config import *
+from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, MANUALLY_DEFINE_LAYERS, AUTO_LAYER_SWAP_COUNT, AUTO_LAYER_EMPTY_COUNT, AUTO_LAYER_IGNORE, FIXATE_MOST_COMMON_LETTER, FIXATED_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DISABLE_UNICODE, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, SCORE_LIST, SCREEN_WIDTH
 from helper_classes import BigramsConfig, ConfigSpecificResults
 from ui_helpers import *
 
@@ -27,7 +27,7 @@ def main():
     ###########################################################################################################################
 
     # Make sure staticLetters and customLayouts are lowercase and properly formatted
-    staticLetters = lowerStaticLetters(STATIC_LETTERS)
+    staticLetters = lowerStaticLetters(FIXATED_LETTERS)
     customLayouts = OrderedDict()
     for name, layout in CUSTOM_LAYOUTS:
         customLayouts[name] = xmlStrToOptStr(layout)
@@ -58,6 +58,12 @@ def main():
 
     # Display layer letters
     if MANUALLY_DEFINE_LAYERS is False:
+        if FIXATE_MOST_COMMON_LETTER:
+            # Assigns a tuple to `staticLetters` where the first index is the most common letter.
+            staticLetters = tuple(letters[0] if i is 0 else "" for i in range(LETTERS_PER_LAYER))
+        else:
+            staticLetters = tuple("" * LETTERS_PER_LAYER)
+            
         displaySubtitle('Layer letters (Generated)')
     else:
         displaySubtitle('Layer letters (Manual)')
@@ -66,6 +72,8 @@ def main():
         write('\n')
     half = len(layerLetters[4])//2
     Info(f'Variable letters: {layerLetters[4][:half]} {"<->" if DISABLE_UNICODE else "⇄"} {layerLetters[4][half:]}')
+    if MANUALLY_DEFINE_LAYERS and FIXATE_MOST_COMMON_LETTER:
+        Info(f' Fixated: \'{staticLetters[0]}\' on the bottom-right')
     write('\n\n')
 
     if DEBUG_MODE:
@@ -262,28 +270,8 @@ def main():
                     customLayouts[name] = layout[:NR_OF_LAYERS *
                                                  LETTERS_PER_LAYER]
 
-        # Calculate what the perfect score would be
-        configSpecificData = [ConfigSpecificResults(
-            "All",
-            100,
-            getBigrams(layer1letters + layer2letters +
-                       layer3letters + layer4letters),
-        )]
-        if len(BIGRAMS_CONFIGS) > 1:
-            for config in BIGRAMS_CONFIGS:
-                originalWeight = config.weight
-                fullWeightConfig = config.fullWeightClone()
-
-                configSpecificData.append(ConfigSpecificResults(
-                    config.name,
-                    originalWeight,
-                    getBigrams(layer1letters + layer2letters +
-                               layer3letters + layer4letters, (fullWeightConfig, )),
-                ))
-
         # Display the data in the terminal.
-        showDataInTerminal(finalLayoutList, finalScoresList,
-                           configSpecificData, asciiArray, customLayouts)
+        showDataInTerminal(finalLayoutList, finalScoresList, asciiArray, customLayouts)
 
 
 def getLayerLetters() -> tuple:
@@ -407,11 +395,12 @@ def generateMonogramsFromBigramFiles(configs: tuple = BIGRAMS_CONFIGS) -> dict:
 
 # Used in combination with the `asciify` and `deAsciify` functions
 replacedWithAscii = dict()
-
+monograms = generateMonogramsFromBigramFiles()
+mostFreqLetters = sorted(monograms, key=lambda i: monograms[i], reverse=True)[:256-LETTERS_PER_LAYER*NR_OF_LAYERS]
+asciiReplacementChars = [chr(i) for i in range(256) if chr(i) not in mostFreqLetters and chr(i) != FILL_SYMBOL]
 
 def asciify(string: str) -> str:
     """Take a string and replace all non-ascii-chars with ascii-versions of them"""
-    asciiReplacementChars = ASCII_REPLACEMENT_CHARS
     result = list(string)
     for idx, char in enumerate(string):
         try:
@@ -910,12 +899,12 @@ def performLetterSwaps(layout: str) -> set:
     return layouts
 
 
-def showDataInTerminal\
- (layouts: tuple,
-  scores: array,
-  configSpecificData: list,
-  asciiArray: array,
-  customLayouts=OrderedDict()) -> None:
+def showDataInTerminal(
+    layouts: tuple,
+    scores: array,
+    asciiArray: array,
+    customLayouts=OrderedDict(),
+) -> None:
     """Displays the results; The best layouts, maybe (if i decide to keep this in here) the worst, and some general data."""
 
     if SHOW_TOP_LAYOUTS > 0:
@@ -929,8 +918,7 @@ def showDataInTerminal\
         layouts = list(layouts)
         layouts.reverse()
         for idx, layout in enumerate(layouts):
-            printLayoutData(layout, asciiArray,
-                            configSpecificData, placing=idx+1)
+            printLayoutData(layout, asciiArray, placing=idx+1)
         displaySeparator()
 
     if TEST_CUSTOM_LAYOUTS is True:
@@ -938,8 +926,7 @@ def showDataInTerminal\
         displayTitle(f'Custom layouts')
 
         for name, layout in customLayouts.items():
-            printLayoutData(layout, asciiArray, configSpecificData, name=name)
-        displaySeparator()
+            printLayoutData(layout, asciiArray, name=name)
 
     if SHOW_GENERAL_STATS is True:
         # Get all bigrams that actually can be written using this layout.
@@ -1010,7 +997,28 @@ def layoutVisualisation(layout: str) -> str:
     return blueprint.format(*layout)
 
 
-def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, placing: int = None, name: str = None) -> None:
+def getConfigSpecificData(layout: str) -> list:
+    """Get all necessary `ConfigSpecificResults`s, according to the provided layout & config."""
+
+    layout = ''.join(letter for letter in layout if letter != FILL_SYMBOL)
+    configSpecificData = [ConfigSpecificResults(
+        "All",
+        100,
+        getBigrams(layout),
+    )]
+    if len(BIGRAMS_CONFIGS) > 1:
+        for config in BIGRAMS_CONFIGS:
+            originalWeight = config.weight
+            fullWeightConfig = config.fullWeightClone()
+
+            configSpecificData.append(ConfigSpecificResults(
+                config.name,
+                originalWeight,
+                getBigrams(layout, (fullWeightConfig, )),
+            ))
+    return configSpecificData
+
+def printLayoutData(layout: str, asciiArray: array, placing: int = None, name: str = None) -> None:
     """A function that positions and prints information
     next to the layout-display-string for more compact visuals."""
 
@@ -1038,6 +1046,7 @@ def printLayoutData(layout: str, asciiArray: array, configSpecificData: list, pl
     print(visLayoutLines[lineToPrint])
     lineToPrint += 1
 
+    configSpecificData = getConfigSpecificData(layout)
     maxVisNameLen = max(len(i.name) for i in configSpecificData if i.name != 'All')
     for data in configSpecificData:
         try:
