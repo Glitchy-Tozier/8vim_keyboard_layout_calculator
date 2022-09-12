@@ -70,7 +70,7 @@ def main():
         print(f' Variable: \'{letters[LETTERS_PER_LAYER - AUTO_LAYER_SWAP_COUNT:LETTERS_PER_LAYER + AUTO_LAYER_SWAP_COUNT]}\'')
         print(f' Unused:   \'{letters[cutoff:]}\'')
         if FIXATE_MOST_COMMON_LETTER:
-            print(f' Fixated \'{staticLetters[0]}\' on the bottom-right')
+            print(f' Fixated: \'{staticLetters[0]}\' on the bottom-right')
     else:
 
         # Asciify all necessary strings
