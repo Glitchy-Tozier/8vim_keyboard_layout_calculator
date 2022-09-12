@@ -60,7 +60,7 @@ def main():
     if MANUALLY_DEFINE_LAYERS is False:
         if FIXATE_MOST_COMMON_LETTER:
             # Assigns a tuple to `staticLetters` where the first index is the most common letter.
-            staticLetters = tuple(letters[0] if i is 0 else "" for i in range(LETTERS_PER_LAYER))
+            staticLetters = tuple(layerLetters[0] if i is 0 else "" for i in range(LETTERS_PER_LAYER))
         else:
             staticLetters = tuple("" * LETTERS_PER_LAYER)
             
