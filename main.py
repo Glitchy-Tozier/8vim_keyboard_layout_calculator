@@ -821,23 +821,26 @@ def getTopScores(layouts: tuple, scores: array, nrOfBest=NR_OF_BEST_LAYOUTS) -> 
     if nrOfBest > len(scores):
         nrOfBest = len(scores)
 
-    oldScores = scores
-    indices = range(len(scores))
+    lenScores = len(scores)
+    indices = range(lenScores)
 
     # BEFORE sorting the lists, make sure they're not unnecessarily large
-    nrRemainingScores = len(oldScores)
-    while nrRemainingScores > nrOfBest*3 and nrRemainingScores > LETTERS_PER_LAYER*2:
-        mean = statistics.mean(scores)
+    while lenScores > nrOfBest*3 and lenScores > LETTERS_PER_LAYER*2:
+        mean = statistics.mean(scores[idx] for idx in indices)
         # Get all indices & scores that are above the mean of the remaining scores.
         # This more than halfes remaining scores.
-        indices = [i for i, score in enumerate(oldScores) if score >= mean]
-        scores = [oldScores[idx] for idx in indices]
+        indices = [i for i, score in enumerate(scores) if score >= mean]
 
-        newNrRemainingScores = len(scores)
-        if newNrRemainingScores == nrRemainingScores:
+        newLength = len(indices)
+        if newLength == lenScores:
+            # If scores aren't filtered anymore, stop the loop
             break
         else:
-            nrRemainingScores = newNrRemainingScores
+            lenScores = newLength
+    else:
+        # Do this after the loop has finished.
+        # Get the remaining (best) scores using the filtered indices.
+        scores = [scores[idx] for idx in indices]
 
     # Sort scores & indices. This is way faster thanks to the above while-loop
     sortedScoreIdxTuples = sorted(zip(scores, indices))
