@@ -829,7 +829,7 @@ def getTopScores(layouts: tuple, scores: array, nrOfBest=NR_OF_BEST_LAYOUTS) -> 
     while nrRemainingScores > nrOfBest*3 and nrRemainingScores > LETTERS_PER_LAYER*2:
         mean = statistics.mean(scores)
         # Get all indices & scores that are above the mean of the remaining scores.
-        # This roughly halfes or tripples the remaining scores.
+        # This more than halfes remaining scores.
         indices = [i for i, score in enumerate(oldScores) if score >= mean]
         scores = [oldScores[idx] for idx in indices]
 
