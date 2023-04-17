@@ -192,7 +192,7 @@ if __name__ == '__main__':
         # Title and subtitle
         write('\n')
         displayTitle('Demos of UI helpers')
-        displayTubtitle('Progress bar demo')
+        displaySubtitle('Progress bar demo')
 
         # Progress bar
         p = Progress(12)
