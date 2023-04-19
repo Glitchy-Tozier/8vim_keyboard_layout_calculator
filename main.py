@@ -60,10 +60,10 @@ def main():
     if MANUALLY_DEFINE_LAYERS is False:
         if FIXATE_MOST_COMMON_LETTER:
             # Assigns a tuple to `staticLetters` where the first index is the most common letter.
-            staticLetters = tuple(layerLetters[0][0] if i is 0 else "" for i in range(LETTERS_PER_LAYER))
+            staticLetters = tuple(layerLetters[0][0] if i == 0 else "" for i in range(LETTERS_PER_LAYER))
         else:
             staticLetters = tuple("" * LETTERS_PER_LAYER)
-            
+
         displaySubtitle('Layer letters (Generated)')
     else:
         displaySubtitle('Layer letters (Manual)')
@@ -395,6 +395,7 @@ replacedWithAscii = dict()
 monograms = generateMonogramsFromBigramFiles()
 mostFreqLetters = sorted(monograms, key=lambda i: monograms[i], reverse=True)[:256-LETTERS_PER_LAYER*NR_OF_LAYERS]
 asciiReplacementChars = [chr(i) for i in range(256) if chr(i) not in mostFreqLetters and chr(i) != FILL_SYMBOL]
+
 
 def asciify(string: str) -> str:
     """Take a string and replace all non-ascii-chars with ascii-versions of them"""
@@ -845,7 +846,7 @@ def getTopScores(layouts: tuple, scores: array, nrOfBest=NR_OF_BEST_LAYOUTS) -> 
     # Sort scores & indices. This is way faster thanks to the above while-loop
     sortedScoreIdxTuples = sorted(zip(scores, indices))
 
-    topScores, topIndices = (l for l in zip(*sortedScoreIdxTuples[-nrOfBest:]))
+    topScores, topIndices = zip(*sortedScoreIdxTuples[-nrOfBest:])
     topLayouts = tuple(layouts[idx] for idx in topIndices)
     topScores = array("d", topScores)
 
@@ -974,18 +975,18 @@ def xmlStrToOptStr(layout: str) -> str:
 def layoutVisualisation(layout: str) -> str:
     """Takes the layout-letters and gives a visual representation of them.
     Currently only supports layouts with 4-sections."""
-    blueprint = """   \  {27}         {28}  /
- {26}  \  {19}       {20}  /  {29}
-  {18}  \  {11}     {12}  /  {21}
-   {10}  \  {3}   {4}  /  {13}
-    {2}  \ _____ /  {5}
+    blueprint = """   \\  {27}         {28}  /
+ {26}  \\  {19}       {20}  /  {29}
+  {18}  \\  {11}     {12}  /  {21}
+   {10}  \\  {3}   {4}  /  {13}
+    {2}  \\ _____ /  {5}
         |     |
         |_____|
-    {1}  /       \  {6}
-   {9}  /  {0}   {7}  \  {14}
-  {17}  /  {8}     {15}  \  {22}
- {25}  /  {16}       {23}  \  {30}
-   /  {24}         {31}  \ """ if DISABLE_UNICODE else """ ⟍  {27}                {28} ⟋
+    {1}  /       \\  {6}
+   {9}  /  {0}   {7}  \\  {14}
+  {17}  /  {8}     {15}  \\  {22}
+ {25}  /  {16}       {23}  \\  {30}
+   /  {24}         {31}  \\ """ if DISABLE_UNICODE else """ ⟍  {27}                {28} ⟋
  {26} ⟍  {19}            {20} ⟋  {29}
    {18} ⟍  {11}        {12} ⟋  {21}
      {10} ⟍  {3}    {4} ⟋  {13}
@@ -1024,6 +1025,7 @@ def getConfigSpecificData(layout: str) -> list:
                 getBigrams(layout, (fullWeightConfig, )),
             ))
     return configSpecificData
+
 
 def printLayoutData(layout: str, placing: int = None, name: str = None) -> None:
     """A function that positions and prints information
