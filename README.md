@@ -31,7 +31,7 @@ python3 main.py
 `cmd.exe` does not support the ANSI escape codes by default though it should be able to be enabled since Windows 10 TH2 (v1511). This script was tested with *Windows PowerShell* successfully. If you are using `pypy.exe` you should set `DISABLE_UNICODE = True` in the `config.py` file.
 
 ### Bigrams
-Due to copyrigiht-reasons, I won't add bigram-files to this repository. Please add them yourself. A great resource is [this website](http://practicalcryptography.com/cryptanalysis/letter-frequencies-various-languages/).
+Due to copyright-reasons, I won't add bigram-files to this repository. Please add them yourself. A great resource is [this website](http://practicalcryptography.com/cryptanalysis/letter-frequencies-various-languages/).
 Read [this](https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator/blob/main/bigram_dictionaries/readme.txt) for more information.
 
 ## Future to-do's (PRs are welcome)
