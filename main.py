@@ -181,7 +181,7 @@ def main():
 
         # Sort the best layer-1 layouts and only return the best ones
         bestLayouts_L1_L2, bestScores_L1_L2 = getTopScores(
-            tempLayoutList, tempScoresList)
+            tuple(tempLayoutList), tempScoresList)
         del tempLayoutList, tempScoresList
 
         # Combine the layouts of layer 1 and layer 2 to all possible variants
@@ -473,7 +473,7 @@ def getLayerCombinations(layer1letters: str, layer2letters: str, varLetters_L1_L
         return [layer1letters], [layer2letters]
 
 
-def getVariableLetters(fullLayer: str, staticLetters: str) -> str:
+def getVariableLetters(fullLayer: str, staticLetters: tuple) -> str:
     """Extracts the non-fix letters for the first layer."""
     varLetters = ''
 
@@ -585,7 +585,7 @@ def lowerStaticLetters(staticLetters: tuple) -> tuple:
     return tuple(lst)
 
 
-def getLayerPermutations(varLetters: str, staticLetters: list, layer2letters: str, layer3letters: str, layer4letters: str) -> tuple:
+def getLayerPermutations(varLetters: str, staticLetters: tuple, layer2letters: str, layer3letters: str, layer4letters: str) -> tuple:
     """Creates and returns a list of layouts."""
 
     layer1layouts = getPermutations(varLetters, staticLetters)
@@ -618,7 +618,7 @@ def getLayerPermutations(varLetters: str, staticLetters: list, layer2letters: st
     return layer1layouts, layer2layouts, layer3layouts, layer4layouts
 
 
-def getPermutations(varLetters: str, staticLetters=[]) -> list:
+def getPermutations(varLetters: str, staticLetters=[]) -> tuple:
     """Returns all possible letter-positions (permutations) with the input letters."""
 
     layouts = ['']*math.factorial(len(varLetters))
@@ -923,9 +923,7 @@ def showDataInTerminal(
 
         layouts, _ = getTopScores(layouts, scores, SHOW_TOP_LAYOUTS)
         del scores
-        layouts = list(layouts)
-        layouts.reverse()
-        for idx, layout in enumerate(layouts):
+        for idx, layout in enumerate(reversed(layouts)):
             printLayoutData(layout, placing=idx+1)
         displaySeparator()
 
