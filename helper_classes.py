@@ -15,7 +15,7 @@ class BigramsConfig:
 
 
 class ConfigSpecificResults:
-    """The data for one or multiple [`BigramConfg`]s"""
+    """The data for one or multiple [`BigramsConfig`]s"""
 
     def __init__(self, name: str, weight: float, bigrams: tuple):
         self.name = name

@@ -1054,7 +1054,8 @@ def printLayoutData(layout: str, placing: int = None, name: str = None) -> None:
     lineToPrint += 1
 
     configSpecificData = getConfigSpecificData(layout)
-    maxVisNameLen = max(len(i.name) for i in configSpecificData if i.name != 'All')
+    visNameLen = [len(i.name) for i in configSpecificData if i.name != 'All']
+    maxVisNameLen = max(visNameLen) if visNameLen else 0
     asciiArray = getAsciiArray()
     for data in configSpecificData:
         try:
