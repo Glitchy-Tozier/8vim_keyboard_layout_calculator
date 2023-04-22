@@ -264,7 +264,7 @@ KJOETOM_FORCED_STOPS = (
 # Counting the not so easy writable "RcR-Transitions" as defined by kjoetom in https://github.com/flide/8VIM/discussions/260
 # 
 # >>> THIS IS NOT A SCORE USED TO CALCULATE THE BEST LAYOUT <<< (in the sense of "higher is better")
-# This should only be used to (objectively) COMPARE DIFFERENT CUSTOM LAYOUTS in terms of the occurence of  
+# This should only be used to (objectively) COMPARE DIFFERENT CUSTOM LAYOUTS in terms of the occurrence of
 # transitions between the 1st and 2nd position that require a twofold change of the rotation direction
 # ... how often do these transitions occur when writing the whole set of bigrams of a language using a respective custom layout
 # Counting RcRs as defined by kjoe in https://github.com/flide/8VIM/discussions/260

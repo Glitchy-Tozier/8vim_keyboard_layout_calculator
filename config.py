@@ -27,14 +27,14 @@ BIGRAMS_CONFIGS = (
 # (0 - fastest, 8 - slowest)
 AUTO_LAYER_SWAP_COUNT = 3
 # The number of slots that will be kept empty
-# Can be used to reserve room for special symbols such as period, comma, ect.
+# Can be used to reserve room for special symbols such as period, comma, etc.
 AUTO_LAYER_EMPTY_COUNT = 6
 # Characters that will be ignored when generating layers from bigram-files
 # Symbols available in the default 8VIM layout
 AUTO_LAYER_IGNORE = ' !"#$%&\'()*+,-./0123456789:;<=>?@[\\]^_`{|}~¡¢£¦§©¬®°¶¿÷€₹™⨯'
 # Whether the most common character should be fixed at the bottom-right of all layouts.
 # If `True, this option fills up the first slot of `FIXATED_LETTERS`, creating less redundant results.
-# Set to `False` if your scoring-system cares about layouts's orientation.
+# Set to `False` if your scoring-system cares about layouts' orientation.
 FIXATE_MOST_COMMON_LETTER = True
 
 # Manually define the letters you want to use
@@ -45,8 +45,8 @@ LAYER_2_LETTERS = 'hldcumfg'.lower() # All letters for the second cycleNr of cal
 LAYER_3_LETTERS = 'pwybvkjx'.lower() # All letters for the third cycleNr of calculation
 LAYER_4_LETTERS = 'zq'.lower() # All letters for the fourth cycleNr of calculation
 
-# Define how which of the above letters are interchangeable (variable) between adjacent layers.
-# They have to be in the same order as they apear between layer1letters and layer2letters.
+# Define which of the above letters are interchangeable (variable) between adjacent layers.
+# They have to be in the same order as they appear between layer1letters and layer2letters.
 # This has a drastic effect on performance. Time for computation skyrockets. This is where the "======>  2 out of X cycleNrs" come from.
 VAR_LETTERS_L1_L2 = 'nsrhld'.lower()
 #VAR_LETTERS_L1_L2 = ''.lower()

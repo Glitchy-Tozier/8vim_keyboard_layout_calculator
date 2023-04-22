@@ -30,7 +30,7 @@ class Cursor:
         write('\x1b[?25h')
 
 
-def getFormatedTime(seconds: float) -> str:
+def getFormattedTime(seconds: float) -> str:
     """Formats a float representing seconds into a readable format and returns it as a string"""
     if seconds < 0:
         return 'N/A'
@@ -118,9 +118,9 @@ class Progress:
             write(f'{msg}{chars[0]}{chars[1]*barLen}{" "*(width - barLen)}{chars[2]}')
         Cursor.left(self.width)
         if self.time_taken:
-            progMsg = f'Time taken: {getFormatedTime(self.estim_total())}'
+            progMsg = f'Time taken: {getFormattedTime(self.estim_total())}'
         else:
-            progMsg = f'Estimated total time: {getFormatedTime(self.estim_total())}'
+            progMsg = f'Estimated total time: {getFormattedTime(self.estim_total())}'
         Cursor.up()
         self.info.set_msg(progMsg)
         self.info.set_status(self.status)
@@ -175,7 +175,7 @@ class InfoWithTime(Info):
         super().display()
         if self.time_taken:
             Cursor.up()
-            progMsg = f'Time taken: {getFormatedTime(self.time_taken)}'
+            progMsg = f'Time taken: {getFormattedTime(self.time_taken)}'
             write(progMsg)
             Cursor.left(len(progMsg))
             Cursor.down()

@@ -143,7 +143,7 @@ def main():
             layouts_L1_L2 = combinePermutations(bestLayouts_L1, layouts_L2)
             del bestLayouts_L1, layouts_L2
 
-            # Test the the combined layouts of layer 1 and layer2
+            # Test the combined layouts of layer 1 and layer2
             goodLayouts_L1_L2, goodScores_L1_L2 = testLayouts(
                 layouts_L1_L2, bestScores_L1)
             del layouts_L1_L2, bestScores_L1
@@ -188,7 +188,7 @@ def main():
         layouts_L1_L2_L3 = combinePermutations(bestLayouts_L1_L2, layouts_L3)
         bestLayouts_L1_L2, layouts_L3
 
-        # Test the the combined layouts of layers 1&2 and layer 3
+        # Test the combined layouts of layers 1&2 and layer 3
         initialGoodLayouts_L1_L2_L3, initialGoodScores_L1_L2_L3 = testLayouts(
             layouts_L1_L2_L3, bestScores_L1_L2)
         del layouts_L1_L2_L3, bestScores_L1_L2
@@ -227,7 +227,7 @@ def main():
                 bestLayouts_L1_L2_L3, layouts_L4)
             del bestLayouts_L1_L2_L3, layouts_L4
 
-            # Test the the combined layouts of layers 1&2 and layer 3
+            # Test the combined layouts of layers 1&2 and layer 3
             goodLayouts_L1_L2_L3_L4, goodScores_L1_L2_L3_L4 = testLayouts(
                 layouts_L1_L2_L3_L4, bestScores_L1_L2_L3)
             del layouts_L1_L2_L3_L4, bestScores_L1_L2_L3
@@ -262,7 +262,7 @@ def main():
     if SHOW_DATA is True:
         if TEST_CUSTOM_LAYOUTS is True:
             for name, layout in customLayouts.items():
-                # If yout're only testing a certain nuber of layers, only use that amount of layers in the name of the custom layouts.
+                # If you're only testing a certain number of layers, only use that amount of layers in the name of the custom layouts.
                 if len(layout) > (NR_OF_LAYERS*LETTERS_PER_LAYER):
                     customLayouts[name] = layout[:NR_OF_LAYERS *
                                                  LETTERS_PER_LAYER]
@@ -323,7 +323,7 @@ def validateSettings(staticLetters) -> bool:
                 print(
                     '"', char, '" was defined in VAR_LETTERS_L1_L2, but is not part of layer 1 or 2')
                 return False
-        # Check whether fixed_letters's letters are contained in the ferst layers
+        # Check whether fixed_letters's letters are contained in the first layers
         for char in staticLetters:
             if char not in LAYER_1_LETTERS:
                 print(
@@ -348,7 +348,7 @@ def validateSettings(staticLetters) -> bool:
 
 
 def normalizeDict(dictionary: dict) -> dict:
-    """Returns a normalized version of a dictionary of frequencier"""
+    """Returns a normalized version of a dictionary of frequencies"""
     total = sum(dictionary.values())
     return {key: dictionary[key]/total for key in dictionary}
 
@@ -357,7 +357,7 @@ def generateMonogramsFromBigramFiles(configs: tuple = BIGRAMS_CONFIGS) -> dict:
     """Uses the bigram-files to generate and return a monogram dictionary"""
 
     # Generate monogram dicts for each language
-    # Store them with their weigths
+    # Store them with their weights
     normalizedMonogramLists = []
     for config in configs:
         if config.weight <= 0:
@@ -678,7 +678,7 @@ def testLayouts(layouts: tuple, prevScores=None) -> tuple:
             if len(prevScores) > 1:
                 goodLayouts = []
                 goodScores = array("d", [])
-                # Prepare the group-sizes of the layout-groups for multiprozessing
+                # Prepare the group-sizes of the layout-groups for multiprocessing
                 groupBeginnings = []
                 for j in range(len(prevScores)):
                     # Prepare the iterables for the later "pool.map"
@@ -691,7 +691,7 @@ def testLayouts(layouts: tuple, prevScores=None) -> tuple:
                                           layouts, bigrams, prevScores, groupSize])
 
                 # Using multithreading, test the layouts for their flow. Only test <= 20 at once.
-                maxNrProcesses = 15  # Max number of simuntaneous processes
+                maxNrProcesses = 15  # Max number of simultaneous processes
                 j = 0
                 while j < len(prevScores):
                     resultsList = []
@@ -829,7 +829,7 @@ def getTopScores(layouts: tuple, scores: array, nrOfBest=NR_OF_BEST_LAYOUTS) -> 
     while lenScores > nrOfBest*3 and lenScores > LETTERS_PER_LAYER*2:
         mean = statistics.mean(scores[idx] for idx in indices)
         # Get all indices & scores that are above the mean of the remaining scores.
-        # This more than halfes remaining scores.
+        # This more than halves remaining scores.
         indices = [i for i, score in enumerate(scores) if score >= mean]
 
         newLength = len(indices)
@@ -872,7 +872,7 @@ def greedyOptimization(layouts: tuple, scores: array, info: InfoWithTime = None)
     if DEBUG_MODE:
         print(f'DEBUG: Greedy optimization with {len(layouts)} layouts')
     else:
-        info.set_status(f'{len(layouts)} layous] [Greedy optimization')
+        info.set_status(f'{len(layouts)} layouts] [Greedy optimization')
     for layout, score in zip(layouts, deepcopy(scores)):
         optimizing = True
         while optimizing is True:
@@ -945,7 +945,7 @@ def showDataInTerminal(
             print('\n')
         write('\n')
         displayTitle('General stats')
-        Info(f'Total execution time: {getFormatedTime(time() - start_time)}')
+        Info(f'Total execution time: {getFormattedTime(time() - start_time)}')
         write('\n')
         Info(f'Amount of bigrams that can be written with the letters used in this layout: {writeableFrequencySum:.2f}%')
         write('\n\n')
