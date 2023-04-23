@@ -1012,16 +1012,15 @@ def getConfigSpecificData(layout: str) -> list:
         100,
         getBigrams(layout),
     )]
-    if len(BIGRAMS_CONFIGS) > 1:
-        for config in BIGRAMS_CONFIGS:
-            originalWeight = config.weight
-            fullWeightConfig = config.fullWeightClone()
+    for config in BIGRAMS_CONFIGS:
+        originalWeight = config.weight
+        fullWeightConfig = config.fullWeightClone()
 
-            configSpecificData.append(ConfigSpecificResults(
-                config.name,
-                originalWeight,
-                getBigrams(layout, (fullWeightConfig, )),
-            ))
+        configSpecificData.append(ConfigSpecificResults(
+            config.name,
+            originalWeight,
+            getBigrams(layout, (fullWeightConfig, )),
+        ))
     return configSpecificData
 
 
