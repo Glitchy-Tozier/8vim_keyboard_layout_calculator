@@ -1,6 +1,6 @@
 # 8vim_keyboard_layout_calculator
 
-- This is a small python script to calculate the best possible layout for https://github.com/flide/8VIM/.
+- This is a python script to calculate the best possible layout for https://github.com/flide/8VIM/.
 - For an explanation of how optimization works, check out [`explanation.md`](https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator/blob/main/explanation.md)
 - The discussion regarding this program can be found here: https://github.com/flide/8VIM/discussions/138
 
