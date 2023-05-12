@@ -1,5 +1,6 @@
 from array import array
 import os.path
+import sys
 import itertools
 from collections import OrderedDict
 from copy import deepcopy
@@ -10,11 +11,26 @@ import multiprocessing
 from functools import partial
 import platform
 
-from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, MANUALLY_DEFINE_LAYERS, AUTO_LAYER_SWAP_COUNT, AUTO_LAYER_EMPTY_COUNT, AUTO_LAYER_IGNORE, FIXATE_MOST_COMMON_LETTER, FIXATED_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DISABLE_UNICODE, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, SCORE_LIST, SCREEN_WIDTH
+from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, MANUALLY_DEFINE_LAYERS, AUTO_LAYER_SWAP_COUNT, AUTO_LAYER_EMPTY_COUNT, AUTO_LAYER_IGNORE, FIXATE_MOST_COMMON_LETTER, FIXATED_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DISABLE_UNICODE, DEBUG_MODE, USE_MULTIPROCESSING, USE_CFFI, FILL_SYMBOL, SCORE_LIST, SCREEN_WIDTH
 from helper_classes import BigramsConfig, ConfigSpecificResults
 from ui_helpers import *
 
 start_time = time()
+
+if USE_CFFI:
+    try:
+        from cffi._cffi_extension.lib import test_single_layout
+        from cffi._cffi_extension import ffi
+    except ModuleNotFoundError as e:
+        implementation = platform.python_implementation()
+        if implementation == "CPython":
+            interpreter = "python3" if implementation == "CPython" else "pypy3"
+        print("Could not import _cffi_extension!\n"
+              "Compile it with:\n"
+              f"cd cffi && {interpreter} ./cffi_extension_build.py")
+        sys.exit(1)
+
+    LINEAR_SCORE_LIST = list(itertools.chain.from_iterable(SCORE_LIST))
 
 
 def main():
@@ -750,13 +766,26 @@ def getAsciiArray() -> array:
 def getLayoutScores(layouts: tuple, bigrams: tuple, prevScores=None) -> tuple:
     """Tests the layouts and return their scores. It's only used when single-threading."""
 
-    asciiArray = getAsciiArray()
     nrLayouts = len(layouts)
     scores = array("d", [0.0]*nrLayouts) # Create the empty scoring-list
+    if USE_CFFI:
+        bigr_count = len(bigrams)
+        bigr = ffi.new("Bigram[]", bigr_count)
+        for i, b in enumerate(bigrams):
+            bigr[i].letter1AsciiCode = b.letter1AsciiCode
+            bigr[i].letter2AsciiCode = b.letter2AsciiCode
+            bigr[i].frequency = b.frequency
 
-    # Test the flow of all the layouts.
-    for k, layout in enumerate(layouts):
-        scores[k] = testSingleLayout(layout, asciiArray, bigrams)
+        # Test the flow of all the layouts.
+        for k, layout in enumerate(layouts):
+            char_list = layout.encode('latin1')
+            scores[k] = test_single_layout(char_list, len(layout), bigr, bigr_count, LINEAR_SCORE_LIST)
+    else:
+        asciiArray = getAsciiArray()
+
+        # Test the flow of all the layouts.
+        for k, layout in enumerate(layouts):
+            scores[k] = testSingleLayout(layout, asciiArray, bigrams)
 
     if prevScores:
         # Add the previous layouts' scores. (which weren't tested here. It would be redundant.)
@@ -861,25 +890,46 @@ def greedyOptimization(layouts: tuple, scores: array, info: InfoWithTime = None)
     """Randomly switches letters in each of the layouts to see whether the layouts can be improved this way."""
 
     optimizedLayouts = dict(zip(layouts, scores))
-    asciiArray = getAsciiArray()
     bigrams = getBigrams(''.join(sorted(layouts[0])))
+    if USE_CFFI:
+        bigr_count = len(bigrams)
+        bigr = ffi.new("Bigram[]", bigr_count)
+        for i, b in enumerate(bigrams):
+            bigr[i].letter1AsciiCode = b.letter1AsciiCode
+            bigr[i].letter2AsciiCode = b.letter2AsciiCode
+            bigr[i].frequency = b.frequency
+    else:
+        asciiArray = getAsciiArray()
     if DEBUG_MODE:
         print(f'DEBUG: Greedy optimization with {len(layouts)} layouts')
     else:
         info.set_status(f'{len(layouts)} layouts] [Greedy optimization')
     for layout, score in zip(layouts, deepcopy(scores)):
         optimizing = True
-        while optimizing is True:
-            layoutPermutations = performLetterSwaps(layout)
-            for i, permutatedLayout in enumerate(layoutPermutations):
-                permutatedScore = testSingleLayout(
-                    permutatedLayout, asciiArray, bigrams)
-                if permutatedScore > score:
-                    layout = permutatedLayout
-                    score = permutatedScore
-                    break
-                elif i+1 == len(layoutPermutations):
-                    optimizing = False
+        if USE_CFFI:
+            while optimizing is True:
+                layoutPermutations = performLetterSwaps(layout)
+                for i, permutatedLayout in enumerate(layoutPermutations):
+                    char_list = permutatedLayout.encode('latin1')
+                    permutatedScore = test_single_layout(char_list, len(permutatedLayout), bigr, bigr_count, LINEAR_SCORE_LIST)
+                    if permutatedScore > score:
+                        layout = permutatedLayout
+                        score = permutatedScore
+                        break
+                    elif i+1 == len(layoutPermutations):
+                        optimizing = False
+        else:
+            while optimizing is True:
+                layoutPermutations = performLetterSwaps(layout)
+                for i, permutatedLayout in enumerate(layoutPermutations):
+                    permutatedScore = testSingleLayout(
+                        permutatedLayout, asciiArray, bigrams)
+                    if permutatedScore > score:
+                        layout = permutatedLayout
+                        score = permutatedScore
+                        break
+                    elif i+1 == len(layoutPermutations):
+                        optimizing = False
         if layout not in optimizedLayouts:
             optimizedLayouts[layout] = score
     if DEBUG_MODE:

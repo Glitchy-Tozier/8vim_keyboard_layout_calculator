@@ -100,6 +100,12 @@ DEBUG_MODE = False
 # Use Multiprocessing (disable this when using `pypy3 main.py`)
 USE_MULTIPROCESSING = False
 
+# Use CFFI for better performance. Before running `pypy3 main.py`,
+# execute this to compile the C(FFI) extension:
+# `cd cffi && pypy3 cffi_extension_build.py`
+# (compiler like gcc or clang required)
+USE_CFFI = True
+
 # Symbol used for filling up layer 4. If your alphabet or your bigram-list for some reason contains "-", change "-" to something else.
 FILL_SYMBOL = '-'
 
