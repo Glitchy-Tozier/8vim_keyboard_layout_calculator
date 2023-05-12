@@ -756,13 +756,7 @@ def getLayoutScores(layouts: tuple, bigrams: tuple, prevScores=None) -> tuple:
 
     # Test the flow of all the layouts.
     for k, layout in enumerate(layouts):
-        for j, letter in enumerate(layout):
-            asciiArray[ord(letter)] = j  # Fill up asciiArray
-
-        for bigram in bigrams: # Go through every bigram and see how well it flows.
-            firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
-            secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
-            scores[k] += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
+        scores[k] = testSingleLayout(layout, asciiArray, bigrams)
 
     if prevScores:
         # Add the previous layouts' scores. (which weren't tested here. It would be redundant.)
