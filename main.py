@@ -19,7 +19,7 @@ start_time = time()
 
 if USE_CFFI:
     try:
-        from cffi._cffi_extension.lib import test_single_layout
+        from cffi._cffi_extension.lib import test_single_layout, get_top_scores
         from cffi._cffi_extension import ffi
     except ModuleNotFoundError as e:
         implementation = platform.python_implementation()
@@ -797,8 +797,18 @@ def getLayoutScores(layouts: tuple, bigrams: tuple, prevScores=None) -> tuple:
             for k in range(groupBeginning, groupEnding):
                 scores[k] += prevScores[j]
 
-    goodLayouts, goodScores = getTopScores(layouts, scores, 500)
-    return goodLayouts, goodScores
+    if USE_CFFI:
+        bytes_layouts = [ffi.new("char[]", layout.encode("latin1")) for layout in layouts]
+        layouts_pointer = ffi.new("char*[]", bytes_layouts)
+        scores_pointer = ffi.new("double[]", list(scores))
+        goodLayouts = [ffi.new("char[]", 100)] * 500
+        goodLayoutsPointer = ffi.new("char*[]", goodLayouts)
+        goodScores = ffi.new('double[]', 500)
+        get_top_scores(layouts_pointer, len(layouts), scores_pointer, 500, LETTERS_PER_LAYER, goodLayoutsPointer, goodScores)
+        return [ffi.string(s).decode("latin1") for s in goodLayoutsPointer], [float(f) for f in goodScores]
+    else:
+        goodLayouts, goodScores = getTopScores(layouts, scores, 500)
+        return goodLayouts, goodScores
 
 
 def getLayoutScores_multiprocessing(*args) -> tuple:
