@@ -23,8 +23,7 @@ if USE_CFFI:
         from cffi._cffi_extension import ffi
     except ModuleNotFoundError as e:
         implementation = platform.python_implementation()
-        if implementation == "CPython":
-            interpreter = "python3" if implementation == "CPython" else "pypy3"
+        interpreter = "python3" if implementation == "CPython" else "pypy3"
         print("Could not import _cffi_extension!\n"
               "Compile it with:\n"
               f"cd cffi && {interpreter} ./cffi_extension_build.py")
