@@ -19,7 +19,7 @@ start_time = time()
 
 if USE_CFFI:
     try:
-        from cffi._cffi_extension.lib import test_single_layout, get_top_scores
+        from cffi import _cffi_extension
         from cffi._cffi_extension import ffi
     except ModuleNotFoundError as e:
         implementation = platform.python_implementation()
@@ -768,17 +768,19 @@ def getLayoutScores(layouts: tuple, bigrams: tuple, prevScores=None) -> tuple:
     nrLayouts = len(layouts)
     scores = array("d", [0.0]*nrLayouts) # Create the empty scoring-list
     if USE_CFFI:
-        bigr_count = len(bigrams)
-        bigr = ffi.new("Bigram[]", bigr_count)
+        nrBigrams = len(bigrams)
+        ffiBigrams = ffi.new("BigramC[]", nrBigrams)
         for i, b in enumerate(bigrams):
-            bigr[i].letter1AsciiCode = b.letter1AsciiCode
-            bigr[i].letter2AsciiCode = b.letter2AsciiCode
-            bigr[i].frequency = b.frequency
+            ffiBigrams[i].letter1AsciiCode = b.letter1AsciiCode
+            ffiBigrams[i].letter2AsciiCode = b.letter2AsciiCode
+            ffiBigrams[i].frequency = b.frequency
 
         # Test the flow of all the layouts.
         for k, layout in enumerate(layouts):
-            char_list = layout.encode('latin1')
-            scores[k] = test_single_layout(char_list, len(layout), bigr, bigr_count, LINEAR_SCORE_LIST)
+            permutatedLayoutBytes = layout.encode('latin1')
+            scores[k] = _cffi_extension.lib.test_single_layout(
+                permutatedLayoutBytes, len(layout), ffiBigrams, nrBigrams, LINEAR_SCORE_LIST
+            )
     else:
         asciiArray = getAsciiArray()
 
@@ -797,14 +799,16 @@ def getLayoutScores(layouts: tuple, bigrams: tuple, prevScores=None) -> tuple:
                 scores[k] += prevScores[j]
 
     if USE_CFFI:
-        bytes_layouts = [ffi.new("char[]", layout.encode("latin1")) for layout in layouts]
-        layouts_pointer = ffi.new("char*[]", bytes_layouts)
-        scores_pointer = ffi.new("double[]", list(scores))
-        goodLayouts = [ffi.new("char[]", 100)] * 500
-        goodLayoutsPointer = ffi.new("char*[]", goodLayouts)
-        goodScores = ffi.new('double[]', 500)
-        get_top_scores(layouts_pointer, len(layouts), scores_pointer, 500, LETTERS_PER_LAYER, goodLayoutsPointer, goodScores)
-        return [ffi.string(s).decode("latin1") for s in goodLayoutsPointer], [float(f) for f in goodScores]
+        ffiLayouts = [ffi.new("char[]", layout.encode("latin1")) for layout in layouts]
+        ffiLayoutsPointer = ffi.new("char*[]", ffiLayouts)
+        ffiScoresArray = ffi.new("double[]", list(scores))
+        ffiGoodLayouts = [ffi.new("char[]", 100)] * 500
+        ffiGoodLayoutsPointer = ffi.new("char*[]", ffiGoodLayouts)
+        ffiGoodScores = ffi.new('double[]', 500)
+        _cffi_extension.lib.get_top_scores(
+            ffiLayoutsPointer, nrLayouts, ffiScoresArray, 500, LETTERS_PER_LAYER, ffiGoodLayoutsPointer, ffiGoodScores
+        )
+        return [ffi.string(s).decode("latin1") for s in ffiGoodLayoutsPointer], [float(f) for f in ffiGoodScores]
     else:
         goodLayouts, goodScores = getTopScores(layouts, scores, 500)
         return goodLayouts, goodScores
@@ -901,12 +905,12 @@ def greedyOptimization(layouts: tuple, scores: array, info: InfoWithTime = None)
     optimizedLayouts = dict(zip(layouts, scores))
     bigrams = getBigrams(''.join(sorted(layouts[0])))
     if USE_CFFI:
-        bigr_count = len(bigrams)
-        bigr = ffi.new("Bigram[]", bigr_count)
+        nrBigrams = len(bigrams)
+        ffiBigrams = ffi.new("BigramC[]", nrBigrams)
         for i, b in enumerate(bigrams):
-            bigr[i].letter1AsciiCode = b.letter1AsciiCode
-            bigr[i].letter2AsciiCode = b.letter2AsciiCode
-            bigr[i].frequency = b.frequency
+            ffiBigrams[i].letter1AsciiCode = b.letter1AsciiCode
+            ffiBigrams[i].letter2AsciiCode = b.letter2AsciiCode
+            ffiBigrams[i].frequency = b.frequency
     else:
         asciiArray = getAsciiArray()
     if DEBUG_MODE:
@@ -919,8 +923,10 @@ def greedyOptimization(layouts: tuple, scores: array, info: InfoWithTime = None)
             while optimizing is True:
                 layoutPermutations = performLetterSwaps(layout)
                 for i, permutatedLayout in enumerate(layoutPermutations):
-                    char_list = permutatedLayout.encode('latin1')
-                    permutatedScore = test_single_layout(char_list, len(permutatedLayout), bigr, bigr_count, LINEAR_SCORE_LIST)
+                    permutatedLayoutBytes = permutatedLayout.encode('latin1')
+                    permutatedScore = _cffi_extension.lib.test_single_layout(
+                        permutatedLayoutBytes, len(permutatedLayout), ffiBigrams, nrBigrams, LINEAR_SCORE_LIST
+                    )
                     if permutatedScore > score:
                         layout = permutatedLayout
                         score = permutatedScore

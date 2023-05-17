@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-double test_single_layout(char* layout, int layout_length, Bigram* bigrams,
+double test_single_layout(char* layout, int layout_length, BigramC* bigrams,
                           int bigrams_count, double* score_list)
 {
 	int ascii_array[256] = {0};
@@ -13,7 +13,7 @@ double test_single_layout(char* layout, int layout_length, Bigram* bigrams,
 
 	double score = 0.0;
 	for (int i = 0; i < bigrams_count; i++) {
-		Bigram bigram = bigrams[i];
+		BigramC bigram = bigrams[i];
 		int row = ascii_array[bigram.letter1AsciiCode];
 		int column = ascii_array[bigram.letter2AsciiCode];
 		score += bigram.frequency * score_list[row*32 + column];
