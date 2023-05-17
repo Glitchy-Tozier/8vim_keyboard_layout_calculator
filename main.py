@@ -29,7 +29,8 @@ if USE_CFFI:
               f"cd cffi && {interpreter} ./cffi_extension_build.py")
         sys.exit(1)
 
-    LINEAR_SCORE_LIST = list(itertools.chain.from_iterable(SCORE_LIST))
+    FFI_SCORE_LIST_ARRAYS = [ffi.new('double[32]', list(array)) for array in SCORE_LIST]
+    FFI_SCORE_LIST = ffi.new('double[][32]', FFI_SCORE_LIST_ARRAYS)
 
 
 def main():
@@ -779,7 +780,7 @@ def getLayoutScores(layouts: tuple, bigrams: tuple, prevScores=None) -> tuple:
         for k, layout in enumerate(layouts):
             permutatedLayoutBytes = layout.encode('latin1')
             scores[k] = _cffi_extension.lib.test_single_layout(
-                permutatedLayoutBytes, len(layout), ffiBigrams, nrBigrams, LINEAR_SCORE_LIST
+                permutatedLayoutBytes, len(layout), ffiBigrams, nrBigrams, FFI_SCORE_LIST
             )
     else:
         asciiArray = getAsciiArray()
@@ -925,7 +926,7 @@ def greedyOptimization(layouts: tuple, scores: array, info: InfoWithTime = None)
                 for i, permutatedLayout in enumerate(layoutPermutations):
                     permutatedLayoutBytes = permutatedLayout.encode('latin1')
                     permutatedScore = _cffi_extension.lib.test_single_layout(
-                        permutatedLayoutBytes, len(permutatedLayout), ffiBigrams, nrBigrams, LINEAR_SCORE_LIST
+                        permutatedLayoutBytes, len(permutatedLayout), ffiBigrams, nrBigrams, FFI_SCORE_LIST
                     )
                     if permutatedScore > score:
                         layout = permutatedLayout
