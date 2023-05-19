@@ -26,7 +26,8 @@ if USE_CFFI:
         interpreter = "python3" if implementation == "CPython" else "pypy3"
         print("Could not import _cffi_extension!\n"
               "Compile it with:\n"
-              f"cd cffi && {interpreter} ./cffi_extension_build.py")
+              f"cd cffi && {interpreter} ./cffi_extension_build.py\n"
+              "(Or disable cffi usage by setting USE_CFFI in config.py to False.)")
         sys.exit(1)
 
     FFI_SCORE_LIST_ARRAYS = [ffi.new('double[32]', list(array)) for array in SCORE_LIST]
