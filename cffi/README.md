@@ -13,6 +13,7 @@ And you need to compile the extension. This can be done with:
 ```sh
 cd cffi
 pypy3 cffi_extension_build.py
+cd ..
 ```
 
 This will use a C compiler in the background. If you don't have one installed, install one and try again.
