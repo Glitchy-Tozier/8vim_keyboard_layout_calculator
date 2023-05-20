@@ -921,32 +921,23 @@ def greedyOptimization(layouts: tuple, scores: array, info: InfoWithTime = None)
         info.set_status(f'{len(layouts)} layouts] [Greedy optimization')
     for layout, score in zip(layouts, deepcopy(scores)):
         optimizing = True
-        if USE_CFFI:
-            while optimizing is True:
-                layoutPermutations = performLetterSwaps(layout)
-                for i, permutatedLayout in enumerate(layoutPermutations):
+        while optimizing is True:
+            layoutPermutations = performLetterSwaps(layout)
+            for i, permutatedLayout in enumerate(layoutPermutations):
+                if USE_CFFI:
                     permutatedLayoutBytes = permutatedLayout.encode('latin1')
                     permutatedScore = _cffi_extension.lib.test_single_layout(
                         permutatedLayoutBytes, len(permutatedLayout), ffiBigrams, nrBigrams, FFI_SCORE_LIST
                     )
-                    if permutatedScore > score:
-                        layout = permutatedLayout
-                        score = permutatedScore
-                        break
-                    elif i+1 == len(layoutPermutations):
-                        optimizing = False
-        else:
-            while optimizing is True:
-                layoutPermutations = performLetterSwaps(layout)
-                for i, permutatedLayout in enumerate(layoutPermutations):
+                else:
                     permutatedScore = testSingleLayout(
                         permutatedLayout, asciiArray, bigrams)
-                    if permutatedScore > score:
-                        layout = permutatedLayout
-                        score = permutatedScore
-                        break
-                    elif i+1 == len(layoutPermutations):
-                        optimizing = False
+                if permutatedScore > score:
+                    layout = permutatedLayout
+                    score = permutatedScore
+                    break
+                elif i+1 == len(layoutPermutations):
+                    optimizing = False
         if layout not in optimizedLayouts:
             optimizedLayouts[layout] = score
     if DEBUG_MODE:
