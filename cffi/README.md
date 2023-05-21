@@ -8,26 +8,16 @@ This "C extension" can be used in `main.py` thanks to [CFFI](https://cffi.readth
 
 If you want to use the C extension, you need to enable it in the configuration file `config.py`: Set `USE_CFFI` to `True`.
 
-And you need to compile the extension. This can be done with:
+## Usage
 
-```sh
-cd cffi
-pypy3 cffi_extension_build.py
-cd ..
-```
+| 1. Decide on Interpreter         | pypy3<br>(recommended)                                 | python3                                                  |
+|:---------------------------------|--------------------------------------------------------|----------------------------------------------------------|
+| 2. Install package (Linux only?) | pypy3-dev                                              | python3-dev                                              |
+| 3. Get `cffi`                    | Included by default                                    | Run `pip install cffi`                                   |
+| 4. Build code                    | Run `cd cffi && pypy3 cffi_extension_build.py ; cd ..` | Run `cd cffi && python3 cffi_extension_build.py ; cd ..` |
+| 5. Start optimizer               | Run `pypy3 main.py`                                    | Run `python3 main.py`                                    |
 
-This will use a C compiler in the background. If you don't have one installed, install one and try again.
+Remarks:
 
-If you want to use _CPython_ (the default Python interpreter), run `python3 cffi_extension_build.py` instead. It's important to use the same Python interpreter for compiling the C extension and running the calculator! This step is only necessary once (except when you change the C code in this folder).
-
-Then run the calculator as usual with:
-
-```sh
-pypy3 main.py
-```
-
-or
-
-```sh
-python3 main.py
-```
+* Step 2: If there is no `pypy3-dev` (or `python3-dev`) package for your distribution (p.e. Arch Linux), just install `pypy3` (or `python`).
+* Step 4 will use a C compiler in the background. If you don't have one installed, install one (p.e. `gcc`, `clang` or `tcc`) and try again.

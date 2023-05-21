@@ -13,12 +13,7 @@ git clone https://github.com/Glitchy-Tozier/8vim_keyboard_layout_calculator.git
 3. Open `config.py` and edit the config-parameters to match your language. The most important ones are:
     - `BIGRAMS_CONFIGS`
     - `NR_OF_BEST_LAYOUTS` (has a big impact on speed)
-4. Optional: For much faster execution times, the bottleneck functions have been rewritten in C. Compile them (only once) like this:
-   ```sh
-   (cd cffi && pypy3 cffi_extension_build.py)
-   ```
-   This requires a C compiler to be installed. Set `USE_CFFI` in `config.py` to `True`.
-5. Start the script:
+4. Start the script:
     - _(Install a recent version of [Python](https://www.python.org/))_
     - Navigate to this project's root directory and run the script.
 
@@ -30,6 +25,8 @@ If for whatever reason you can't use pypy, to at least benefit from *some* speed
 ```sh
 python3 main.py
 ```
+
+Optional: For much faster execution times, the bottleneck functions have been rewritten in C. If you want to use them, follow [these instructions](cffi/README.md).
 
 ### Compatibility
 #### Windows
