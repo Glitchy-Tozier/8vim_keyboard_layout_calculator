@@ -1,5 +1,6 @@
 from array import array
 import os.path
+import sys
 import itertools
 from collections import OrderedDict
 from copy import deepcopy
@@ -10,11 +11,27 @@ import multiprocessing
 from functools import partial
 import platform
 
-from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, MANUALLY_DEFINE_LAYERS, AUTO_LAYER_SWAP_COUNT, AUTO_LAYER_EMPTY_COUNT, AUTO_LAYER_IGNORE, FIXATE_MOST_COMMON_LETTER, FIXATED_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DISABLE_UNICODE, DEBUG_MODE, USE_MULTIPROCESSING, FILL_SYMBOL, SCORE_LIST, SCREEN_WIDTH
+from config import BIGRAMS_CONFIGS, LAYER_1_LETTERS, LAYER_2_LETTERS, LAYER_3_LETTERS, LAYER_4_LETTERS, VAR_LETTERS_L1_L2, MANUALLY_DEFINE_LAYERS, AUTO_LAYER_SWAP_COUNT, AUTO_LAYER_EMPTY_COUNT, AUTO_LAYER_IGNORE, FIXATE_MOST_COMMON_LETTER, FIXATED_LETTERS, NR_OF_LAYERS, NR_OF_BEST_LAYOUTS, PERFORM_GREEDY_OPTIMIZATION, SHOW_DATA, SHOW_GENERAL_STATS, SHOW_TOP_LAYOUTS, TEST_CUSTOM_LAYOUTS, CUSTOM_LAYOUTS, LETTERS_PER_LAYER, DISABLE_UNICODE, DEBUG_MODE, USE_MULTIPROCESSING, USE_CFFI, FILL_SYMBOL, SCORE_LIST, SCREEN_WIDTH
 from helper_classes import BigramsConfig, ConfigSpecificResults
 from ui_helpers import *
 
 start_time = time()
+
+if USE_CFFI:
+    try:
+        from cffi import _cffi_extension
+        from cffi._cffi_extension import ffi
+    except ModuleNotFoundError as e:
+        implementation = platform.python_implementation()
+        interpreter = "python3" if implementation == "CPython" else "pypy3"
+        print("Could not import _cffi_extension!\n"
+              "Compile it with:\n"
+              f"cd cffi && {interpreter} ./cffi_extension_build.py\n"
+              "(Or disable cffi usage by setting USE_CFFI in config.py to False.)")
+        sys.exit(1)
+
+    FFI_SCORE_LIST_ARRAYS = [ffi.new('double[32]', list(array)) for array in SCORE_LIST]
+    FFI_SCORE_LIST = ffi.new('double[][32]', FFI_SCORE_LIST_ARRAYS)
 
 
 def main():
@@ -750,19 +767,28 @@ def getAsciiArray() -> array:
 def getLayoutScores(layouts: tuple, bigrams: tuple, prevScores=None) -> tuple:
     """Tests the layouts and return their scores. It's only used when single-threading."""
 
-    asciiArray = getAsciiArray()
     nrLayouts = len(layouts)
     scores = array("d", [0.0]*nrLayouts) # Create the empty scoring-list
+    if USE_CFFI:
+        nrBigrams = len(bigrams)
+        ffiBigrams = ffi.new("BigramC[]", nrBigrams)
+        for i, b in enumerate(bigrams):
+            ffiBigrams[i].letter1AsciiCode = b.letter1AsciiCode
+            ffiBigrams[i].letter2AsciiCode = b.letter2AsciiCode
+            ffiBigrams[i].frequency = b.frequency
 
-    # Test the flow of all the layouts.
-    for k, layout in enumerate(layouts):
-        for j, letter in enumerate(layout):
-            asciiArray[ord(letter)] = j  # Fill up asciiArray
+        # Test the flow of all the layouts.
+        for k, layout in enumerate(layouts):
+            permutatedLayoutBytes = layout.encode('latin1')
+            scores[k] = _cffi_extension.lib.test_single_layout(
+                permutatedLayoutBytes, len(layout), ffiBigrams, nrBigrams, FFI_SCORE_LIST
+            )
+    else:
+        asciiArray = getAsciiArray()
 
-        for bigram in bigrams: # Go through every bigram and see how well it flows.
-            firstLetterPlacement = asciiArray[bigram.letter1AsciiCode]
-            secondLetterPlacement = asciiArray[bigram.letter2AsciiCode]
-            scores[k] += bigram.frequency * SCORE_LIST[firstLetterPlacement][secondLetterPlacement]
+        # Test the flow of all the layouts.
+        for k, layout in enumerate(layouts):
+            scores[k] = testSingleLayout(layout, asciiArray, bigrams)
 
     if prevScores:
         # Add the previous layouts' scores. (which weren't tested here. It would be redundant.)
@@ -774,8 +800,20 @@ def getLayoutScores(layouts: tuple, bigrams: tuple, prevScores=None) -> tuple:
             for k in range(groupBeginning, groupEnding):
                 scores[k] += prevScores[j]
 
-    goodLayouts, goodScores = getTopScores(layouts, scores, 500)
-    return goodLayouts, goodScores
+    if USE_CFFI:
+        ffiLayouts = [ffi.new("char[]", layout.encode("latin1")) for layout in layouts]
+        ffiLayoutsPointer = ffi.new("char*[]", ffiLayouts)
+        ffiScoresArray = ffi.new("double[]", list(scores))
+        ffiGoodLayouts = [ffi.new("char[]", 100)] * 500
+        ffiGoodLayoutsPointer = ffi.new("char*[]", ffiGoodLayouts)
+        ffiGoodScores = ffi.new('double[]', 500)
+        _cffi_extension.lib.get_top_scores(
+            ffiLayoutsPointer, nrLayouts, ffiScoresArray, 500, LETTERS_PER_LAYER, ffiGoodLayoutsPointer, ffiGoodScores
+        )
+        return [ffi.string(s).decode("latin1") for s in ffiGoodLayoutsPointer], [float(f) for f in ffiGoodScores]
+    else:
+        goodLayouts, goodScores = getTopScores(layouts, scores, 500)
+        return goodLayouts, goodScores
 
 
 def getLayoutScores_multiprocessing(*args) -> tuple:
@@ -867,8 +905,16 @@ def greedyOptimization(layouts: tuple, scores: array, info: InfoWithTime = None)
     """Randomly switches letters in each of the layouts to see whether the layouts can be improved this way."""
 
     optimizedLayouts = dict(zip(layouts, scores))
-    asciiArray = getAsciiArray()
     bigrams = getBigrams(''.join(sorted(layouts[0])))
+    if USE_CFFI:
+        nrBigrams = len(bigrams)
+        ffiBigrams = ffi.new("BigramC[]", nrBigrams)
+        for i, b in enumerate(bigrams):
+            ffiBigrams[i].letter1AsciiCode = b.letter1AsciiCode
+            ffiBigrams[i].letter2AsciiCode = b.letter2AsciiCode
+            ffiBigrams[i].frequency = b.frequency
+    else:
+        asciiArray = getAsciiArray()
     if DEBUG_MODE:
         print(f'DEBUG: Greedy optimization with {len(layouts)} layouts')
     else:
@@ -878,8 +924,14 @@ def greedyOptimization(layouts: tuple, scores: array, info: InfoWithTime = None)
         while optimizing is True:
             layoutPermutations = performLetterSwaps(layout)
             for i, permutatedLayout in enumerate(layoutPermutations):
-                permutatedScore = testSingleLayout(
-                    permutatedLayout, asciiArray, bigrams)
+                if USE_CFFI:
+                    permutatedLayoutBytes = permutatedLayout.encode('latin1')
+                    permutatedScore = _cffi_extension.lib.test_single_layout(
+                        permutatedLayoutBytes, len(permutatedLayout), ffiBigrams, nrBigrams, FFI_SCORE_LIST
+                    )
+                else:
+                    permutatedScore = testSingleLayout(
+                        permutatedLayout, asciiArray, bigrams)
                 if permutatedScore > score:
                     layout = permutatedLayout
                     score = permutatedScore

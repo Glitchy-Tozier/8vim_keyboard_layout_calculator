@@ -26,6 +26,8 @@ If for whatever reason you can't use pypy, to at least benefit from *some* speed
 python3 main.py
 ```
 
+Optional: For much faster execution times, the bottleneck functions have been rewritten in C. If you want to use them, follow [these instructions](cffi/README.md).
+
 ### Compatibility
 #### Windows
 `cmd.exe` does not support the ANSI escape codes by default though it should be able to be enabled since Windows 10 TH2 (v1511). This script was tested with *Windows PowerShell* successfully. If you are using `pypy.exe` you should set `DISABLE_UNICODE = True` in the `config.py` file.
